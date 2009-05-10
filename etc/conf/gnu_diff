@@ -8,6 +8,8 @@
  * be used.
  */
 
+/* Davidb, change to show normal context instead of the whole file. */
+
 
 /*
  * Compare two files using GNU diff.  The -U -1 option produces an output
@@ -44,7 +46,7 @@
  */
 diff_command =
        "set +e; "
-       "diff -U -1 -a ${quote $original} ${quote $input} > ${quote $output}; "
+       "diff -U 3 -a ${quote $original} ${quote $input} > ${quote $output}; "
        "if test $? -gt 1; then "
        "grep -q '^Binary' ${quote $output}; "
        "test $? -eq 0; "
