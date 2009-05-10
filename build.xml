@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="jpool" default="build">
+
+  <property name="lib.dir" value="${basedir}/lib"/>
+  <property name="src.dir" value="${basedir}/src"/>
+  <property name="test.dir" value="${basedir}/test"/>
+
+  <property name="target" value="${basedir}/target"/>
+  <property name="classes.dir" value="${target}/classes"/>
+  <property name="test.classes.dir" value="${target}/test-classes"/>
+
+  <!-- Gentoo specific value -->
+  <property name="scala.home" value="/usr/share/scala/lib"/>
+
+  <target name="init">
+    <!-- Ant build tasks from scala. -->
+    <path id="build.classpath">
+      <pathelement location="${scala.home}/scala-library.jar"/>
+      <pathelement location="${lib.dir}/scalatest-0.9.5.jar"/>
+      <pathelement location="${classes.dir}"/>
+    </path>
+    <taskdef resource="scala/tools/ant/antlib.xml">
+      <classpath>
+	<pathelement location="${scala.home}/scala-compiler.jar"/>
+	<pathelement location="${scala.home}/scala-library.jar"/>
+      </classpath>
+    </taskdef>
+
+    <mkdir dir="${classes.dir}"/>
+    <mkdir dir="${test.classes.dir}"/>
+  </target>
+
+  <target name="build" depends="init, compile.src, compile.test">
+  </target>
+
+  <target name="compile.src">
+    <fsc
+	deprecation="yes"
+	srcdir="${src.dir}"
+	destdir="${classes.dir}"
+	classpathref="build.classpath" />
+    <jar destfile="${target}/jpool.jar" basedir="${classes.dir}"/>
+  </target>
+
+  <target name="compile.test">
+    <fsc
+	deprecation="yes"
+	srcdir="${test.dir}"
+	destdir="${test.classes.dir}"
+	classpathref="build.classpath" />
+    <jar destfile="${target}/jpool-tests.jar" basedir="${test.classes.dir}"/>
+  </target>
+
+  <target name="clean">
+    <delete dir="${target}"/>
+  </target>
+
+</project>
