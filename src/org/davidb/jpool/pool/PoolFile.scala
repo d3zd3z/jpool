@@ -40,7 +40,7 @@ class PoolFile(val path: File) {
     }
   }
   class WriteState extends State {
-    val file = new RandomAccessFile(path, "wr")
+    val file = new RandomAccessFile(path, "rw")
     val chan = file.getChannel()
     def getReadable(): FileChannel = chan
     def getWritable(): FileChannel = chan
@@ -64,7 +64,13 @@ class PoolFile(val path: File) {
     Chunk.readUnchecked(chan)
   }
 
-  // TODO: Write
+  def append(chunk: Chunk): Int = {
+    val chan = state.getWritable()
+    val pos = chan.size.toInt
+    chan.position(pos)
+    chunk.write(chan)
+    pos
+  }
 
   def close() = state.close()
 }
