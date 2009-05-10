@@ -49,7 +49,19 @@ class IntHashIndex(val basePath: String, val prefix: String) extends {
   override def ramMax = 103
 }
 
-object HashIndexSuite extends Suite {
+class HashIndexSuite extends Suite with TempDirTest {
+  var hashIndex: IntHashIndex = null
+
+  override def beforeEach() {
+    super.beforeEach()
+    hashIndex = new IntHashIndex(tmpDir.path.getPath, "index-")
+  }
+
+  override def afterEach() {
+    super.afterEach()
+    hashIndex = null
+  }
+
   def testInvalidDir {
     intercept[IllegalArgumentException] {
       new IntHashIndex("/xxxxx/yyyyy/zzzzz", "index-")
@@ -60,48 +72,6 @@ object HashIndexSuite extends Suite {
     intercept[IllegalArgumentException] {
       new IntHashIndex("/tmp", "in/dex-")
     }
-  }
-
-  def notestIndex {
-    TempDir.withTempDir { name =>
-      val hi = new IntHashIndex(name.getPath, "index-")
-      val a = hi.ramMax * 16 + 1
-      for (i <- 0 until a) {
-        hi += (hashOfNum(i) -> i)
-        if ((i % 1737) == 0)
-          hi.flush()
-      }
-      hi.flush()
-
-      for (i <- 0 until a) {
-        checkNode(hi, i)
-      }
-    }
-  }
-
-  private def checkNode(m: collection.Map[Hash, Int], num: Int) {
-    val h1 = hashOfNum(num)
-    assert(m.get(h1) === Some(num))
-  }
-
-  private def hashOfNum(num: Int): Hash = {
-    Hash("blob", num.toString)
-  }
-}
-
-class HashIndexSuite extends Suite with BeforeAndAfter {
-  var tmpDir: TempDir = null
-  var hashIndex: IntHashIndex = null
-
-  override def beforeEach() {
-    tmpDir = new TempDir
-    hashIndex = new IntHashIndex(tmpDir.path.getPath, "index-")
-  }
-
-  override def afterEach() {
-    tmpDir.close()
-    tmpDir = null
-    hashIndex = null
   }
 
   def reload() {
