@@ -51,12 +51,17 @@ object AegisRunner {
       test match {
         case GetName(name) =>
           printf("TestRunner: %s%n", name)
-          val suiteClass = Class.forName(name.replace('/', '.'))
-          val suite = suiteClass.newInstance.asInstanceOf[Suite]
-          val reporter = new SavingReporter
-          suite.execute(None, reporter, new Stopper {}, Set(), Set("org.scalatest.Ignore"), Map(), None)
-
-          results += (test, reporter.aegisStatus)
+          try {
+            val suiteClass = Class.forName(name.replace('/', '.'))
+            val suite = suiteClass.newInstance.asInstanceOf[Suite]
+            val reporter = new SavingReporter
+            suite.execute(None, reporter, new Stopper {}, Set(), Set("org.scalatest.Ignore"), Map(), None)
+            results += (test, reporter.aegisStatus)
+          } catch {
+            case e: Exception =>
+              printf("Exception raised: %n")
+              results += (test, 2)
+          }
         case _ =>
           printf("Unknown test name: %s%n", test)
           exit(1)

@@ -1,4 +1,4 @@
 batch_test_command =
 	"env SPATH=${quote ${search_path}}"
 	"EPATH=${quote ${search_path_executable}} "
-	"sh etc/run-test.sh ${output} ${file_names}";
+	"sh ${ad}/etc/run-test.sh ${output} ${file_names}";
