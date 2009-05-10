@@ -61,7 +61,11 @@ object AegisRunner {
             case e: Exception =>
               printf("Exception raised: %n")
               e.printStackTrace
-              results += (test, 2)
+              results += (test, 1)
+            case e: NoClassDefFoundError =>
+              printf("Class not present%n")
+              e.printStackTrace
+              results += (test, 1)
           }
         case _ =>
           printf("Unknown test name: %s%n", test)
