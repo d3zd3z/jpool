@@ -60,6 +60,7 @@ object AegisRunner {
           } catch {
             case e: Exception =>
               printf("Exception raised: %n")
+              e.printStackTrace
               results += (test, 2)
           }
         case _ =>
