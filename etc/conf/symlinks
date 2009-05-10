@@ -1,0 +1,3 @@
+development_directory_style = {
+	source_file_symlink = true;
+};
