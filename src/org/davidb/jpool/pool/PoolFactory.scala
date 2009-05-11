@@ -3,6 +3,7 @@
 
 package org.davidb.jpool.pool
 
+import java.io.File
 import java.net.{URI, UnknownServiceException}
 
 object PoolFactory {
@@ -14,6 +15,11 @@ object PoolFactory {
     if (uri.getScheme != "jpool")
       throw new IllegalArgumentException("Pool URI must start with 'jpool:'")
     val u2 = new URI(uri.getRawSchemeSpecificPart)
-    throw new UnknownServiceException("Unknown pool service: " + u2.getScheme)
+    u2.getScheme match {
+      case "file" =>
+        new FilePool(new File(u2.getPath))
+      case scheme =>
+        throw new UnknownServiceException("Unknown pool service: " + scheme)
+    }
   }
 }
