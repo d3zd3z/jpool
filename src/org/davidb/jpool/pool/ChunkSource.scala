@@ -10,4 +10,7 @@ trait ChunkSource {
 
   // Attempt to read a single Chunk from this pool.
   def readChunk(hash: Hash): Option[Chunk]
+
+  // Close up any resources associated with this source.
+  def close()
 }

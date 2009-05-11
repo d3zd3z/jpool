@@ -14,4 +14,11 @@ class PoolFactorySuite extends Suite {
       PoolFactory.getInstance(new URI("jpool:unknown:foo"))
     }
   }
+
+  def testFilePool {
+    TempDir.withTempDir { tdir =>
+      val pool = PoolFactory.getInstance(new URI("jpool:file://%s" format tdir.getPath))
+      pool.close()
+    }
+  }
 }
