@@ -34,12 +34,21 @@ class FilePool(prefix: File) extends ChunkSource {
   recover
 
   def getBackups: Set[Hash] = db.getBackups
-  def readChunk(hash: Hash): Option[Chunk] = {
+
+  def get(hash: Hash): Option[Chunk] = {
     hashIndex.get(hash) match {
       case None => None
       case Some((file, offset)) => Some(files(file).read(offset))
     }
   }
+
+  // No need to read the data for just a containment check.
+  // TODO: Remember the last Hash lookup for get/contains and reuse
+  // it.
+  override def contains(hash: Hash): Boolean = hashIndex.contains(hash)
+
+  def size: Int = error("TODO")
+  def elements: Iterator[(Hash, Chunk)] = error("TODO")
 
   // Scan the pool directory for the pool files.
   private def scan: mutable.ArrayBuffer[PoolFile] = {
