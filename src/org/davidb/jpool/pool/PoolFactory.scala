@@ -22,4 +22,11 @@ object PoolFactory {
         throw new UnknownServiceException("Unknown pool service: " + scheme)
     }
   }
+
+  def getStoreInstance(uri: URI): ChunkStore = {
+    getInstance(uri) match {
+      case st: ChunkStore => st
+      case _ => throw new UnsupportedOperationException("Request store is not writable")
+    }
+  }
 }
