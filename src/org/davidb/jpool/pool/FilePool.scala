@@ -21,7 +21,7 @@ class PoolHashIndex(val basePath: String, val prefix: String) extends {
   }
 } with HashIndex[(Int,Int)]
 
-class FilePool(prefix: File) extends ChunkSource {
+class FilePool(prefix: File) extends ChunkStore {
   if (!prefix.isDirectory())
     error("Pool name '" + prefix + "' must be a directory")
 
@@ -50,6 +50,18 @@ class FilePool(prefix: File) extends ChunkSource {
   def size: Int = error("TODO")
   def elements: Iterator[(Hash, Chunk)] = error("TODO")
 
+  def -= (key: Hash) =
+    new UnsupportedOperationException("Pools only support adding, not removal")
+
+  def update(key: Hash, value: Chunk) = {
+    require(key == value.hash)
+    if (!hashIndex.contains(key)) {
+      needRoom(value)
+      val pos = files(files.size - 1).append(value)
+      hashIndex += (key -> (files.size - 1, pos))
+    }
+  }
+
   // Scan the pool directory for the pool files.
   private def scan: mutable.ArrayBuffer[PoolFile] = {
     val Name = """^pool-data-(\d{4})\.data$""".r
@@ -64,8 +76,22 @@ class FilePool(prefix: File) extends ChunkSource {
   }
 
   def close() {
+    flush()
     // TODO: Better invalidate our own state.
     db.close()
+  }
+
+  def flush() {
+    hashIndex.flush()
+  }
+
+  // Ensure that we can write to the last file.  Make sure it exists,
+  // and has room.
+  private def needRoom(chunk: Chunk) {
+    // TODO: Check for growth.
+    if (files.size == 0) {
+      files += new PoolFile(makeName(files.size))
+    }
   }
 
   private def makeName(index: Int): File = {

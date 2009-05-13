@@ -11,3 +11,6 @@ trait ChunkSource extends collection.Map[Hash, Chunk] {
   // Close up any resources associated with this source.
   def close()
 }
+
+trait ChunkStore extends ChunkSource with collection.mutable.Map[Hash, Chunk] {
+}
