@@ -57,8 +57,12 @@ class FilePool(prefix: File) extends ChunkStore {
     require(key == value.hash)
     if (!hashIndex.contains(key)) {
       needRoom(value)
-      val pos = files(files.size - 1).append(value)
-      hashIndex += (key -> (files.size - 1, pos))
+      val fileNum = files.size - 1
+      val file = files(fileNum)
+      val pos = file.append(value)
+      hashIndex += (key -> (fileNum, pos))
+
+      hashIndex.setProperty("pool.fileSeen." + fileNum, file.size.toString)
     }
   }
 
