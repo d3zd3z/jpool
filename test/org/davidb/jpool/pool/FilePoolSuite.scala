@@ -2,10 +2,17 @@
 
 package org.davidb.jpool.pool
 
+import java.io.File
 import java.net.URI
 import org.scalatest.{Suite, BeforeAndAfter}
 
 class FilePoolSuite extends Suite with BeforeAndAfter with TempDirTest {
+
+  class PerformedRecovery extends AssertionError("Recovery performed")
+
+  class NoRecoveryPool(prefix: File) extends FilePool(prefix) {
+    override def recoveryNotify { throw new PerformedRecovery }
+  }
 
   var pool: ChunkStore = null
   override def beforeEach() {
@@ -15,6 +22,10 @@ class FilePoolSuite extends Suite with BeforeAndAfter with TempDirTest {
   override def afterEach() {
     pool.close()
     super.afterEach()
+  }
+  private def reopen {
+    pool.close()
+    pool = new NoRecoveryPool(tmpDir.path)
   }
 
   def testSimplePool {
@@ -29,6 +40,16 @@ class FilePoolSuite extends Suite with BeforeAndAfter with TempDirTest {
     val c2b = pool(c2.hash)
     assert(c1.hash === c1b.hash)
     assert(c2.hash === c2b.hash)
+  }
+
+  def testHasRecovery {
+    val chunk = makeChunk(1, 1024)
+    pool += (chunk.hash -> chunk)
+    pool.close()
+    assert(new File(new File(tmpDir.path, "metadata"), "data-index-0001").delete)
+    intercept[PerformedRecovery] {
+      pool = new NoRecoveryPool(tmpDir.path)
+    }
   }
 
   private def makeChunk(index: Int, size: Int) = Chunk.make("blob", StringMaker.generate(index, size))
