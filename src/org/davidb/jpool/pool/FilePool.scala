@@ -127,6 +127,8 @@ class FilePool(prefix: File) extends ChunkStore {
     }
   }
 
+  protected def recoveryNotify {}
+
   // Walk through the pool files, recovering the index if necessary.
   private def recover {
     var dirty = false
@@ -157,7 +159,9 @@ class FilePool(prefix: File) extends ChunkStore {
       pf.close()
     }
 
-    if (dirty)
+    if (dirty) {
       hashIndex.flush()
+      recoveryNotify
+    }
   }
 }
