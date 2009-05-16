@@ -6,6 +6,8 @@ import java.io.File
 import java.net.URI
 import org.scalatest.{Suite, BeforeAndAfter}
 
+import scala.collection.mutable.ArrayBuffer
+
 class FilePoolSuite extends Suite with BeforeAndAfter with TempDirTest {
 
   class PerformedRecovery extends AssertionError("Recovery performed")
@@ -49,6 +51,21 @@ class FilePoolSuite extends Suite with BeforeAndAfter with TempDirTest {
     assert(new File(new File(tmpDir.path, "metadata"), "data-index-0001").delete)
     intercept[PerformedRecovery] {
       pool = new NoRecoveryPool(tmpDir.path)
+    }
+  }
+
+  def testReopen {
+    val hashes = new ArrayBuffer[Hash]
+    for (i <- 0 until 100) {
+      val chunk = makeChunk(i, 512)
+      pool += (chunk.hash -> chunk)
+      hashes += chunk.hash
+    }
+
+    reopen
+    for (hash <- hashes) {
+      val chunk = pool(hash)
+      assert (hash === chunk.hash)
     }
   }
 
