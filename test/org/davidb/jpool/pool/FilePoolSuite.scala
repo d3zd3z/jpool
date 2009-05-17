@@ -69,5 +69,9 @@ class FilePoolSuite extends Suite with BeforeAndAfter with TempDirTest {
     }
   }
 
+  def testReopenNoWrite {
+    reopen
+  }
+
   private def makeChunk(index: Int, size: Int) = Chunk.make("blob", StringMaker.generate(index, size))
 }
