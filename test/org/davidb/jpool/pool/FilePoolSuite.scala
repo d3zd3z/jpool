@@ -8,27 +8,7 @@ import org.scalatest.{Suite, BeforeAndAfter}
 
 import scala.collection.mutable.ArrayBuffer
 
-class FilePoolSuite extends Suite with BeforeAndAfter with TempDirTest {
-
-  class PerformedRecovery extends AssertionError("Recovery performed")
-
-  class NoRecoveryPool(prefix: File) extends FilePool(prefix) {
-    override def recoveryNotify { throw new PerformedRecovery }
-  }
-
-  var pool: ChunkStore = null
-  override def beforeEach() {
-    super.beforeEach()
-    pool = PoolFactory.getStoreInstance(new URI("jpool:file://%s" format tmpDir.path.getPath))
-  }
-  override def afterEach() {
-    pool.close()
-    super.afterEach()
-  }
-  private def reopen {
-    pool.close()
-    pool = new NoRecoveryPool(tmpDir.path)
-  }
+class FilePoolSuite extends Suite with PoolTest {
 
   def testSimplePool {
     val c1 = makeChunk(1, 1024)
@@ -73,5 +53,4 @@ class FilePoolSuite extends Suite with BeforeAndAfter with TempDirTest {
     reopen
   }
 
-  private def makeChunk(index: Int, size: Int) = Chunk.make("blob", StringMaker.generate(index, size))
 }
