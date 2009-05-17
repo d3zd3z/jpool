@@ -115,12 +115,18 @@ class FilePool(prefix: File) extends ChunkStore {
 
   // Pool directory sanity test.  Make sure this directory appears as
   // a reasonably sane pool.  It should either contain at least one
-  // pool data file, or be entirely empty.
+  // pool data file, contain only metadata, or be entirely empty.
   private def sanityTest {
     val names = prefix.list()
-    if (names.size != 0 &&  !(names contains "pool-data-0000.data"))
-      error("Pool directory %s is not a valid pool, but is not empty"
-        format prefix.getPath)
+    if (names.size == 0)
+      return
+    if (names contains "pool-data-0000.data")
+      return
+    if (names.size == 1 && names(0) == "metadata" &&
+        new File(prefix, "metadata").isDirectory)
+      return
+    error("Pool directory %s is not a valid pool, but is not empty"
+      format prefix.getPath)
   }
 
   // Ensure there is a metadata directory.
