@@ -1,8 +1,6 @@
 // Tree builder.
 
-package org.davidb.jpool
-
-import jpool.pool.ChunkStore
+package org.davidb.jpool.pool
 
 import scala.collection.mutable.Stack
 import java.nio.ByteBuffer

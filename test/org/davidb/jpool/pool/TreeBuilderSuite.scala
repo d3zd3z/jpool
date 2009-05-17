@@ -1,8 +1,6 @@
 // Test the tree builder.
 
-package org.davidb.jpool
-
-import jpool.pool.{ChunkStore, PoolFactory, PoolTest}
+package org.davidb.jpool.pool
 
 import java.net.URI
 import org.scalatest.{Suite, BeforeAndAfter}
