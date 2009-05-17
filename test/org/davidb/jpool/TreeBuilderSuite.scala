@@ -2,21 +2,12 @@
 
 package org.davidb.jpool
 
-import jpool.pool.{ChunkStore, PoolFactory}
+import jpool.pool.{ChunkStore, PoolFactory, PoolTest}
 
 import java.net.URI
 import org.scalatest.{Suite, BeforeAndAfter}
 
-class TreeBuilderSuite extends Suite with BeforeAndAfter with TempDirTest {
-  var pool: ChunkStore = _
-  override def beforeEach() {
-    super.beforeEach()
-    pool = PoolFactory.getStoreInstance(new URI("jpool:file://%s" format tmpDir.path.getPath))
-  }
-  override def afterEach() {
-    pool.close()
-    super.afterEach()
-  }
+class TreeBuilderSuite extends Suite with PoolTest {
 
   def testSingle {
     val tb = TreeBuilder.makeBuilder("tmp", pool, 10*20)
@@ -27,5 +18,4 @@ class TreeBuilderSuite extends Suite with BeforeAndAfter with TempDirTest {
     assert ((walker map (_.hash)) sameElements (expected map (_.hash)))
   }
 
-  private def makeChunk(index: Int, size: Int) = Chunk.make("blob", StringMaker.generate(index, size))
 }
