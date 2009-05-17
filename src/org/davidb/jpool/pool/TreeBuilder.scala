@@ -18,12 +18,17 @@ object TreeBuilder {
 
   // Iterate (lazily) through a tree rooted at a given hash.  Must use
   // the same prefix used to build the tree.
-  def walk(prefix: String, pool: ChunkStore, hash: Hash): Iterable[Chunk] = {
+  def walk(prefix: String, pool: ChunkStore, hash: Hash): Stream[Chunk] = {
     val chunk = pool(hash)
     val kind = chunk.kind
-    if (kind.startsWith(prefix) && kind(3).isDigit)
-      error("TODO: tree")
-    else
+    if (kind.startsWith(prefix) && kind(3).isDigit) {
+      val buffer = chunk.data
+      val iter = new Iterator[Stream[Chunk]] {
+        def hasNext: Boolean = buffer.remaining > 0
+        def next: Stream[Chunk] = walk(prefix, pool, getHash(buffer))
+      }
+      Stream.concat(iter)
+    } else
       Stream.cons(chunk, Stream.empty)
   }
 
@@ -42,28 +47,68 @@ class TreeBuilder private (prefix: String, pool: ChunkStore, limit: Int) {
   // the store, and it's hash will be remembered for this store.
   def add(chunk: Chunk) {
     pool += (chunk.hash -> chunk)
-    room
-    printf("Adding: %s%n", buffers.top)
-    buffers.top.put(chunk.hash.getBytes)
-    printf("Adding: %s%n", buffers.top)
+    // printf("Adding: %s%n", buffers.top)
+    append(chunk.hash, 0)
+    // printf("Adding: %s%n", buffers.top)
   }
 
   // Write out any remaining buffers, and return the final chunk's
   // Hash describing the entire tree.
   def finish(): Hash = {
-    if (buffers.length != 1)
-      error("TODO: More than one")
+    if (buffers.length != 1) {
+      // Collapse buffers.
+      var level = 0
+      while (buffers.length > 1) {
+        val tmp = buffers.pop()
+        append(summarize(tmp, level + 1), level + 1)
+        level += 1
+      }
+    }
     val top = buffers.pop
-    top.flip
-    if (top.remaining != Hash.HashLength)
-      error("TODO: More than one (2)")
-    TreeBuilder.getHash(top)
+    summarize(top, 0)
   }
 
-  // Make sure the bytebuffer system has sufficient room.
-  private def room {
-    if (buffers.top.remaining == 0)
-      error("TODO")
+  // Summarize the hashes in the buffer, naming them according to the
+  // given level.  Avoids creating a summary level for the special
+  // case of a single hash.  The buffer should be filled (with the
+  // position at the end).
+  private def summarize(buffer: ByteBuffer, level: Int): Hash = {
+    buffer.flip
+    if (buffer.remaining == 0) {
+      if (level == 0) {
+        // Empty chunk is allowed, but only at the first level.
+        // TODO: Do we want to be more specific than "blob" for the
+        // type?
+        val chunk = Chunk.make("blob", "")
+        pool += (chunk.hash -> chunk)
+        return chunk.hash
+      } else
+        error("Internal error: Empty hash buffer at non-zero level")
+    }
+
+    val chunk = Chunk.make(prefix + level.toString, buffer)
+    pool += (chunk.hash -> chunk)
+    chunk.hash
+  }
+
+  // Append this hash, at level 'n', to the top of the stack.
+  private def append(hash: Hash, level: Int) {
+    if (buffers.isEmpty) {
+      push(hash)
+    } else if (buffers.top.remaining == 0) {
+      val sumHash = summarize(buffers.pop(), level + 1)
+      append(sumHash, level + 1)
+      push(hash)
+    } else {
+      buffers.top.put(hash.getBytes)
+    }
+  }
+
+  // Create a new buffer, and push the specified hash onto it.
+  private def push(hash: Hash) {
+    val buf = ByteBuffer.allocate(limit)
+    buffers.push(buf)
+    buf.put(hash.getBytes)
   }
 
   val buffers = new Stack[ByteBuffer]

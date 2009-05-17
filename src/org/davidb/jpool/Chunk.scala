@@ -20,6 +20,8 @@ object Chunk {
   // Simple constructors.
   def make(kind: String, data: String): Chunk =
     new DataChunk(kind, ByteBuffer.wrap(data.getBytes))
+  def make(kind: String, data: ByteBuffer): Chunk =
+    new DataChunk(kind, data.duplicate)
 
   def readUnchecked(chan: FileChannel): (Chunk, Hash) = {
     val header = readBytes(chan, 48)
