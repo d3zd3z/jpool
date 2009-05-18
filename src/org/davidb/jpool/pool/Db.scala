@@ -41,6 +41,22 @@ class Db(metaPrefix: File) {
     result
   }
 
+  // Retrieve a property from the config table.
+  def getProperty(key: String, default: String): String = {
+    query(getString1 _, "select value from config where key = ?", key).toList match {
+      case List(item) => item
+      case Nil => default
+      case _ => error("Multiple config entries for %s in config table" format key)
+    }
+  }
+
+  // Set and/or replace a property in the config table.
+  def setProperty(key: String, value: String) {
+    updateQuery("delete from config where key = ?", key)
+    updateQuery("insert into config values (?, ?)", key, value)
+    conn.commit()
+  }
+
   private def makeQuery(sql: String, args: Any*): PreparedStatement = {
     val stmt = conn.prepareStatement(sql)
     var pos = 0
@@ -66,12 +82,24 @@ class Db(metaPrefix: File) {
   {
     val stmt = makeQuery(sql, args: _*)
     val result = stmt.executeQuery()
+    // It is necessary to pre-fetch the results, because ResultSet
+    // considers an empty set to not be on the last entry.
     new Iterator[A] {
-      def hasNext: Boolean = !(result.isLast())
+      var item: Option[A] = _
+      private def advance {
+        item = if (result.next()) Some(convert(result)) else None
+      }
+      advance
+
+      def hasNext: Boolean = item != None
       def next: A = {
-        if (result.next()) {
-          convert(result)
-        } else error("next on empty iterator")
+        item match {
+          case None => error("next on empty iterator")
+          case Some(r) =>
+            val result = r
+            advance
+            result
+        }
       }
     }
   }
