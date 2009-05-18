@@ -53,4 +53,42 @@ class FilePoolSuite extends Suite with PoolTest {
     reopen
   }
 
+  def testStickyLimit {
+    val a = pool.limit
+    assert(a === 640*1024*1024)  // Might not be set in stone.
+    pool.limit = 512*1024
+    assert(pool.limit == 512*1024)
+    reopen
+    assert(pool.limit == 512*1024)
+  }
+
+  def testLimit {
+    val hashes = new ArrayBuffer[Hash]
+    pool.limit = 32*1024
+    for (i <- 0 until 300) {
+      val chunk = makeChunk(i, 1024)
+      pool += (chunk.hash -> chunk)
+      hashes += chunk.hash
+    }
+
+    reopen
+    for (hash <- hashes) {
+      val chunk = pool(hash)
+      assert(hash === chunk.hash)
+    }
+
+    // Assure that multiple files were opened.
+    var limit = -1
+    def loop(index: Int) {
+      val f = new File(tmpDir.path, "pool-data-%04d.data" format index)
+      if (f.isFile) {
+        // printf("File: %d len = %x%n", index, f.length)
+        assert(f.length < 32L*1024)
+        limit = index
+        loop(index + 1)
+      }
+    }
+    loop(0)
+    assert(limit > 0)
+  }
 }

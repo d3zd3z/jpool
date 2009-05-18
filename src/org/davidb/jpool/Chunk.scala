@@ -96,6 +96,12 @@ abstract class Chunk(val kind: String) {
       "Chunk", kind, hash.toString, int2Integer(dataLength))
   }
 
+  def writeSize: Int = {
+    val zd = _zdata
+    val len = if (zd eq null) dataLength else zd.remaining
+    48 + (len + 15) & -15
+  }
+
   def write(chan: FileChannel) {
     val header = ByteBuffer.allocate(48)
     header.order(LITTLE_ENDIAN)

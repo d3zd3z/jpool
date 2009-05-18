@@ -13,4 +13,6 @@ trait ChunkSource extends collection.Map[Hash, Chunk] {
 }
 
 trait ChunkStore extends ChunkSource with collection.mutable.Map[Hash, Chunk] {
+  // Settable limit on individual size of files.
+  var limit: Int
 }

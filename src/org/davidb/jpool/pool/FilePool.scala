@@ -25,6 +25,11 @@ class FilePool(prefix: File) extends ChunkStore {
   if (!prefix.isDirectory())
     error("Pool name '" + prefix + "' must be a directory")
 
+  // Default initial limit for pool datafiles.  Any write that would
+  // exceed this value will cause a new file to be written.  Changing
+  // this on existing pools doesn't affect the size of files already
+  // written.
+
   private val metaPrefix = new File(prefix, "metadata")
   sanityTest
   metaCheck
@@ -32,6 +37,16 @@ class FilePool(prefix: File) extends ChunkStore {
   private val files = scan
   private val hashIndex = new PoolHashIndex(metaPrefix.getPath, "data-index-")
   recover
+
+  private final val defaultLimit = 640*1024*1024
+  private var _limit = db.getProperty("limit", defaultLimit.toString).toInt
+
+  def limit: Int = _limit
+  def limit_=(value: Int) {
+    require(value > 0)
+    db.setProperty("limit", value.toString)
+    _limit = value
+  }
 
   def getBackups: Set[Hash] = db.getBackups
 
@@ -95,6 +110,12 @@ class FilePool(prefix: File) extends ChunkStore {
     // TODO: Check for growth.
     if (files.size == 0) {
       files += new PoolFile(makeName(files.size))
+    } else {
+      val file = files(files.size - 1)
+      if (file.size + chunk.writeSize > limit) {
+        file.close
+        files += new PoolFile(makeName(files.size))
+      }
     }
   }
 
