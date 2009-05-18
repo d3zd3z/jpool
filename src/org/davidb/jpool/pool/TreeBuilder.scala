@@ -86,9 +86,13 @@ class TreeBuilder private (prefix: String, pool: ChunkStore, limit: Int) {
         error("Internal error: Empty hash buffer at non-zero level")
     }
 
-    val chunk = Chunk.make(prefix + level.toString, buffer)
-    pool += (chunk.hash -> chunk)
-    chunk.hash
+    if (buffer.remaining == Hash.HashLength) {
+      TreeBuilder.getHash(buffer)
+    } else {
+      val chunk = Chunk.make(prefix + level.toString, buffer)
+      pool += (chunk.hash -> chunk)
+      chunk.hash
+    }
   }
 
   // Append this hash, at level 'n', to the top of the stack.
