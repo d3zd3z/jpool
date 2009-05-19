@@ -18,7 +18,7 @@ object TreeBuilder {
 
   // Iterate (lazily) through a tree rooted at a given hash.  Must use
   // the same prefix used to build the tree.
-  def walk(prefix: String, pool: ChunkStore, hash: Hash): Stream[Chunk] = {
+  def walk(prefix: String, pool: ChunkSource, hash: Hash): Stream[Chunk] = {
     val chunk = pool(hash)
     val kind = chunk.kind
     if (kind.startsWith(prefix) && kind(3).isDigit) {
