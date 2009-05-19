@@ -3,14 +3,30 @@
 
 package org.davidb.jpool.pool
 
+import java.io.ByteArrayOutputStream
 import java.nio.channels.{ReadableByteChannel}
 import java.nio.ByteBuffer
+import java.util.Properties
 
 class TarSave(pool: ChunkStore, chan: ReadableByteChannel) {
   private var tars = TreeBuilder.makeBuilder("tar", pool)
   private var tar = new TarParser(chan)
   encodeEntry
-  val hash = tars.finish()
+  val subHash = tars.finish()
+
+  // Encode a 'back' record, storing the given properites.  Note that
+  // the properties will also have the 'hash' property set to the hash
+  // of the root of this backup.
+  def store(props: Properties): Hash = {
+    props.setProperty("hash", subHash.toString)
+    val buf = new ByteArrayOutputStream
+    props.storeToXML(buf, "Backup")
+    val encoded = ByteBuffer.wrap(buf.toByteArray)
+    // Pdump.dump(encoded)
+    val chunk = Chunk.make("back", encoded)
+    pool += (chunk.hash -> chunk)
+    chunk.hash
+  }
 
   private def encodeEntry {
     tar.getHeader match {
