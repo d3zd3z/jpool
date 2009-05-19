@@ -8,20 +8,22 @@ import java.nio.channels.WritableByteChannel
 import java.nio.ByteBuffer
 import java.util.Properties
 
-class TarRestore(pool: ChunkStore, dest: WritableByteChannel) {
-
-  def decode(hash: Hash) {
-    val (_, tarHash) = lookupHash(hash)
-    decodeTar(tarHash)
-  }
-
-  def lookupHash(hash: Hash): (Properties, Hash) = {
+object TarRestore {
+  def lookupHash(pool: ChunkSource, hash: Hash): (Properties, Hash) = {
     val chunk = pool(hash)
     val data = chunk.data
     val encoded = new ByteArrayInputStream(data.array, data.arrayOffset + data.position, data.remaining)
     val props = new Properties
     props.loadFromXML(encoded)
     (props, Hash.ofString(props.getProperty("hash")))
+  }
+}
+
+class TarRestore(pool: ChunkSource, dest: WritableByteChannel) {
+
+  def decode(hash: Hash) {
+    val (_, tarHash) = TarRestore.lookupHash(pool, hash)
+    decodeTar(tarHash)
   }
 
   private def decodeTar(hash: Hash) {

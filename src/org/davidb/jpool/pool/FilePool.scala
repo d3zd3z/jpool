@@ -78,6 +78,9 @@ class FilePool(prefix: File) extends ChunkStore {
       hashIndex += (key -> (fileNum, pos))
 
       hashIndex.setProperty("pool.fileSeen." + fileNum, file.size.toString)
+
+      if (value.kind == "back")
+        db.addBackup(key)
     }
   }
 
