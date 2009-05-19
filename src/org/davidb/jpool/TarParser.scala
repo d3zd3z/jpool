@@ -5,25 +5,12 @@ package org.davidb.jpool
 import java.nio.channels.{Channels, ReadableByteChannel}
 import java.nio.ByteBuffer
 
-class TarParser(chan: ReadableByteChannel) {
-  private val buffer = ByteBuffer.allocate(20 * 512)
-  fill
-
-  // Get a single block.
-  def get: ByteBuffer = {
-    if (buffer.remaining == 0)
-      fill
-    val result = buffer.slice()
-    result.limit(512)
-    // printf("Result: %s%n" format result)
-    buffer.position(buffer.position + 512)
-    result
-  }
-
-  // Decode the next tar header, returning an Option for the header,
-  // with None indicating that the EOF marker is reached.
-  def getHeader: Option[TarHeader] = {
-    val data = get
+object TarParser {
+  // Decode the buffer as a tar header, returning an Option for the
+  // header, with None indicating the EOF marker is reached.
+  def decode(data: ByteBuffer): Option[TarHeader] = {
+    require(data.remaining == 512)
+    val rawData = data.duplicate
     data.position(257)
     val piece = getBytes(data, 5)
     if (new String(piece) == "ustar") {
@@ -34,7 +21,7 @@ class TarParser(chan: ReadableByteChannel) {
       if (octSize(11) != 0)
         error("Not null terminated")
       val size = java.lang.Long.parseLong(new String(octSize, 0, 11), 8)
-      Some(new TarHeader(size))
+      Some(new TarHeader(rawData, size))
     } else {
       // All zeros is EOF.
       data.position(0)
@@ -53,6 +40,28 @@ class TarParser(chan: ReadableByteChannel) {
     buf.get(result)
     result
   }
+}
+
+class TarParser(chan: ReadableByteChannel) {
+  private val buffer = ByteBuffer.allocate(20 * 512)
+  fill
+
+  // Get a single block.
+  def get: ByteBuffer = {
+    if (buffer.remaining == 0)
+      fill
+    val result = buffer.slice()
+    result.limit(512)
+    // printf("Result: %s%n" format result)
+    buffer.position(buffer.position + 512)
+    result
+  }
+
+  // Decode the next tar header, returning an Option for the header,
+  // with None indicating that the EOF marker is reached.
+  def getHeader: Option[TarHeader] = {
+    TarParser.decode(get)
+  }
 
   private def fill {
     buffer.clear
@@ -65,8 +74,9 @@ class TarParser(chan: ReadableByteChannel) {
   }
 }
 
-class TarHeader(val size: Long) {
+class TarHeader(raw_ : ByteBuffer, val size: Long) {
   def dataBlocks = (size + 511) >>> 9
+  val raw: ByteBuffer = raw_.duplicate
 }
 
 // For testing, read a tarfile from stdin, and decode the pieces.
