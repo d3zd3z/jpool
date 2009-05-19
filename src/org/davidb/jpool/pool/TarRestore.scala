@@ -3,12 +3,28 @@
 
 package org.davidb.jpool.pool
 
+import java.io.ByteArrayInputStream
 import java.nio.channels.WritableByteChannel
 import java.nio.ByteBuffer
+import java.util.Properties
 
 class TarRestore(pool: ChunkStore, dest: WritableByteChannel) {
 
   def decode(hash: Hash) {
+    val (_, tarHash) = lookupHash(hash)
+    decodeTar(tarHash)
+  }
+
+  def lookupHash(hash: Hash): (Properties, Hash) = {
+    val chunk = pool(hash)
+    val data = chunk.data
+    val encoded = new ByteArrayInputStream(data.array, data.arrayOffset + data.position, data.remaining)
+    val props = new Properties
+    props.loadFromXML(encoded)
+    (props, Hash.ofString(props.getProperty("hash")))
+  }
+
+  private def decodeTar(hash: Hash) {
     for (head <- TreeBuilder.walk("tar", pool, hash)) {
       head.kind match {
         case "tard" => decodeDirect(head.data)

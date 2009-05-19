@@ -10,6 +10,7 @@ import java.io.{BufferedReader, InputStreamReader}
 import java.nio.ByteBuffer
 import java.nio.channels.{Channels, Pipe, ReadableByteChannel, WritableByteChannel}
 import java.security.MessageDigest
+import java.util.Properties
 
 import scala.concurrent.SyncVar
 
@@ -29,7 +30,9 @@ class TarSuite extends Suite with PoolTest {
     assert(proc.waitFor() === 0)
     // printf("Digest = %s%n", digest)
 
-    assert(viewTar(saver.hash) === digest)
+    val props = new Properties
+    props.setProperty("info", "Test backup info")
+    assert(viewTar(saver.store(props)) === digest)
   }
 
   private def viewTar(hash: Hash): Hash = {
