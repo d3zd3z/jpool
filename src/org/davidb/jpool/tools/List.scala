@@ -21,18 +21,28 @@ object List {
 
     val pool = PoolFactory.getInstance(new URI(args(0)))
 
-    for (hash <- pool.getBackups) {
-      val (props, _) = TarRestore.lookupHash(pool, hash)
-      printf("%s %s%n", hash, sanitize(props))
-    }
+    val sanity = for {
+      hash <- pool.getBackups
+      (props, _) = TarRestore.lookupHash(pool, hash)
+      (date, sane) = sanitize(props) }
+      yield (date, sane, hash)
     pool.close
+    for ((date, sane, hash) <- sanity.toList.sort((a, b) => datelt(a._1, b._1))) {
+      printf("%s %s%n", hash, sane)
+    }
   }
 
-  def sanitize(props: Properties): String = {
+  private final def datelt(a: Date, b: Date): Boolean = {
+    (a compareTo b) < 0
+  }
+
+  def sanitize(props: Properties): (Date, String) = {
     val allKeys = (jcl.Set(props.stringPropertyNames) - "_date" - "hash").toArray
     val result = new StringBuilder
 
-    val date = new Date(props.getProperty("_date").toLong)
+    val rawDate = props.getProperty("_date").toLong
+    val date = new Date(rawDate)
+    // val fmt = new SimpleDateFormat("yyyy-MM-dd hh:mm")
     val fmt = new SimpleDateFormat("yyyy-MM-dd")
     result.append(fmt.format(date))
 
@@ -44,6 +54,6 @@ object List {
       result.append(props.getProperty(key))
     }
 
-    result.toString
+    (date, result.toString)
   }
 }
