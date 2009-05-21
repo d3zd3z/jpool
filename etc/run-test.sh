@@ -8,7 +8,10 @@ JPOOL=`echo ${EPATH:-.} | sed -e 's/:.*//'`/target/jpool.jar
 TESTS=`echo ${SPATH:-.} | sed -e 's/:.*//'`/target/jpool-tests.jar
 LIB=`echo ${SPATH:-.} | sed -e 's/:.*//'`/lib/'*'
 
-echo ${JPOOL}:${TESTS}:${LIB}
+SOPATH=`echo ${EPATH:-.} | sed -e 's/:.*//'`/target/so
+
+# echo $SOPATH
+# echo ${JPOOL}:${TESTS}:${LIB}
 
 genfailure() {
 	# Unfortunately, at this point, we only know that things
@@ -29,6 +32,7 @@ genfailure() {
 }
 
 # Invoke tests.
+LD_LIBRARY_PATH=${SOPATH} \
 scala -classpath ${JPOOL}:${TESTS}:${LIB} \
 	org.scalatest.AegisRunner "$@" || genfailure "$@"
 exit 0

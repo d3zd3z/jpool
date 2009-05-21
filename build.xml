@@ -4,10 +4,14 @@
 
   <property name="lib.dir" value="${basedir}/lib"/>
   <property name="src.dir" value="${basedir}/src"/>
+  <property name="native.src.dir" value="${basedir}/src/native"/>
   <property name="test.dir" value="${basedir}/test"/>
 
   <property name="target" value="${basedir}/target"/>
   <property name="classes.dir" value="${target}/classes"/>
+  <property name="obj.dir" value="${target}/obj"/>
+  <property name="so.dir" value="${target}/so"/>
+  <property name="headers.dir" value="${target}/headers"/>
   <property name="test.classes.dir" value="${target}/test-classes"/>
 
   <!-- Gentoo specific value -->
@@ -27,15 +31,20 @@
 	<pathelement location="${scala.home}/scala-library.jar"/>
       </classpath>
     </taskdef>
+    <taskdef resource="cpptasks.tasks">
+      <classpath>
+	<pathelement location="${lib.dir}/cpptasks-1.05b.jar"/>
+      </classpath>
+    </taskdef>
 
     <mkdir dir="${classes.dir}"/>
     <mkdir dir="${test.classes.dir}"/>
   </target>
 
-  <target name="build" depends="init, compile.src, compile.test">
+  <target name="build" depends="compile.src, compile.test, shared">
   </target>
 
-  <target name="compile.src">
+  <target name="compile.src" depends="init">
     <fsc
 	deprecation="yes"
 	srcdir="${src.dir}"
@@ -44,7 +53,7 @@
     <jar destfile="${target}/jpool.jar" basedir="${classes.dir}"/>
   </target>
 
-  <target name="compile.test">
+  <target name="compile.test" depends="init">
     <fsc
 	deprecation="yes"
 	srcdir="${test.dir}"
@@ -55,6 +64,31 @@
 
   <target name="clean">
     <delete dir="${target}"/>
+  </target>
+
+  <target name="headers" depends="compile.src">
+    <mkdir dir="${headers.dir}"/>
+    <javah destdir="${headers.dir}">
+      <classpath>
+	<pathelement location="${classes.dir}"/>
+      </classpath>
+      <class name="org.davidb.jpool.Linux$$"/>
+    </javah>
+  </target>
+
+  <target name="shared" depends="headers">
+    <mkdir dir="${obj.dir}"/>
+    <mkdir dir="${so.dir}"/>
+    <cc outtype="shared" objdir="${obj.dir}" outfile="${so.dir}/linux">
+      <includepath location="${headers.dir}"/>
+      <!-- Some installs point java.home to the JRE one level within
+	the JDK.  Set the path to both dirs. -->
+      <sysincludepath location="${java.home}/include"/>
+      <sysincludepath location="${java.home}/../include"/>
+      <sysincludepath location="${java.home}/include/linux"/>
+      <sysincludepath location="${java.home}/../include/linux"/>
+      <fileset dir="${native.src.dir}" includes="*.c"/>
+    </cc>
   </target>
 
 </project>
