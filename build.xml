@@ -71,6 +71,7 @@
     <javah destdir="${headers.dir}">
       <classpath>
 	<pathelement location="${classes.dir}"/>
+	<pathelement location="${scala.home}/scala-library.jar"/>
       </classpath>
       <class name="org.davidb.jpool.Linux$$"/>
     </javah>
