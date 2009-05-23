@@ -367,78 +367,32 @@ JNIEXPORT jstring JNICALL Java_org_davidb_jpool_Linux_00024_readlink
 	}
 }
 
-JNIEXPORT void JNICALL Java_org_davidb_jpool_Linux_00024_readFile
-	(JNIEnv *env, jobject obj, jstring path, jint chunkSize, jobject process)
-{
-	JSTRING_TO_C_STACK(env, cpath, path);
-	jlong total = 0;
-
-	int fd = open(cpath, O_RDONLY | O_NOATIME);
-	/* Non root users aren't permitted to open without changing
-	 * the atime on files they don't own.  If this happens, read
-	 * the normal way.
-	 */
-	if (fd < 0 && errno == EPERM)
-		fd = open(cpath, O_RDONLY);
-	if (fd < 0) {
-		jstring myName = (*env)->NewStringUTF(env, "open");
-		if (myName != NULL)
-			(*env)->CallObjectMethod(env, obj, throwNativeError,
-					myName, path, (jint) errno);
-		return;
-	}
-
-	while (1) {
-		jbyteArray jbuffer = (*env)->NewByteArray(env, chunkSize);
-		if (jbuffer == NULL)
-			goto cleanup;
-
-		jbyte *buffer = (*env)->GetByteArrayElements(env, jbuffer, NULL);
-		if (buffer == NULL)
-			goto cleanup;
-
-		jint offset = 0;
-		while (offset < chunkSize) {
-			int count = read(fd, buffer + offset, chunkSize - offset);
-			if (count < 0) {
-				(*env)->ReleaseByteArrayElements(env, jbuffer, buffer, JNI_ABORT);
-				jstring myName = (*env)->NewStringUTF(env, "read");
-				if (myName != NULL)
-					(*env)->CallObjectMethod(env, obj, throwNativeError,
-							myName, path, (jint) errno);
-				goto cleanup;
-			}
-
-			if (count == 0)
-				break;
-
-			offset += count;
-		}
-
-		(*env)->ReleaseByteArrayElements(env, jbuffer, buffer, 0);
-
-		/* EOF */
-		if (offset == 0)
-			break;
-
-		jobject bb = (*env)->CallStaticObjectMethod(env, ByteBufferClass, bbWrap, jbuffer,
-				(jint)0, offset);
-		(*env)->CallObjectMethod(env, process, function1Apply, bb);
-		if ((*env)->ExceptionOccurred(env))
-			goto cleanup;
-		(*env)->DeleteLocalRef(env, bb);
-		(*env)->DeleteLocalRef(env, jbuffer);
-	}
-
-cleanup:
-	close(fd);
-}
-
 JNIEXPORT jint JNICALL Java_org_davidb_jpool_Linux_00024_openForWrite
 	(JNIEnv *env, jobject obj, jstring path)
 {
 	JSTRING_TO_C_STACK(env, cpath, path);
 	int fd = open(cpath, O_WRONLY | O_CREAT | O_EXCL, 0600);
+	if (fd < 0) {
+		jstring myName = (*env)->NewStringUTF(env, "open");
+		if (myName != NULL)
+			(*env)->CallObjectMethod(env, obj, throwNativeError,
+					myName, path, (jint) errno);
+		return -1;
+	}
+
+	return fd;
+}
+
+JNIEXPORT jint JNICALL Java_org_davidb_jpool_Linux_00024_openForRead
+	(JNIEnv *env, jobject obj, jstring path)
+{
+	JSTRING_TO_C_STACK(env, cpath, path);
+	int fd = open(cpath, O_RDONLY | O_NOATIME);
+	/* Non-root users aren't permitted to open without changing
+	 * atime on files they don't own.  If this happens, try
+	 * opening the normal way. */
+	if (fd < 0 && errno == EPERM)
+		fd = open(cpath, O_RDONLY);
 	if (fd < 0) {
 		jstring myName = (*env)->NewStringUTF(env, "open");
 		if (myName != NULL)
@@ -479,11 +433,47 @@ JNIEXPORT void JNICALL Java_org_davidb_jpool_Linux_00024_writeChunk
 			if (myName != NULL)
 				(*env)->CallObjectMethod(env, obj, throwNativeError,
 						myName, NULL, (jint) errno);
-			return;
+			goto cleanup;
 		}
 		length -= count;
 		offset += count;
 	}
+
+cleanup:
+	(*env)->ReleaseByteArrayElements(env, jbuffer, buffer, JNI_ABORT);
+}
+
+/* This also assumes that the offset and length are within bounds.
+ * Returns number of bytes actually read, possibly zero. */
+JNIEXPORT int JNICALL Java_org_davidb_jpool_Linux_00024_readChunk
+	(JNIEnv *env, jobject obj, jint fd, jbyteArray jbuffer, jint offset, jint length)
+{
+	jbyte *buffer = (*env)->GetByteArrayElements(env, jbuffer, NULL);
+	if (buffer == NULL)
+		return;
+
+	int total = 0;
+
+	while (length > 0) {
+		int count = read(fd, buffer + offset, length);
+		if (count == 0)
+			break;
+		if (count < 0) {
+			jstring myName = (*env)->NewStringUTF(env, "read");
+			if (myName != NULL)
+				(*env)->CallObjectMethod(env, obj, throwNativeError,
+						myName, NULL, (jint) errno);
+			(*env)->ReleaseByteArrayElements(env, jbuffer, buffer, JNI_ABORT);
+			return;
+		}
+		length -= count;
+		offset += count;
+		total += count;
+	}
+
+	(*env)->ReleaseByteArrayElements(env, jbuffer, buffer, 0);
+
+	return total;
 }
 
 /* Note that this is glibc specific, and depends on the _GNU_SOURCE

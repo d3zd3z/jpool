@@ -23,7 +23,25 @@ object Linux {
   // Bulk read.  Reads the contents of the given file, in blocks of
   // the given chunks size, and calls 'process' with a fresh
   // ByteBuffer for each chunk.
-  @native def readFile(path: String, chunkSize: Int, process: ByteBuffer => Unit)
+  def readFile(path: String, chunkSize: Int, process: ByteBuffer => Unit) {
+    val fd = openForRead(path)
+    try {
+      def loop {
+        val buf = ByteBuffer.allocate(chunkSize)
+        val count = readChunk(fd, buf.array, buf.arrayOffset + buf.position,
+          buf.remaining)
+        if (count > 0) {
+          buf.limit(count)
+          process(buf)
+        }
+        if (count == chunkSize)
+          loop
+      }
+      loop
+    } finally {
+      close(fd)
+    }
+  }
 
   // Bulk write.  The iterator should return ByteBuffers, the contents
   // of which will be written to the file.
@@ -40,8 +58,10 @@ object Linux {
   }
 
   @native protected def openForWrite(path: String): Int
+  @native protected def openForRead(path: String): Int
   @native protected def close(fd: Int)
   @native protected def writeChunk(fd: Int, data: Array[Byte], offset: Int, length: Int)
+  @native protected def readChunk(fd: Int, data: Array[Byte], offset: Int, length: Int): Int
 
   // These wrappers keep the JNI code less dependent on the
   // implementation details of the Scala runtime.
