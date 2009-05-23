@@ -3,6 +3,7 @@
 
 package org.davidb.jpool
 
+import java.nio.ByteBuffer
 import java.io.IOException
 import scala.collection.immutable
 
@@ -23,6 +24,12 @@ object Linux {
 
   @native
   def symlink(oldPath: String, newPath: String)
+
+  // Bulk read.  Reads the contents of the given file, in blocks of
+  // the given chunks size, and calls 'process' with a fresh
+  // ByteBuffer for each chunk.
+  @native
+  def readFile(path: String, chunkSize: Int, process: ByteBuffer => Unit)
 
   // These wrappers keep the JNI code less dependent on the
   // implementation details of the Scala runtime.
@@ -46,6 +53,9 @@ object Linux {
   private def symlinkError(oldPath: String, newPath: String, errno: Int): Nothing =
     throw new IOException("Error making symlink from '%s' to '%s' (%d)"
       format (oldPath, newPath, errno))
+  private def readError(path: String, errno: Int): Nothing =
+    throw new IOException("Error reading file '%s' (%d)"
+      format (path, errno))
 
   System.loadLibrary("linux")
   setup
