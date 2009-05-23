@@ -56,24 +56,19 @@ object Linux {
     prior + (key -> value)
   }
 
-  private def readdirError(path: String, errno: Int): Nothing =
-    throw new IOException("Error reading directory: '%s' (%d)" format (path, errno))
-  private def lstatError(path: String, errno: Int): Nothing =
-    throw new IOException("Error statting node: '%s' (%d)" format (path, errno))
-  private def readlinkError(path: String, errno: Int): Nothing =
-    throw new IOException("Error readlink: '%s' (%d)" format (path, errno))
-  private def symlinkError(oldPath: String, newPath: String, errno: Int): Nothing =
-    throw new IOException("Error making symlink from '%s' to '%s' (%d)"
-      format (oldPath, newPath, errno))
-  private def openError(path: String, errno: Int): Nothing =
-    throw new IOException("Error opening file: '%s' (%d)" format (path, errno))
-  private def readError(path: String, errno: Int): Nothing =
-    throw new IOException("Error reading file '%s' (%d)"
-      format (path, errno))
-  private def writeError(errno: Int): Nothing =
-    throw new IOException("Error writing file (%d)" format errno)
-  private def closeError(errno: Int): Nothing =
-    throw new IOException("Error closing file (%d)" format errno)
+  @native protected def strerror(errnum: Int): String
+
+  class NativeError(val name: String, val path: String, val errno: Int, message: String)
+    extends IOException(message)
+  def throwNativeError(name: String, path: String, errno: Int): Nothing = {
+    val message =
+      if (path == null)
+        "native error in '%s' (%d:%s)" format (name, errno, strerror(errno))
+      else
+        "native error in '%s' accessing '%s' (%d:%s)" format
+          (name, path, errno, strerror(errno))
+    throw new NativeError(name, path, errno, message)
+  }
 
   System.loadLibrary("linux")
   setup

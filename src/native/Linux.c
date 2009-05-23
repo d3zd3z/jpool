@@ -48,14 +48,7 @@ static jstring c_to_jstring(JNIEnv *env, char *str, int len)
  * objects. */
 
 static jmethodID makePair;
-static jmethodID readdirError;
-static jmethodID lstatError;
-static jmethodID readlinkError;
-static jmethodID symlinkError;
-static jmethodID readError;
-static jmethodID openError;
-static jmethodID writeError;
-static jmethodID closeError;
+static jmethodID throwNativeError;
 static jmethodID infoZero;
 static jmethodID infoPlus;
 
@@ -82,44 +75,9 @@ JNIEXPORT void JNICALL Java_org_davidb_jpool_Linux_00024_setup
 	if (makePair == NULL)
 		return;
 
-	readdirError = (*env)->GetMethodID(env, clazz, "readdirError",
-			"(Ljava/lang/String;I)Lscala/runtime/Nothing$;");
-	if (readdirError == NULL)
-		return;
-
-	lstatError = (*env)->GetMethodID(env, clazz, "lstatError",
-			"(Ljava/lang/String;I)Lscala/runtime/Nothing$;");
-	if (lstatError == NULL)
-		return;
-
-	readlinkError = (*env)->GetMethodID(env, clazz, "readlinkError",
-			"(Ljava/lang/String;I)Lscala/runtime/Nothing$;");
-	if (readlinkError == NULL)
-		return;
-
-	symlinkError = (*env)->GetMethodID(env, clazz, "symlinkError",
+	throwNativeError = (*env)->GetMethodID(env, clazz, "throwNativeError",
 			"(Ljava/lang/String;Ljava/lang/String;I)Lscala/runtime/Nothing$;");
-	if (symlinkError == NULL)
-		return;
-
-	readError = (*env)->GetMethodID(env, clazz, "readError",
-			"(Ljava/lang/String;I)Lscala/runtime/Nothing$;");
-	if (readError == NULL)
-		return;
-
-	openError = (*env)->GetMethodID(env, clazz, "openError",
-			"(Ljava/lang/String;I)Lscala/runtime/Nothing$;");
-	if (openError == NULL)
-		return;
-
-	writeError = (*env)->GetMethodID(env, clazz, "writeError",
-			"(I)Lscala/runtime/Nothing$;");
-	if (writeError == NULL)
-		return;
-
-	closeError = (*env)->GetMethodID(env, clazz, "closeError",
-			"(I)Lscala/runtime/Nothing$;");
-	if (closeError == NULL)
+	if (throwNativeError == NULL)
 		return;
 
 	infoZero = (*env)->GetMethodID(env, clazz, "infoZero",
@@ -197,9 +155,10 @@ JNIEXPORT jobject JNICALL Java_org_davidb_jpool_Linux_00024_readDir
 	DIR *dirp = opendir(buf);
 
 	if (dirp == NULL) {
-		(*env)->CallObjectMethod(env, obj, readdirError, path, (jint) errno);
-		// This returns Nothing, so always raises an
-		// exception.
+		jstring myName = (*env)->NewStringUTF(env, "readDir");
+		if (myName != NULL)
+			(*env)->CallObjectMethod(env, obj, throwNativeError,
+					myName, path, (jint) errno);
 		return NULL;
 	}
 
@@ -260,7 +219,10 @@ JNIEXPORT jobject JNICALL Java_org_davidb_jpool_Linux_00024_lstat
 	int res = lstat(buf, &sbuf);
 
 	if (res < 0) {
-		(*env)->CallObjectMethod(env, obj, lstatError, path, (jint) errno);
+		jstring myName = (*env)->NewStringUTF(env, "lstat");
+		if (myName != NULL)
+			(*env)->CallObjectMethod(env, obj, throwNativeError,
+					myName, path, (jint) errno);
 		return NULL;
 	}
 
@@ -285,7 +247,10 @@ JNIEXPORT jobject JNICALL Java_org_davidb_jpool_Linux_00024_lstat
 	else if (S_ISSOCK(sbuf.st_mode))
 		v = "DIR";
 	else {
-		(*env)->CallObjectMethod(env, obj, lstatError, path, EINVAL);
+		jstring myName = (*env)->NewStringUTF(env, "lstat");
+		if (myName != NULL)
+			(*env)->CallObjectMethod(env, obj, throwNativeError,
+					myName, path, (jint) errno);
 		return NULL;
 	}
 	map = setProp(env, obj, map, "*kind*", v);
@@ -357,7 +322,10 @@ JNIEXPORT void JNICALL Java_org_davidb_jpool_Linux_00024_symlink
 
 	int result = symlink(cOldPath, cNewPath);
 	if (result != 0) {
-		(*env)->CallObjectMethod(env, obj, symlinkError, oldPath, newPath, (jint) errno);
+		jstring myName = (*env)->NewStringUTF(env, "symlink");
+		if (myName != NULL)
+			(*env)->CallObjectMethod(env, obj, throwNativeError,
+					myName, newPath, (jint) errno);
 	}
 }
 
@@ -377,7 +345,10 @@ JNIEXPORT jstring JNICALL Java_org_davidb_jpool_Linux_00024_readlink
 		int count = readlink(cpath, buffer, size);
 		if (count < 0) {
 			free(buffer);
-			(*env)->CallObjectMethod(env, obj, readlinkError, path, (jint) errno);
+			jstring myName = (*env)->NewStringUTF(env, "readlink");
+			if (myName != NULL)
+				(*env)->CallObjectMethod(env, obj, throwNativeError,
+						myName, path, (jint) errno);
 			return NULL;
 		}
 		else if (count == size) {
@@ -410,7 +381,10 @@ JNIEXPORT void JNICALL Java_org_davidb_jpool_Linux_00024_readFile
 	if (fd < 0 && errno == EPERM)
 		fd = open(cpath, O_RDONLY);
 	if (fd < 0) {
-		(*env)->CallObjectMethod(env, obj, readError, path, (jint) errno);
+		jstring myName = (*env)->NewStringUTF(env, "open");
+		if (myName != NULL)
+			(*env)->CallObjectMethod(env, obj, throwNativeError,
+					myName, path, (jint) errno);
 		return;
 	}
 
@@ -428,7 +402,10 @@ JNIEXPORT void JNICALL Java_org_davidb_jpool_Linux_00024_readFile
 			int count = read(fd, buffer + offset, chunkSize - offset);
 			if (count < 0) {
 				(*env)->ReleaseByteArrayElements(env, jbuffer, buffer, JNI_ABORT);
-				(*env)->CallObjectMethod(env, obj, readError, path, (jint) errno);
+				jstring myName = (*env)->NewStringUTF(env, "read");
+				if (myName != NULL)
+					(*env)->CallObjectMethod(env, obj, throwNativeError,
+							myName, path, (jint) errno);
 				goto cleanup;
 			}
 
@@ -463,7 +440,10 @@ JNIEXPORT jint JNICALL Java_org_davidb_jpool_Linux_00024_openForWrite
 	JSTRING_TO_C_STACK(env, cpath, path);
 	int fd = open(cpath, O_WRONLY | O_CREAT | O_EXCL, 0600);
 	if (fd < 0) {
-		(*env)->CallObjectMethod(env, obj, writeError, path, (jint) errno);
+		jstring myName = (*env)->NewStringUTF(env, "open");
+		if (myName != NULL)
+			(*env)->CallObjectMethod(env, obj, throwNativeError,
+					myName, path, (jint) errno);
 		return -1;
 	}
 
@@ -475,7 +455,10 @@ JNIEXPORT void JNICALL Java_org_davidb_jpool_Linux_00024_close
 {
 	int result = close(fd);
 	if (result < 0) {
-		(*env)->CallObjectMethod(env, obj, closeError, (jint) errno);
+		jstring myName = (*env)->NewStringUTF(env, "close");
+		if (myName != NULL)
+			(*env)->CallObjectMethod(env, obj, throwNativeError,
+					myName, NULL, (jint) errno);
 		return;
 	}
 }
@@ -492,12 +475,25 @@ JNIEXPORT void JNICALL Java_org_davidb_jpool_Linux_00024_writeChunk
 	while (length > 0) {
 		int count = write(fd, buffer + offset, length);
 		if (count <= 0) {
-			(*env)->CallObjectMethod(env, obj, writeError, (jint) errno);
+			jstring myName = (*env)->NewStringUTF(env, "write");
+			if (myName != NULL)
+				(*env)->CallObjectMethod(env, obj, throwNativeError,
+						myName, NULL, (jint) errno);
 			return;
 		}
 		length -= count;
 		offset += count;
 	}
+}
+
+/* Note that this is glibc specific, and depends on the _GNU_SOURCE
+ * defined before including anything. */
+JNIEXPORT jstring JNICALL Java_org_davidb_jpool_Linux_00024_strerror
+	(JNIEnv *env, jobject obj, int errnum)
+{
+	char buf[128];
+	char *msg = strerror_r(errnum, buf, sizeof(buf));
+	return c_to_jstring(env, msg, strlen(msg));
 }
 
 jint JNI_OnLoad(JavaVM *vm, void *reserved)
