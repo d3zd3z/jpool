@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<project name="jpool" default="build">
+<project
+    xmlns:ivy="antlib:org.apache.ivy.ant"
+    xmlns:cpptasks="antlib:net.sf.antcontrib.cpptasks"
+    name="jpool" default="build">
 
   <property name="lib.dir" value="${basedir}/lib"/>
   <property name="src.dir" value="${basedir}/src"/>
@@ -17,12 +20,12 @@
   <!-- Gentoo specific value -->
   <property name="scala.home" value="/usr/share/scala/lib"/>
 
-  <target name="init">
+  <target name="init" depends="resolve">
     <!-- Ant build tasks from scala. -->
     <path id="build.classpath">
       <pathelement location="${scala.home}/scala-library.jar"/>
       <pathelement location="${lib.dir}/scalatest-0.9.5.jar"/>
-      <pathelement location="${lib.dir}/h2-1.1.111.jar"/>
+      <pathelement location="${lib.dir}/h2-1.1.112.jar"/>
       <pathelement location="${classes.dir}"/>
     </path>
     <taskdef resource="scala/tools/ant/antlib.xml">
@@ -31,11 +34,9 @@
 	<pathelement location="${scala.home}/scala-library.jar"/>
       </classpath>
     </taskdef>
-    <taskdef resource="cpptasks.tasks">
-      <classpath>
-	<pathelement location="${lib.dir}/cpptasks-1.05b.jar"/>
-      </classpath>
-    </taskdef>
+    <taskdef uri="antlib:net.sf.antcontrib.cpptasks"
+	resource="net/sf/antcontrib/cpptasks/antlib.xml"
+	classpath="${lib.dir}/cpptasks-1.0b5.jar"/>
 
     <mkdir dir="${classes.dir}"/>
     <mkdir dir="${test.classes.dir}"/>
@@ -64,6 +65,7 @@
 
   <target name="clean">
     <delete dir="${target}"/>
+    <delete dir="${lib.dir}"/>
   </target>
 
   <target name="headers" depends="compile.src">
@@ -80,7 +82,7 @@
   <target name="shared" depends="headers">
     <mkdir dir="${obj.dir}"/>
     <mkdir dir="${so.dir}"/>
-    <cc outtype="shared" objdir="${obj.dir}" outfile="${so.dir}/linux">
+    <cpptasks:cc outtype="shared" objdir="${obj.dir}" outfile="${so.dir}/linux">
       <includepath location="${headers.dir}"/>
       <!-- Some installs point java.home to the JRE one level within
 	the JDK.  Set the path to both dirs. -->
@@ -89,7 +91,11 @@
       <sysincludepath location="${java.home}/include/linux"/>
       <sysincludepath location="${java.home}/../include/linux"/>
       <fileset dir="${native.src.dir}" includes="*.c"/>
-    </cc>
+    </cpptasks:cc>
+  </target>
+
+  <target name="resolve">
+    <ivy:retrieve/>
   </target>
 
 </project>

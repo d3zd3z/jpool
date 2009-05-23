@@ -1,0 +1,14 @@
+<ivy-module version="2.0">
+  <info organisation="org.davidb" module="jpool"/>
+  <dependencies>
+    <dependency org="org.scala-tools.testing" name="scalatest" rev="0.9.5">
+      <exclude org="org.scala-lang" name="scala-library"/>
+    </dependency>
+    <dependency org="com.h2database" name="h2" rev="1.1.112"/>
+    <dependency org="ant-contrib" name="cpptasks" rev="1.0b5">
+      <exclude org="ant" name="ant"/>
+      <exclude org="xerces" name="xercesImpl"/>
+      <exclude org="xml-apis" name="xml-apis"/>
+    </dependency>
+  </dependencies>
+</ivy-module>
