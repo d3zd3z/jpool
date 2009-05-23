@@ -3,7 +3,6 @@
 
 package org.davidb.jpool
 
-import java.io.IOException
 import java.nio.ByteBuffer
 import java.security.MessageDigest
 import org.scalatest.Suite
@@ -21,13 +20,13 @@ class LinuxSuite extends Suite {
   }
 
   def testBadDir {
-    intercept[IOException] {
+    intercept[Linux$NativeError] {
       Linux.readDir("/invalidDir/stuff")
     }
   }
 
   def testBadStat {
-    intercept[IOException] {
+    intercept[Linux$NativeError] {
       Linux.lstat("/invalidDir/stuff")
     }
   }
@@ -49,7 +48,7 @@ class LinuxSuite extends Suite {
   }
 
   def testSymlinks {
-    intercept[IOException] {
+    intercept[Linux$NativeError] {
       Linux.readlink("/invalidDir")
     }
     TempDir.withTempDir { tdir =>
