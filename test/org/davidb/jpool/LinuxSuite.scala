@@ -73,21 +73,27 @@ class LinuxSuite extends Suite {
     }
   }
 
-  def testReads {
+  def hashFileIn(path: String, chunkSize: Int) {
     def handle(digest: MessageDigest)(chunk: ByteBuffer) {
       // printf("Chunk: %d bytes%n", chunk.remaining)
       digest.update(chunk)
     }
     val lsmd = MessageDigest.getInstance("SHA-1")
-    Linux.readFile("/bin/ls", 32768, handle(lsmd)_)
+    Linux.readFile(path, chunkSize, handle(lsmd)_)
     val dig1 = Hash.raw(lsmd.digest)
 
-    val fields = Proc.runAndCapture("sha1sum", "/bin/ls") match {
+    val fields = Proc.runAndCapture("sha1sum", path) match {
       case Array(line) => line.split("\\s+")
       case _ => error("Unknown output from 'sha1sum'")
     }
     val dig2 = Hash.ofString(fields(0))
     assert(dig1 === dig2)
+  }
+
+  def testReads {
+    hashFileIn("/bin/ls", 32768)
+    // Test on a large file to demonstrate there is no space leak.
+    // hashFileIn("hugefile", 32768)
   }
 
   def testReadException {
