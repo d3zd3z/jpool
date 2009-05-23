@@ -195,7 +195,13 @@ class FilePool(prefix: File) extends ChunkStore {
 
     if (dirty) {
       hashIndex.flush()
-      recoveryNotify
+      try {
+        recoveryNotify
+      } catch {
+        case e: Throwable =>
+          db.close()
+          throw e
+      }
     }
   }
 }
