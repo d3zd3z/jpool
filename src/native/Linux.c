@@ -1,6 +1,7 @@
 /* Linux native JNI. */
 
 #define _FILE_OFFSET_BITS 64
+#define _GNU_SOURCE
 
 #include <stdio.h>
 #include <string.h>
@@ -8,6 +9,7 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <fcntl.h>
 #include <dirent.h>
 #include <unistd.h>
 #include <errno.h>
@@ -50,6 +52,7 @@ static jmethodID readdirError;
 static jmethodID lstatError;
 static jmethodID readlinkError;
 static jmethodID symlinkError;
+static jmethodID readError;
 static jmethodID infoZero;
 static jmethodID infoPlus;
 
@@ -59,6 +62,11 @@ static jmethodID lbAppend;
 static jmethodID lbToList;
 
 static jclass oomClass;
+
+static jmethodID function1Apply;
+
+static jclass ByteBufferClass;
+static jmethodID bbWrap;
 
 JNIEXPORT void JNICALL Java_org_davidb_jpool_Linux_00024_setup
 	(JNIEnv *env, jobject obj)
@@ -89,6 +97,11 @@ JNIEXPORT void JNICALL Java_org_davidb_jpool_Linux_00024_setup
 	symlinkError = (*env)->GetMethodID(env, clazz, "symlinkError",
 			"(Ljava/lang/String;Ljava/lang/String;I)Lscala/runtime/Nothing$;");
 	if (symlinkError == NULL)
+		return;
+
+	readError = (*env)->GetMethodID(env, clazz, "readError",
+			"(Ljava/lang/String;I)Lscala/runtime/Nothing$;");
+	if (readError == NULL)
 		return;
 
 	infoZero = (*env)->GetMethodID(env, clazz, "infoZero",
@@ -128,6 +141,27 @@ JNIEXPORT void JNICALL Java_org_davidb_jpool_Linux_00024_setup
 		return;
 	oomClass = (*env)->NewGlobalRef(env, tmp);
 	if (oomClass == NULL)
+		return;
+
+	jclass function1 = (*env)->FindClass(env, "scala/Function1");
+	if (function1 == NULL)
+		return;
+
+	function1Apply = (*env)->GetMethodID(env, function1, "apply",
+			"(Ljava/lang/Object;)Ljava/lang/Object;");
+	if (function1Apply == NULL)
+		return;
+
+	tmp = (*env)->FindClass(env, "java/nio/ByteBuffer");
+	if (tmp == NULL)
+		return;
+	ByteBufferClass = (*env)->NewGlobalRef(env, tmp);
+	if (ByteBufferClass == NULL)
+		return;
+
+	bbWrap = (*env)->GetStaticMethodID(env, ByteBufferClass, "wrap",
+			"([BII)Ljava/nio/ByteBuffer;");
+	if (bbWrap == NULL)
 		return;
 }
 
@@ -342,6 +376,64 @@ JNIEXPORT jstring JNICALL Java_org_davidb_jpool_Linux_00024_readlink
 			return result;
 		}
 	}
+}
+
+JNIEXPORT void JNICALL Java_org_davidb_jpool_Linux_00024_readFile
+	(JNIEnv *env, jobject obj, jstring path, jint chunkSize, jobject process)
+{
+	JSTRING_TO_C_STACK(env, cpath, path);
+	jlong total = 0;
+
+	int fd = open(cpath, O_RDONLY | O_NOATIME);
+	/* Non root users aren't permitted to open without changing
+	 * the atime on files they don't own.  If this happens, read
+	 * the normal way.
+	 */
+	if (fd < 0 && errno == EPERM)
+		fd = open(cpath, O_RDONLY);
+	if (fd < 0) {
+		(*env)->CallObjectMethod(env, obj, readError, path, (jint) errno);
+		return;
+	}
+
+	while (1) {
+		jbyteArray jbuffer = (*env)->NewByteArray(env, chunkSize);
+		if (jbuffer == NULL)
+			goto cleanup;
+
+		jbyte *buffer = (*env)->GetByteArrayElements(env, jbuffer, NULL);
+
+		jint offset = 0;
+		while (offset < chunkSize) {
+			int count = read(fd, buffer + offset, chunkSize - offset);
+			if (count < 0) {
+				(*env)->ReleaseByteArrayElements(env, jbuffer, buffer, JNI_ABORT);
+				(*env)->CallObjectMethod(env, obj, readError, path, (jint) errno);
+				goto cleanup;
+			}
+
+			if (count == 0)
+				break;
+
+			offset += count;
+		}
+
+		(*env)->ReleaseByteArrayElements(env, jbuffer, buffer, 0);
+
+		/* EOF */
+		if (offset == 0)
+			break;
+
+		jobject bb = (*env)->CallStaticObjectMethod(env, ByteBufferClass, bbWrap, jbuffer,
+				(jint)0, offset);
+		(*env)->CallObjectMethod(env, process, function1Apply, bb);
+		if ((*env)->ExceptionOccurred(env))
+			goto cleanup;
+		(*env)->DeleteLocalRef(env, bb);
+	}
+
+cleanup:
+	close(fd);
 }
 
 jint JNI_OnLoad(JavaVM *vm, void *reserved)

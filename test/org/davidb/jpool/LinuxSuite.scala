@@ -4,6 +4,8 @@
 package org.davidb.jpool
 
 import java.io.IOException
+import java.nio.ByteBuffer
+import java.security.MessageDigest
 import org.scalatest.Suite
 import scala.collection.mutable.ListBuffer
 
@@ -67,6 +69,36 @@ class LinuxSuite extends Suite {
       for ((src, dest) <- names) {
         val dest2 = Linux.readlink("%s/%s" format (tdir.getPath, src))
         assert(dest === dest2)
+      }
+    }
+  }
+
+  def testReads {
+    def handle(digest: MessageDigest)(chunk: ByteBuffer) {
+      // printf("Chunk: %d bytes%n", chunk.remaining)
+      digest.update(chunk)
+    }
+    val lsmd = MessageDigest.getInstance("SHA-1")
+    Linux.readFile("/bin/ls", 32768, handle(lsmd)_)
+    val dig1 = Hash.raw(lsmd.digest)
+
+    val fields = Proc.runAndCapture("sha1sum", "/bin/ls") match {
+      case Array(line) => line.split("\\s+")
+      case _ => error("Unknown output from 'sha1sum'")
+    }
+    val dig2 = Hash.ofString(fields(0))
+    assert(dig1 === dig2)
+  }
+
+  def testReadException {
+    class SimpleException extends Exception
+    def handle(chunk: ByteBuffer) { throw new SimpleException }
+    // Try to open more than the limit.  It is typically 1024,
+    // although settable, so this test isn't guaranteed.  We're mostly
+    // making sure that the descriptor gets closed.
+    for (i <- 1 to 2050) {
+      intercept[SimpleException] {
+        Linux.readFile("/bin/ls", 32768, handle _)
       }
     }
   }
