@@ -3,7 +3,7 @@
 
 package org.davidb.jpool
 
-import java.io.{BufferedReader, InputStreamReader, IOException}
+import java.io.IOException
 import org.scalatest.Suite
 import scala.collection.mutable.ListBuffer
 
@@ -48,42 +48,27 @@ class LinuxSuite extends Suite {
 
   // Duplicate the native readdir, using find.
   private def findReadDir(path: String): List[(String, Long)] = {
-    val proc = new ProcessBuilder("find", path, "-maxdepth", "1", "-printf", "%P\\t%i\\n").start
-    drainError(proc)
-    val findOut = new BufferedReader(new InputStreamReader(proc.getInputStream))
     val result = new ListBuffer[(String, Long)]
-    def run() {
-      val line = findOut.readLine()
-      if (line ne null) {
-        line.split("\t", 2) match {
-          case Array(name, num) =>
-            // Find generates a blank name for '.', which
-            // Linux.readDir skips.
-            if (name.length > 0)
-              result += (name, num.toLong)
-            run()
-          case _ =>
-            printf("Unknown output from find: '%s'%n", line)
-        }
+    for (line <- Proc.runAndCapture("find", path, "-maxdepth", "1", "-printf", "%P\\t%i\\n")) {
+      line.split("\t", 2) match {
+        case Array(name, num) =>
+          // Find generates a blank name for '.', which
+          // Linux.readDir skips.
+          if (name.length > 0)
+            result += (name, num.toLong)
+        case _ =>
+          printf("Unknown output from find: '%s'%n", line)
       }
     }
-    run()
-    assert(proc.waitFor() === 0)
     result.toList
   }
 
   private def checkStat(path: String, info: Map[String, String], kind: String) {
     assert(info("*kind*") === kind)
-    val proc = new ProcessBuilder("stat", "--format", "%s %Y %Z %h %u %g %f %i %d %t %T", path).start
-    drainError(proc)
-    val procOut = new BufferedReader(new InputStreamReader(proc.getInputStream))
-    val line = procOut.readLine()
-    var tmp = line
-    while (tmp ne null) {
-      tmp = procOut.readLine()
+    val fields = Proc.runAndCapture("stat", "--format", "%s %Y %Z %h %u %g %f %i %d %t %T", path) match {
+      case Array(line) => line.split(" ")
+      case _ => error("Invalid response from 'stat' call")
     }
-    assert(line ne null)
-    val fields = line.split(" ")
     def hexField(n: Int) = java.lang.Long.parseLong(fields(n), 16)
     // printf("fields: %s", fields.toList)
     assert(fields(0) === info("size"))
@@ -98,20 +83,5 @@ class LinuxSuite extends Suite {
     if (kind == "CHR" || kind == "BLK") {
       assert((hexField(9) * 256 + hexField(10)).toString === info("rdev"))
     }
-  }
-
-  private def drainError(proc: Process) {
-    val child = new Thread {
-      val input = new BufferedReader(new InputStreamReader(proc.getErrorStream))
-      override def run() {
-        val line = input.readLine()
-        if (line ne null) {
-          printf("find: '%s'%n", line)
-          run()
-        }
-      }
-    }
-    child.setDaemon(true)
-    child.start()
   }
 }

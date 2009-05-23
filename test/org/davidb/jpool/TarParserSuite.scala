@@ -7,7 +7,7 @@ import java.io.{BufferedReader, InputStreamReader}
 class TarParserSuite extends Suite {
   def testTarup {
     val proc = new ProcessBuilder("tar", "--posix", "-cf", "-", ".").start
-    drainError(proc)
+    Proc.drainError(proc, "tar")
     val tar = new TarParser(Channels.newChannel(proc.getInputStream))
     walkTar(tar)
     assert(proc.waitFor === 0)
@@ -27,18 +27,4 @@ class TarParserSuite extends Suite {
     }
   }
 
-  private def drainError(proc: Process) {
-    val child = new Thread {
-      val input = new BufferedReader(new InputStreamReader(proc.getErrorStream))
-      override def run() {
-        val line = input.readLine()
-        if (line ne null) {
-          printf("tar: '%s'%n", line)
-          run()
-        }
-      }
-    }
-    child.setDaemon(true)
-    child.start()
-  }
 }
