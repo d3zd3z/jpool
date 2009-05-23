@@ -82,12 +82,17 @@ class LinuxSuite extends Suite {
     Linux.readFile(path, chunkSize, handle(lsmd)_)
     val dig1 = Hash.raw(lsmd.digest)
 
+    val dig2 = fileHash(path)
+    assert(dig1 === dig2)
+  }
+
+  // Get the hash of a file using sha1sum externally.
+  def fileHash(path: String): Hash = {
     val fields = Proc.runAndCapture("sha1sum", path) match {
       case Array(line) => line.split("\\s+")
       case _ => error("Unknown output from 'sha1sum'")
     }
-    val dig2 = Hash.ofString(fields(0))
-    assert(dig1 === dig2)
+    Hash.ofString(fields(0))
   }
 
   def testReads {
@@ -106,6 +111,23 @@ class LinuxSuite extends Suite {
       intercept[SimpleException] {
         Linux.readFile("/bin/ls", 32768, handle _)
       }
+    }
+  }
+
+  def testWrites {
+    val md = MessageDigest.getInstance("SHA-1")
+    TempDir.withTempDir { tdir =>
+      val fileName = "%s/file" format tdir.getPath
+      val pieces = Stream.range(1, 40) map { index =>
+        val text = StringMaker.generate(index, 256*1024)
+        val buf = ByteBuffer.wrap(text.getBytes)
+        md.update(buf.duplicate)
+        buf
+      }
+      Linux.writeFile(fileName, pieces.elements)
+      val dig1 = Hash.raw(md.digest)
+      val dig2 = fileHash(fileName)
+      assert(dig1 === dig2)
     }
   }
 

@@ -53,6 +53,9 @@ static jmethodID lstatError;
 static jmethodID readlinkError;
 static jmethodID symlinkError;
 static jmethodID readError;
+static jmethodID openError;
+static jmethodID writeError;
+static jmethodID closeError;
 static jmethodID infoZero;
 static jmethodID infoPlus;
 
@@ -102,6 +105,21 @@ JNIEXPORT void JNICALL Java_org_davidb_jpool_Linux_00024_setup
 	readError = (*env)->GetMethodID(env, clazz, "readError",
 			"(Ljava/lang/String;I)Lscala/runtime/Nothing$;");
 	if (readError == NULL)
+		return;
+
+	openError = (*env)->GetMethodID(env, clazz, "openError",
+			"(Ljava/lang/String;I)Lscala/runtime/Nothing$;");
+	if (openError == NULL)
+		return;
+
+	writeError = (*env)->GetMethodID(env, clazz, "writeError",
+			"(I)Lscala/runtime/Nothing$;");
+	if (writeError == NULL)
+		return;
+
+	closeError = (*env)->GetMethodID(env, clazz, "closeError",
+			"(I)Lscala/runtime/Nothing$;");
+	if (closeError == NULL)
 		return;
 
 	infoZero = (*env)->GetMethodID(env, clazz, "infoZero",
@@ -402,6 +420,8 @@ JNIEXPORT void JNICALL Java_org_davidb_jpool_Linux_00024_readFile
 			goto cleanup;
 
 		jbyte *buffer = (*env)->GetByteArrayElements(env, jbuffer, NULL);
+		if (buffer == NULL)
+			goto cleanup;
 
 		jint offset = 0;
 		while (offset < chunkSize) {
@@ -435,6 +455,49 @@ JNIEXPORT void JNICALL Java_org_davidb_jpool_Linux_00024_readFile
 
 cleanup:
 	close(fd);
+}
+
+JNIEXPORT jint JNICALL Java_org_davidb_jpool_Linux_00024_openForWrite
+	(JNIEnv *env, jobject obj, jstring path)
+{
+	JSTRING_TO_C_STACK(env, cpath, path);
+	int fd = open(cpath, O_WRONLY | O_CREAT | O_EXCL, 0600);
+	if (fd < 0) {
+		(*env)->CallObjectMethod(env, obj, writeError, path, (jint) errno);
+		return -1;
+	}
+
+	return fd;
+}
+
+JNIEXPORT void JNICALL Java_org_davidb_jpool_Linux_00024_close
+	(JNIEnv *env, jobject obj, jint fd)
+{
+	int result = close(fd);
+	if (result < 0) {
+		(*env)->CallObjectMethod(env, obj, closeError, (jint) errno);
+		return;
+	}
+}
+
+/* Note that this assumes that the offset and length are within
+ * bounds, since they are checked in the caller. */
+JNIEXPORT void JNICALL Java_org_davidb_jpool_Linux_00024_writeChunk
+	(JNIEnv *env, jobject obj, jint fd, jbyteArray jbuffer, jint offset, jint length)
+{
+	jbyte *buffer = (*env)->GetByteArrayElements(env, jbuffer, NULL);
+	if (buffer == NULL)
+		return;
+
+	while (length > 0) {
+		int count = write(fd, buffer + offset, length);
+		if (count <= 0) {
+			(*env)->CallObjectMethod(env, obj, writeError, (jint) errno);
+			return;
+		}
+		length -= count;
+		offset += count;
+	}
 }
 
 jint JNI_OnLoad(JavaVM *vm, void *reserved)
