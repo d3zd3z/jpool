@@ -22,7 +22,7 @@ class TarSuite extends Suite with PoolTest {
 
   private def genTar {
     val proc = new ProcessBuilder("tar", "--posix", "-cf", "-", ".").start
-    drainError(proc)
+    Proc.drainError(proc, "tar")
     val (reader, digestBox) = summarizeChannel(Channels.newChannel(proc.getInputStream))
     val saver = new TarSave(pool, reader)
     // printf("Tar hash: %s%n", saver.hash)
@@ -120,21 +120,4 @@ class TarSuite extends Suite with PoolTest {
     child.start()
     (pipe.sink(), result)
   }
-
-  // Copy stderr to output for user to see.
-  private def drainError(proc: Process) {
-    val child = new Thread {
-      val input = new BufferedReader(new InputStreamReader(proc.getErrorStream))
-      override def run() {
-        val line = input.readLine()
-        if (line ne null) {
-          printf("tar: '%s'%n", line)
-          run()
-        }
-      }
-    }
-    child.setDaemon(true)
-    child.start()
-  }
-
 }
