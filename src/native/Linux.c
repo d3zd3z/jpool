@@ -430,6 +430,7 @@ JNIEXPORT void JNICALL Java_org_davidb_jpool_Linux_00024_readFile
 		if ((*env)->ExceptionOccurred(env))
 			goto cleanup;
 		(*env)->DeleteLocalRef(env, bb);
+		(*env)->DeleteLocalRef(env, jbuffer);
 	}
 
 cleanup:
