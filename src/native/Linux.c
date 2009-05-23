@@ -11,6 +11,36 @@
 #include <dirent.h>
 #include <unistd.h>
 #include <errno.h>
+#include <stdlib.h>
+#include <alloca.h>
+
+/* Allocate a stack variable called _cname that will be stack
+ * allocated, and contain the _raw_ decoded characters from string
+ * _jname.  _cname must be a simple identifier. */
+#define JSTRING_TO_C_STACK(_env, _cname, _jname) \
+	char *_cname; \
+	{ \
+		const int _len = (*(_env))->GetStringLength((_env), (_jname)); \
+		_cname = alloca(_len); \
+		int _i; \
+		const jchar *_src = (*(_env))->GetStringChars((_env), (_jname), NULL); \
+		for (_i = 0; _i < _len; _i++) { \
+			_cname[_i] = _src[_i]; \
+		} \
+		_cname[_len] = 0; \
+		(*(_env))->ReleaseStringChars((_env), (_jname), _src); \
+	}
+
+/* Allocate a Java string (local ref) from the given raw C string,
+ * with the given length (not using the nul termination). */
+static jstring c_to_jstring(JNIEnv *env, char *str, int len)
+{
+	jchar buf[len];
+	int i;
+	for (i = 0; i < len; i++)
+		buf[i] = str[i] & 0xFF;
+	return (*env)->NewString(env, buf, len);
+}
 
 /* Note that Scala doesn't generate static class, but singleton
  * objects. */
@@ -18,6 +48,8 @@
 static jmethodID makePair;
 static jmethodID readdirError;
 static jmethodID lstatError;
+static jmethodID readlinkError;
+static jmethodID symlinkError;
 static jmethodID infoZero;
 static jmethodID infoPlus;
 
@@ -25,6 +57,8 @@ static jclass ListBufferClass;
 static jmethodID lbCtor;
 static jmethodID lbAppend;
 static jmethodID lbToList;
+
+static jclass oomClass;
 
 JNIEXPORT void JNICALL Java_org_davidb_jpool_Linux_00024_setup
 	(JNIEnv *env, jobject obj)
@@ -45,6 +79,16 @@ JNIEXPORT void JNICALL Java_org_davidb_jpool_Linux_00024_setup
 	lstatError = (*env)->GetMethodID(env, clazz, "lstatError",
 			"(Ljava/lang/String;I)Lscala/runtime/Nothing$;");
 	if (lstatError == NULL)
+		return;
+
+	readlinkError = (*env)->GetMethodID(env, clazz, "readlinkError",
+			"(Ljava/lang/String;I)Lscala/runtime/Nothing$;");
+	if (readlinkError == NULL)
+		return;
+
+	symlinkError = (*env)->GetMethodID(env, clazz, "symlinkError",
+			"(Ljava/lang/String;Ljava/lang/String;I)Lscala/runtime/Nothing$;");
+	if (symlinkError == NULL)
 		return;
 
 	infoZero = (*env)->GetMethodID(env, clazz, "infoZero",
@@ -78,6 +122,13 @@ JNIEXPORT void JNICALL Java_org_davidb_jpool_Linux_00024_setup
 			"()Lscala/List;");
 	if (lbToList == NULL)
 		return;
+
+	tmp = (*env)->FindClass(env, "java/lang/OutOfMemoryError");
+	if (tmp == NULL)
+		return;
+	oomClass = (*env)->NewGlobalRef(env, tmp);
+	if (oomClass == NULL)
+		return;
 }
 
 JNIEXPORT jstring JNICALL Java_org_davidb_jpool_Linux_00024_message
@@ -89,17 +140,7 @@ JNIEXPORT jstring JNICALL Java_org_davidb_jpool_Linux_00024_message
 JNIEXPORT jobject JNICALL Java_org_davidb_jpool_Linux_00024_readDir
 	(JNIEnv *env, jobject obj, jstring path)
 {
-	/* Extract the name from the string.  Linux supports invalid
-	 * UTF-8, so just use 8859-1 encoding, ignoring the high-byte.
-	 * (for now). */
-	const int len = (*env)->GetStringLength(env, path);
-	char buf[len+1];
-	int i;
-	const jchar *src = (*env)->GetStringChars(env, path, NULL);
-	for (i = 0; i < len; i++)
-		buf[i] = src[i];
-	buf[len] = 0;
-	(*env)->ReleaseStringChars(env, path, src);
+	JSTRING_TO_C_STACK(env, buf, path);
 
 	DIR *dirp = opendir(buf);
 
@@ -125,12 +166,7 @@ JNIEXPORT jobject JNICALL Java_org_davidb_jpool_Linux_00024_readDir
 			continue;
 		if (len == 2 && ent->d_name[0] == '.' && ent->d_name[1] == '.')
 			continue;
-		jchar buf[len];
-		int i;
-		for (i = 0; i < len; i++)
-			buf[i] = ent->d_name[i];
-
-		jstring name = (*env)->NewString(env, buf, len);
+		jstring name = c_to_jstring(env, ent->d_name, len);
 		if (name == NULL)
 			goto failure;
 		jobject pair = (*env)->CallObjectMethod(env, obj, makePair,
@@ -166,14 +202,7 @@ static jobject setProp(JNIEnv *env, jobject obj, jobject map, char *key, char *v
 JNIEXPORT jobject JNICALL Java_org_davidb_jpool_Linux_00024_lstat
 	(JNIEnv *env, jobject obj, jstring path)
 {
-	const int len = (*env)->GetStringLength(env, path);
-	char buf[len+1];
-	int i;
-	const jchar *src = (*env)->GetStringChars(env, path, NULL);
-	for (i = 0; i < len; i++)
-		buf[i] = src[i];
-	buf[len] = 0;
-	(*env)->ReleaseStringChars(env, path, src);
+	JSTRING_TO_C_STACK(env, buf, path);
 
 	struct stat sbuf;
 	int res = lstat(buf, &sbuf);
@@ -266,6 +295,53 @@ JNIEXPORT jobject JNICALL Java_org_davidb_jpool_Linux_00024_lstat
 		return;
 
 	return map;
+}
+
+JNIEXPORT void JNICALL Java_org_davidb_jpool_Linux_00024_symlink
+	(JNIEnv *env, jobject obj, jstring oldPath, jstring newPath)
+{
+	JSTRING_TO_C_STACK(env, cOldPath, oldPath);
+	JSTRING_TO_C_STACK(env, cNewPath, newPath);
+
+	int result = symlink(cOldPath, cNewPath);
+	if (result != 0) {
+		(*env)->CallObjectMethod(env, obj, symlinkError, oldPath, newPath, (jint) errno);
+	}
+}
+
+JNIEXPORT jstring JNICALL Java_org_davidb_jpool_Linux_00024_readlink
+	(JNIEnv *env, jobject obj, jstring path)
+{
+	JSTRING_TO_C_STACK(env, cpath, path);
+
+	int size = 128;
+	char *buffer = malloc(size);
+	if (buffer == NULL) {
+		(*env)->ThrowNew(env, oomClass, "Unable to allocate readlink buffer");
+		return NULL;
+	}
+
+	while (1) {
+		int count = readlink(cpath, buffer, size);
+		if (count < 0) {
+			free(buffer);
+			(*env)->CallObjectMethod(env, obj, readlinkError, path, (jint) errno);
+			return NULL;
+		}
+		else if (count == size) {
+			free(buffer);
+			size *= 2;
+			buffer = malloc(size);
+			if (buffer == NULL) {
+				(*env)->ThrowNew(env, oomClass, "Unable to allocate readlink buffer");
+				return NULL;
+			}
+		} else {
+			jstring result = c_to_jstring(env, buffer, count);
+			free(buffer);
+			return result;
+		}
+	}
 }
 
 jint JNI_OnLoad(JavaVM *vm, void *reserved)

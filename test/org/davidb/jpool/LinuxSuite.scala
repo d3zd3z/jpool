@@ -46,6 +46,31 @@ class LinuxSuite extends Suite {
     // checkName("/etc/make.profile", "LNK")
   }
 
+  def testSymlinks {
+    intercept[IOException] {
+      Linux.readlink("/invalidDir")
+    }
+    TempDir.withTempDir { tdir =>
+      val names = Array(
+        ("s", "short"),
+        ("weird", "this is'\"a ^long!@name/with!lo\001ts \377of garbage in it"),
+        ("t127", StringMaker.generate(1, 127)),
+        ("t128", StringMaker.generate(2, 128)),
+        ("t129", StringMaker.generate(3, 129)),
+        ("t254", StringMaker.generate(4, 254)),
+        ("t255", StringMaker.generate(5, 255)),
+        ("t256", StringMaker.generate(6, 256)),
+        ("t257", StringMaker.generate(7, 257)))
+      for ((src, dest) <- names) {
+        Linux.symlink(dest, "%s/%s" format (tdir.getPath, src))
+      }
+      for ((src, dest) <- names) {
+        val dest2 = Linux.readlink("%s/%s" format (tdir.getPath, src))
+        assert(dest === dest2)
+      }
+    }
+  }
+
   // Duplicate the native readdir, using find.
   private def findReadDir(path: String): List[(String, Long)] = {
     val result = new ListBuffer[(String, Long)]

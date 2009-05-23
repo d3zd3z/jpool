@@ -18,6 +18,12 @@ object Linux {
   @native
   def lstat(name: String): Map[String, String]
 
+  @native
+  def readlink(name: String): String
+
+  @native
+  def symlink(oldPath: String, newPath: String)
+
   // These wrappers keep the JNI code less dependent on the
   // implementation details of the Scala runtime.
   private def makePair(name: String, inum: Long) = (name, inum)
@@ -35,6 +41,11 @@ object Linux {
     throw new IOException("Error reading directory: '%s' (%d)" format (path, errno))
   private def lstatError(path: String, errno: Int): Nothing =
     throw new IOException("Error statting node: '%s' (%d)" format (path, errno))
+  private def readlinkError(path: String, errno: Int): Nothing =
+    throw new IOException("Error readlink: '%s' (%d)" format (path, errno))
+  private def symlinkError(oldPath: String, newPath: String, errno: Int): Nothing =
+    throw new IOException("Error making symlink from '%s' to '%s' (%d)"
+      format (oldPath, newPath, errno))
 
   System.loadLibrary("linux")
   setup
