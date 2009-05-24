@@ -23,7 +23,7 @@ trait Logger {
   protected def debug(text: String, args: Any*) { myLogger.debug(text format (args : _*)) }
   protected def info(text: String, args: Any*) { myLogger.info(text format (args : _*)) }
   protected def warn(text: String, args: Any*) { myLogger.warn(text format (args : _*)) }
-  protected def error(text: String, args: Any*) { myLogger.error(text format (args : _*)) }
+  protected def logError(text: String, args: Any*) { myLogger.error(text format (args : _*)) }
   protected def fatal(text: String, args: Any*) { myLogger.fatal(text format (args : _*)) }
 
   // Queries.
