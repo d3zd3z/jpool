@@ -26,6 +26,7 @@
       <pathelement location="${scala.home}/scala-library.jar"/>
       <pathelement location="${lib.dir}/scalatest-0.9.5.jar"/>
       <pathelement location="${lib.dir}/h2-1.1.112.jar"/>
+      <pathelement location="${lib.dir}/log4j-1.2.15.jar"/>
       <pathelement location="${classes.dir}"/>
     </path>
     <taskdef resource="scala/tools/ant/antlib.xml">
