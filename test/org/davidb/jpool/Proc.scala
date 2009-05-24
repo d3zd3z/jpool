@@ -28,6 +28,16 @@ object Proc {
     result.toArray
   }
 
+  // Run the program, and make sure it not only has '0' exit status,
+  // but generates no output.
+  def run(args: String*) {
+    runAndCapture(args: _*) match {
+      case Array() =>
+      case unexpected =>
+        error("Unexpected output from %s: %s" format (args, unexpected))
+    }
+  }
+
   def drainError(proc: Process, prefix: String) {
     val child = new Thread {
       val input = new BufferedReader(new InputStreamReader(proc.getErrorStream))
