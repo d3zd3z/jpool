@@ -13,4 +13,12 @@ class LoggerSuite extends Suite with Logger {
       warn("Tracing is not enabled!")
     }
   }
+
+  // Make sure that we can still cause error.
+  def testError {
+    intercept[RuntimeException] {
+      error("Message")
+      println("Should not be reached")
+    }
+  }
 }
