@@ -10,5 +10,14 @@
       <exclude org="xerces" name="xercesImpl"/>
       <exclude org="xml-apis" name="xml-apis"/>
     </dependency>
+    <dependency org="log4j" name="log4j" rev="1.2.15">
+      <!-- Ugh, this depends on things you can't download without
+	agreeing.  Avoid using the appenders and things should be fine. -->
+      <exclude org="com.sun.jdmk"/>
+      <exclude org="com.sun.jmx"/>
+      <exclude org="javax.mail"/>
+      <exclude org="javax.activation"/>
+      <exclude org="javax.jms"/>
+    </dependency>
   </dependencies>
 </ivy-module>
