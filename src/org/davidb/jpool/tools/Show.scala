@@ -6,7 +6,7 @@
 
 package org.davidb.jpool.tools
 
-import jpool.pool.{TreeList, PoolFactory}
+import jpool.pool.{TreeWalk, PoolFactory}
 import java.net.URI
 
 object Show {
@@ -18,7 +18,7 @@ object Show {
 
     val pool = PoolFactory.getInstance(new URI(args(0)))
 
-    val lister = new TreeList(pool)
+    val lister = new TreeWalk(pool)
     lister.show(Hash.ofString(args(1)))
     pool.close()
   }
