@@ -43,8 +43,14 @@ class LinuxSuite extends Suite {
     checkName("/dev/null", "CHR")
     checkName("/dev/sda", "BLK")
     checkName(".", "DIR")
-    // TODO: Once we have code to make these, test them.
-    // checkName("/etc/make.profile", "LNK")
+
+    TempDir.withTempDir { tdir =>
+      val dnull = "%s/%s" format (tdir.getPath, "dnull")
+      Linux.symlink("/dev/null", dnull)
+      checkName(dnull, "LNK")
+      val stat = Linux.stat(dnull)
+      assert(stat("*kind*") === "CHR")
+    }
   }
 
   def testSymlinks {
