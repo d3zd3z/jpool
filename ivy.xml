@@ -19,5 +19,6 @@
       <exclude org="javax.activation"/>
       <exclude org="javax.jms"/>
     </dependency>
+    <dependency org="commons-codec" name="commons-codec" rev="1.3"/>
   </dependencies>
 </ivy-module>
