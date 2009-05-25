@@ -210,6 +210,115 @@ static jobject setProp(JNIEnv *env, jobject obj, jobject map, char *key, char *v
 	return nmap;
 }
 
+static jobject lstat_convert(JNIEnv *env, jobject obj, jstring path, struct stat *sbuf)
+{
+	jobject map = (*env)->CallObjectMethod(env, obj, infoZero);
+
+	/* Determine the kind. */
+	char *v;
+	if (S_ISREG(sbuf->st_mode))
+		v = "REG";
+	else if (S_ISDIR(sbuf->st_mode))
+		v = "DIR";
+	else if (S_ISCHR(sbuf->st_mode))
+		v = "CHR";
+	else if (S_ISBLK(sbuf->st_mode))
+		v = "BLK";
+	else if (S_ISFIFO(sbuf->st_mode))
+		v = "FIFO";
+	else if (S_ISLNK(sbuf->st_mode))
+		v = "LNK";
+	else if (S_ISSOCK(sbuf->st_mode))
+		v = "SOCK";
+	else if (S_ISSOCK(sbuf->st_mode))
+		v = "DIR";
+	else {
+		jstring myName = (*env)->NewStringUTF(env, "lstat");
+		if (myName != NULL)
+			(*env)->CallObjectMethod(env, obj, throwNativeError,
+					myName, path, (jint) errno);
+		return NULL;
+	}
+	map = setProp(env, obj, map, "*kind*", v);
+	if (map == NULL)
+		return;
+
+	char tmp[40];
+
+	sprintf(tmp, "%lld", (long long)(sbuf->st_mode & (~S_IFMT)));
+	map = setProp(env, obj, map, "mode", tmp);
+	if (map == NULL)
+		return;
+
+	sprintf(tmp, "%lld", (long long)sbuf->st_dev);
+	map = setProp(env, obj, map, "dev", tmp);
+	if (map == NULL)
+		return;
+
+	sprintf(tmp, "%lld", (long long)sbuf->st_ino);
+	map = setProp(env, obj, map, "ino", tmp);
+	if (map == NULL)
+		return;
+
+	sprintf(tmp, "%lld", (long long)sbuf->st_nlink);
+	map = setProp(env, obj, map, "nlink", tmp);
+	if (map == NULL)
+		return;
+
+	sprintf(tmp, "%lld", (long long)sbuf->st_uid);
+	map = setProp(env, obj, map, "uid", tmp);
+	if (map == NULL)
+		return;
+
+	sprintf(tmp, "%lld", (long long)sbuf->st_gid);
+	map = setProp(env, obj, map, "gid", tmp);
+	if (map == NULL)
+		return;
+
+	if (S_ISCHR(sbuf->st_mode) || S_ISBLK(sbuf->st_mode)) {
+		sprintf(tmp, "%lld", (long long)sbuf->st_rdev);
+		map = setProp(env, obj, map, "rdev", tmp);
+		if (map == NULL)
+			return;
+	}
+
+	sprintf(tmp, "%lld", (long long)sbuf->st_size);
+	map = setProp(env, obj, map, "size", tmp);
+	if (map == NULL)
+		return;
+
+	sprintf(tmp, "%lld", (long long)sbuf->st_mtime);
+	map = setProp(env, obj, map, "mtime", tmp);
+	if (map == NULL)
+		return;
+
+	sprintf(tmp, "%lld", (long long)sbuf->st_ctime);
+	map = setProp(env, obj, map, "ctime", tmp);
+	if (map == NULL)
+		return;
+
+	return map;
+}
+
+JNIEXPORT jobject JNICALL Java_org_davidb_jpool_Linux_00024_stat
+	(JNIEnv *env, jobject obj, jstring path)
+{
+	JSTRING_TO_C_STACK(env, buf, path);
+
+	struct stat sbuf;
+	int res = stat(buf, &sbuf);
+
+	if (res < 0) {
+		jstring myName = (*env)->NewStringUTF(env, "stat");
+		if (myName != NULL)
+			(*env)->CallObjectMethod(env, obj, throwNativeError,
+					myName, path, (jint) errno);
+		return NULL;
+	}
+
+	return lstat_convert(env, obj, path, &sbuf);
+}
+
 JNIEXPORT jobject JNICALL Java_org_davidb_jpool_Linux_00024_lstat
 	(JNIEnv *env, jobject obj, jstring path)
 {
@@ -226,92 +335,7 @@ JNIEXPORT jobject JNICALL Java_org_davidb_jpool_Linux_00024_lstat
 		return NULL;
 	}
 
-	jobject map = (*env)->CallObjectMethod(env, obj, infoZero);
-
-	/* Determine the kind. */
-	char *v;
-	if (S_ISREG(sbuf.st_mode))
-		v = "REG";
-	else if (S_ISDIR(sbuf.st_mode))
-		v = "DIR";
-	else if (S_ISCHR(sbuf.st_mode))
-		v = "CHR";
-	else if (S_ISBLK(sbuf.st_mode))
-		v = "BLK";
-	else if (S_ISFIFO(sbuf.st_mode))
-		v = "FIFO";
-	else if (S_ISLNK(sbuf.st_mode))
-		v = "LNK";
-	else if (S_ISSOCK(sbuf.st_mode))
-		v = "SOCK";
-	else if (S_ISSOCK(sbuf.st_mode))
-		v = "DIR";
-	else {
-		jstring myName = (*env)->NewStringUTF(env, "lstat");
-		if (myName != NULL)
-			(*env)->CallObjectMethod(env, obj, throwNativeError,
-					myName, path, (jint) errno);
-		return NULL;
-	}
-	map = setProp(env, obj, map, "*kind*", v);
-	if (map == NULL)
-		return;
-
-	char tmp[40];
-
-	sprintf(tmp, "%lld", (long long)(sbuf.st_mode & (~S_IFMT)));
-	map = setProp(env, obj, map, "mode", tmp);
-	if (map == NULL)
-		return;
-
-	sprintf(tmp, "%lld", (long long)sbuf.st_dev);
-	map = setProp(env, obj, map, "dev", tmp);
-	if (map == NULL)
-		return;
-
-	sprintf(tmp, "%lld", (long long)sbuf.st_ino);
-	map = setProp(env, obj, map, "ino", tmp);
-	if (map == NULL)
-		return;
-
-	sprintf(tmp, "%lld", (long long)sbuf.st_nlink);
-	map = setProp(env, obj, map, "nlink", tmp);
-	if (map == NULL)
-		return;
-
-	sprintf(tmp, "%lld", (long long)sbuf.st_uid);
-	map = setProp(env, obj, map, "uid", tmp);
-	if (map == NULL)
-		return;
-
-	sprintf(tmp, "%lld", (long long)sbuf.st_gid);
-	map = setProp(env, obj, map, "gid", tmp);
-	if (map == NULL)
-		return;
-
-	if (S_ISCHR(sbuf.st_mode) || S_ISBLK(sbuf.st_mode)) {
-		sprintf(tmp, "%lld", (long long)sbuf.st_rdev);
-		map = setProp(env, obj, map, "rdev", tmp);
-		if (map == NULL)
-			return;
-	}
-
-	sprintf(tmp, "%lld", (long long)sbuf.st_size);
-	map = setProp(env, obj, map, "size", tmp);
-	if (map == NULL)
-		return;
-
-	sprintf(tmp, "%lld", (long long)sbuf.st_mtime);
-	map = setProp(env, obj, map, "mtime", tmp);
-	if (map == NULL)
-		return;
-
-	sprintf(tmp, "%lld", (long long)sbuf.st_ctime);
-	map = setProp(env, obj, map, "ctime", tmp);
-	if (map == NULL)
-		return;
-
-	return map;
+	return lstat_convert(env, obj, path, &sbuf);
 }
 
 JNIEXPORT void JNICALL Java_org_davidb_jpool_Linux_00024_symlink
