@@ -5,6 +5,9 @@ package org.davidb.jpool.pool
 
 import org.davidb.logging.Logger
 
+import java.util.Properties
+import java.io.ByteArrayInputStream
+
 class TreeWalk(pool: ChunkSource) extends AnyRef with Logger {
 
   sealed class State
@@ -17,7 +20,8 @@ class TreeWalk(pool: ChunkSource) extends AnyRef with Logger {
   // directory with state set to 'Enter', then the nodes, and then the
   // state set to 'Leave'.
   def walk(hash: Hash): Stream[Visitor] = {
-    val node = pool(hash)
+    val (_, nodeHash) = lookupHash(hash)
+    val node = pool(nodeHash)
     walk(node, ".", 0)
   }
 
@@ -46,5 +50,15 @@ class TreeWalk(pool: ChunkSource) extends AnyRef with Logger {
     for (node <- walk(hash)) {
       printf("%5s %4s %s%n", node.state, node.atts.kind, node.path)
     }
+  }
+
+  // Lookup the hash associated with a given tar set.
+  def lookupHash(hash: Hash): (Properties, Hash) = {
+    val chunk = pool(hash)
+    val data = chunk.data
+    val encoded = new ByteArrayInputStream(data.array, data.arrayOffset + data.position, data.remaining)
+    val props = new Properties
+    props.loadFromXML(encoded)
+    (props, Hash.ofString(props.getProperty("hash")))
   }
 }

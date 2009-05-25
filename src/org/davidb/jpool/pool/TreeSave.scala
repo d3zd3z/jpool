@@ -5,19 +5,34 @@ package org.davidb.jpool.pool
 
 import scala.collection.mutable.ListBuffer
 import org.davidb.logging.Logger
+import java.io.ByteArrayOutputStream
+import java.nio.ByteBuffer
+import java.util.Properties
 
 class TreeSave(pool: ChunkStore, rootPath: String) extends AnyRef with Logger {
   // Store the item, of whatever type it is, into the given storage
   // pool, returning the hash needed to retrieve it later.  If unable
   // to save the item, the exception will be propagated.  Directories
   // will warn, but will save as much as possible.
-  def store(): Hash = {
-    store(rootPath, "%root%", rootStat)
+  // Writes the properties into the 'back' record, adding a 'hash'
+  // property to the root of this backup, and a 'kind=snapshot'
+  // property to indicate that this is a tree snapshot.
+  def store(props: Properties): Hash = {
+    val treeHash = internalStore(rootPath, "%root%", rootStat)
+    props.setProperty("hash", treeHash.toString)
+    props.setProperty("kind", "snapshot")
+    val buf = new ByteArrayOutputStream
+    props.storeToXML(buf, "Backup")
+    val encoded = ByteBuffer.wrap(buf.toByteArray)
+    // Pdump.dump(encoded)
+    val chunk = Chunk.make("back", encoded)
+    pool += (chunk.hash -> chunk)
+    chunk.hash
   }
 
   // Internal store, where we've already statted the nodes (avoids
   // duplicate stats, since directory traversal requires statting).
-  def store(path: String, name: String, stat: Linux.StatInfo): Hash = {
+  private def internalStore(path: String, name: String, stat: Linux.StatInfo): Hash = {
     handlers.get(stat("*kind*")) match {
       case None =>
         logError("Unknown filesystem entry kind: %s (%s)", stat("*kind*"), path)
@@ -64,7 +79,7 @@ class TreeSave(pool: ChunkStore, rootPath: String) extends AnyRef with Logger {
     for ((name, childStat) <- items) {
       val fullName = path + "/" + name
       try {
-        val childHash = store(fullName, name, childStat)
+        val childHash = internalStore(fullName, name, childStat)
         builder.add(childHash)
       } catch {
         case e: NativeError =>

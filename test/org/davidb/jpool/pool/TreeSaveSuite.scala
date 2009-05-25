@@ -6,6 +6,7 @@ package org.davidb.jpool.pool
 import scala.collection.mutable
 import org.scalatest.Suite
 import org.davidb.logging.Logger
+import java.util.Properties
 
 class TreeSaveSuite extends Suite with PoolTest with Logger {
 
@@ -16,8 +17,8 @@ class TreeSaveSuite extends Suite with PoolTest with Logger {
   def testSave {
     // These also test graceful handling of unreadable files.
     info("warnings are expected for this test")
-    var h1 = new TreeSave(pool, "/bin").store()
-    var h2 = new TreeSave(pool, "/dev").store()
+    var h1 = new TreeSave(pool, "/bin").store(someProps("bin"))
+    var h2 = new TreeSave(pool, "/dev").store(someProps("dev"))
     printf("%s%n%s%n", h1, h2)
 
     check(h1, "./bin/ls")
@@ -43,5 +44,12 @@ class TreeSaveSuite extends Suite with PoolTest with Logger {
           assert(node.path startsWith dirs.top)
       }
     }
+  }
+
+  // Make up some properties.
+  private def someProps(name: String): Properties = {
+    val props = new Properties
+    props.setProperty("name", name)
+    props
   }
 }
