@@ -35,7 +35,7 @@ object Attributes {
 
   // Convert the result of a Linux stat or lstat result into
   // Attributes.
-  def ofLinuxStat(att: Map[String, String], name: String) =
+  def ofLinuxStat(att: Linux.StatInfo, name: String) =
     new Attributes(att("*kind*"), name, att - "*kind*")
 
   private def decodeEntry(node: xml.Node): (String, String) = {

@@ -25,6 +25,13 @@ if [ ! -f "$BASEDIR"/target/jpool.jar ]; then
 	exit 1
 fi
 
+SO_PATH="${BASEDIR}/target/so"
+if [ -z "${LD_LIBRARY_PATH}" ]; then
+	LD_LIBRARY_PATH="${SO_PATH}"
+else
+	LD_LIBRARY_PATH="${SO_PATH}:${LD_LIBRARY_PATH}"
+fi
+
 if [ "$#" -lt 1 ]; then
 	echo "Usage: jpool command args"
 	exit 1
@@ -42,6 +49,12 @@ case "$CMD" in
 	restore)
 		CMD=org.davidb.jpool.tools.Restore
 		;;
+	dump)
+		CMD=org.davidb.jpool.tools.Dump
+		;;
+	show)
+		CMD=org.davidb.jpool.tools.Show
+		;;
 	*)
 		echo "Unknown command: $CMD"
 		exit 1
@@ -49,4 +62,5 @@ case "$CMD" in
 esac
 
 CLASSPATH="$BASEDIR"/target/classes:"$BASEDIR"/lib/'*' \
+LD_LIBRARY_PATH="${LD_LIBRARY_PATH}" \
 	exec scala "$CMD" "$@"
