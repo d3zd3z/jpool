@@ -79,8 +79,6 @@ object Linux {
 
   @native protected def strerror(errnum: Int): String
 
-  class NativeError(val name: String, val path: String, val errno: Int, message: String)
-    extends IOException(message)
   def throwNativeError(name: String, path: String, errno: Int): Nothing = {
     val message =
       if (path == null)

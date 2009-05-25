@@ -20,13 +20,13 @@ class LinuxSuite extends Suite {
   }
 
   def testBadDir {
-    intercept[Linux$NativeError] {
+    intercept[NativeError] {
       Linux.readDir("/invalidDir/stuff")
     }
   }
 
   def testBadStat {
-    intercept[Linux$NativeError] {
+    intercept[NativeError] {
       Linux.lstat("/invalidDir/stuff")
     }
   }
@@ -54,7 +54,7 @@ class LinuxSuite extends Suite {
   }
 
   def testSymlinks {
-    intercept[Linux$NativeError] {
+    intercept[NativeError] {
       Linux.readlink("/invalidDir")
     }
     TempDir.withTempDir { tdir =>
