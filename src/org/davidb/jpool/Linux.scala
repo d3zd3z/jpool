@@ -14,8 +14,9 @@ object Linux {
 
   @native def readDir(name: String): List[(String, Long)]
 
-  @native def lstat(name: String): Map[String, String]
-  @native def stat(name: String): Map[String, String]
+  type StatInfo = Map[String, String]
+  @native def lstat(name: String): StatInfo
+  @native def stat(name: String): StatInfo
 
   @native def readlink(name: String): String
 

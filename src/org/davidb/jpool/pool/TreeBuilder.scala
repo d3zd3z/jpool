@@ -52,6 +52,10 @@ class TreeBuilder private (prefix: String, pool: ChunkStore, limit: Int) {
     // printf("Adding: %s%n", buffers.top)
   }
 
+  // Add a chunk, by hash, e.g. we've already stored the chunk and now
+  // just have the hash for it.
+  def add(hash: Hash) = append(hash, 0)
+
   // Write out any remaining buffers, and return the final chunk's
   // Hash describing the entire tree.
   def finish(): Hash = {
@@ -77,9 +81,9 @@ class TreeBuilder private (prefix: String, pool: ChunkStore, limit: Int) {
     if (buffer.remaining == 0) {
       if (level == 0) {
         // Empty chunk is allowed, but only at the first level.
-        // TODO: Do we want to be more specific than "blob" for the
+        // TODO: Do we want to be more specific than "null" for the
         // type?
-        val chunk = Chunk.make("blob", "")
+        val chunk = Chunk.make("null", "")
         pool += (chunk.hash -> chunk)
         return chunk.hash
       } else
