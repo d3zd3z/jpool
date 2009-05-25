@@ -15,16 +15,28 @@ package org.davidb.jpool.pool
 import org.apache.commons.codec.binary.Base64
 import scala.collection.mutable.ListBuffer
 import scala.xml
-import java.io.{ByteArrayOutputStream, OutputStreamWriter}
+import java.nio.ByteBuffer
 
 object Attributes {
-  def decode(bytes: Array[Byte]): Attributes = {
-    val nodes = xml.XML.loadString(new String(bytes, "UTF-8"))
+  def decode(bytes: Array[Byte]): Attributes = decode(ByteBuffer.wrap(bytes))
+
+  // Convert the given chunk from a pool into attributes.
+  def decode(chunk: Chunk): Attributes = decode(chunk.data)
+
+  def decode(data: ByteBuffer): Attributes = {
+    val text = new String(data.array, data.arrayOffset + data.position,
+      data.remaining, "UTF-8")
+    val nodes = xml.XML.loadString(text)
     val kind = (nodes \ "@kind").text
     val name = (nodes \ "@name").text
     val entries = for (child <- nodes \ "entry") yield decodeEntry(child)
     new Attributes(kind, name, Map[String, String]() ++ entries)
   }
+
+  // Convert the result of a Linux stat or lstat result into
+  // Attributes.
+  def ofLinuxStat(att: Map[String, String], name: String) =
+    new Attributes(att("*kind*"), name, att - "*kind*")
 
   private def decodeEntry(node: xml.Node): (String, String) = {
     val key = node \ "@key"
@@ -45,6 +57,13 @@ class Attributes(var kind: String, var name: String,
   def size: Int = contents.size
   def get(key: String): Option[String] = contents.get(key)
   def elements = contents.elements
+
+  // Store these attributes into a storage pool.
+  def store(pool: ChunkStore): Hash = {
+    val chunk = Chunk.make("node", ByteBuffer.wrap(toByteArray()))
+    pool += (chunk.hash -> chunk)
+    chunk.hash
+  }
 
   // Convert this node into XML.
   def toXML: xml.Elem = {
@@ -85,4 +104,7 @@ class Attributes(var kind: String, var name: String,
         contents == other.contents
     case _ => false
   }
+
+  override def hashCode(): Int =
+    ((kind.hashCode + 41) * 41 + name.hashCode) * 41 + contents.hashCode
 }

@@ -5,7 +5,7 @@ package org.davidb.jpool.pool
 
 import org.scalatest.Suite
 
-class AttributesSuite extends Suite {
+class AttributesSuite extends Suite with PoolTest {
   def testXML {
     var map = Map[String, String]()
     map += ("aaa" -> "123")
@@ -41,5 +41,15 @@ class AttributesSuite extends Suite {
     }
     */
     assert(att === attb)
+  }
+
+  def testPool {
+    val a1 = Attributes.ofLinuxStat(Linux.lstat("/bin/ls"), "ls")
+    val h1 = a1.store(pool)
+    val a2 = Attributes.ofLinuxStat(Linux.lstat("/dev/null"), "null")
+    val h2 = a2.store(pool)
+
+    assert(a1 === Attributes.decode(pool(h1)))
+    assert(a2 === Attributes.decode(pool(h2)))
   }
 }
