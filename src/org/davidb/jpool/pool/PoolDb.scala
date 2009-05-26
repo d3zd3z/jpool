@@ -12,7 +12,7 @@ import java.util.UUID
 // To start with, let's just port the existing code over.  We can
 // extend this later.
 
-class Db(metaPrefix: File) {
+class PoolDb(metaPrefix: File) {
   private final val schema = Array(
     "create table config (key varchar not null primary key, value varchar)",
     "create table backups (hash binary(20) not null primary key)")

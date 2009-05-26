@@ -12,7 +12,7 @@ import java.util.UUID
 
 import org.scalatest.{Suite, BeforeAndAfter}
 
-class DbSuite extends Suite {
+class PoolDbSuite extends Suite {
   def nottestHello {
 
     Class.forName("org.h2.Driver")
@@ -28,7 +28,7 @@ class DbSuite extends Suite {
 
   def testSimple {
     TempDir.withTempDir { tdir =>
-      val db = new Db(tdir)
+      val db = new PoolDb(tdir)
       for (i <- 1 to 100) {
         db.addBackup(Hash("blob", i.toString))
       }
@@ -40,7 +40,7 @@ class DbSuite extends Suite {
       db.close()
 
       // Try reopen.
-      val db2 = new Db(tdir)
+      val db2 = new PoolDb(tdir)
       val b2 = db2.getBackups()
       assert(b2.size === 100)
       db2.close()
@@ -61,7 +61,7 @@ class DbSuite extends Suite {
       run("sqlite3", sqldb, "create table config(key text, value text)")
       run("sqlite3", sqldb,
         "insert into config values('uuid', '%s')".format(testUUID))
-      val db = new Db(mdir)
+      val db = new PoolDb(mdir)
       assert(db.uuid === testUUID)
       db.close()
     }
