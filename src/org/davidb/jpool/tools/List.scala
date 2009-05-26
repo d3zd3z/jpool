@@ -9,7 +9,7 @@ package org.davidb.jpool.tools
 import java.net.URI
 import java.text.{SimpleDateFormat}
 import java.util.{Date, Properties, TimeZone}
-import org.davidb.jpool.pool.{TarRestore, PoolFactory}
+import org.davidb.jpool.pool.{Back, TarRestore, PoolFactory}
 import scala.collection.jcl
 
 object List {
@@ -23,8 +23,8 @@ object List {
 
     val sanity = for {
       hash <- pool.getBackups
-      (props, _) = TarRestore.lookupHash(pool, hash)
-      (date, sane) = sanitize(props) }
+      val back = Back.load(pool, hash)
+      (date, sane) = sanitize(back.props) }
       yield (date, sane, hash)
     pool.close
     for ((date, sane, hash) <- sanity.toList.sort((a, b) => datelt(a._1, b._1))) {

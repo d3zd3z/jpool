@@ -3,27 +3,15 @@
 
 package org.davidb.jpool.pool
 
-import java.io.ByteArrayInputStream
 import java.nio.channels.WritableByteChannel
 import java.nio.ByteBuffer
 import java.util.Properties
 
-object TarRestore {
-  def lookupHash(pool: ChunkSource, hash: Hash): (Properties, Hash) = {
-    val chunk = pool(hash)
-    val data = chunk.data
-    val encoded = new ByteArrayInputStream(data.array, data.arrayOffset + data.position, data.remaining)
-    val props = new Properties
-    props.loadFromXML(encoded)
-    (props, Hash.ofString(props.getProperty("hash")))
-  }
-}
-
 class TarRestore(pool: ChunkSource, dest: WritableByteChannel) {
 
   def decode(hash: Hash) {
-    val (_, tarHash) = TarRestore.lookupHash(pool, hash)
-    decodeTar(tarHash)
+    val back = Back.load(pool, hash)
+    decodeTar(back.hash)
   }
 
   private def decodeTar(hash: Hash) {

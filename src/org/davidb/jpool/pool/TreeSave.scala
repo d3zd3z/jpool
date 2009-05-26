@@ -5,8 +5,6 @@ package org.davidb.jpool.pool
 
 import scala.collection.mutable.ListBuffer
 import org.davidb.logging.Logger
-import java.io.ByteArrayOutputStream
-import java.nio.ByteBuffer
 import java.util.Properties
 
 class TreeSave(pool: ChunkStore, rootPath: String) extends AnyRef with Logger {
@@ -21,13 +19,7 @@ class TreeSave(pool: ChunkStore, rootPath: String) extends AnyRef with Logger {
     val treeHash = internalStore(rootPath, "%root%", rootStat)
     props.setProperty("hash", treeHash.toString)
     props.setProperty("kind", "snapshot")
-    val buf = new ByteArrayOutputStream
-    props.storeToXML(buf, "Backup")
-    val encoded = ByteBuffer.wrap(buf.toByteArray)
-    // Pdump.dump(encoded)
-    val chunk = Chunk.make("back", encoded)
-    pool += (chunk.hash -> chunk)
-    chunk.hash
+    new Back(props).store(pool)
   }
 
   // Internal store, where we've already statted the nodes (avoids
