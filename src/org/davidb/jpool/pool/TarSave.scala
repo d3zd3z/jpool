@@ -19,13 +19,7 @@ class TarSave(pool: ChunkStore, chan: ReadableByteChannel) {
   // of the root of this backup.
   def store(props: Properties): Hash = {
     props.setProperty("hash", subHash.toString)
-    val buf = new ByteArrayOutputStream
-    props.storeToXML(buf, "Backup")
-    val encoded = ByteBuffer.wrap(buf.toByteArray)
-    // Pdump.dump(encoded)
-    val chunk = Chunk.make("back", encoded)
-    pool += (chunk.hash -> chunk)
-    chunk.hash
+    new Back(props).store(pool)
   }
 
   private def encodeEntry {
