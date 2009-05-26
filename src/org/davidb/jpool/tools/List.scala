@@ -10,20 +10,23 @@ import java.net.URI
 import java.text.{SimpleDateFormat}
 import java.util.{Date, Properties, TimeZone}
 import org.davidb.jpool.pool.{Back, TarRestore, PoolFactory}
+import org.davidb.logging.Logger
 import scala.collection.jcl
 
-object List {
+object List extends AnyRef with Logger {
   def main(args: Array[String]) {
-    if (args.length != 1) {
-      System.err.println("Usage: List jpool:file:///path")
+    if (args.length < 1) {
+      logError("Usage: List jpool:file:///path {key=value ...}")
       System.exit(1)
     }
 
     val pool = PoolFactory.getInstance(new URI(args(0)))
+    val matcher = buildMatcher(args drop 1)
 
     val sanity = for {
       hash <- pool.getBackups
       val back = Back.load(pool, hash)
+      if (matcher(back.props))
       (date, sane) = sanitize(back.props) }
       yield (date, sane, hash)
     pool.close
@@ -55,5 +58,19 @@ object List {
     }
 
     (date, result.toString)
+  }
+
+  // Convert the properties specified in the command line to a
+  // matching function that will return true if a set of properties
+  // matches the user-requested filter.
+  def buildMatcher(args: Seq[String]): (Properties => Boolean) = {
+    def split(arg: String): (Properties => Boolean) = arg.split("=", 2) match {
+      case Array(key, value) => (props => props.getProperty(key) == value)
+      case _ =>
+        logError("Illegal key=value argument '%s'%n", arg)
+        exit(1)
+    }
+    val pairs = args.map(split _)
+    (props => pairs forall (_(props)))
   }
 }
