@@ -33,7 +33,7 @@ class FilePool(prefix: File) extends ChunkStore {
   private val metaPrefix = new File(prefix, "metadata")
   sanityTest
   metaCheck
-  private val db = new Db(metaPrefix)
+  private val db = new PoolDb(metaPrefix)
   private val files = scan
   private val hashIndex = new PoolHashIndex(metaPrefix.getPath, "data-index-")
   recover
