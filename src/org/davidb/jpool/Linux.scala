@@ -90,6 +90,11 @@ object Linux {
     throw new NativeError(name, path, errno, message)
   }
 
-  System.loadLibrary("linux")
+  // If the test framework passed in a specific library, use it.
+  val libname = System.getProperty("linux.lib")
+  if (libname ne null)
+    System.load(libname)
+  else
+    System.loadLibrary("linux")
   setup
 }

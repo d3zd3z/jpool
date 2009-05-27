@@ -56,7 +56,7 @@
     <jar destfile="${target}/jpool.jar" basedir="${classes.dir}"/>
   </target>
 
-  <target name="compile.test" depends="init">
+  <target name="compile.test" depends="init, compile.src">
     <fsc
 	deprecation="yes"
 	srcdir="${test.dir}"
@@ -98,6 +98,49 @@
 
   <target name="resolve">
     <ivy:retrieve/>
+  </target>
+
+  <!-- 
+  <target name="broken-test" depends="compile.test, shared">
+    <taskdef name="scalatest" classname="org.scalatest.tools.ScalaTestTask">
+      <classpath>
+	<pathelement location="${scala.home}/scala-library.jar"/>
+	<pathelement location="${lib.dir}/scalatest-0.9.5.jar"/>
+      </classpath>
+    </taskdef>
+    <scalatest>
+      <!- - TODO: This is Linux specific. - ->
+      <property name="linux.lib" value="${so.dir}/liblinux.so"/>
+      <runpath>
+	<pathelement location="${target}/jpool.jar"/>
+	<pathelement location="${target}/jpool-tests.jar"/>
+      </runpath>
+      <runpath refid="build.classpath"/>
+      <!- - <suite classname="org.davidb.logging.LoggerSuite"/> - ->
+      <wildcard package="org.davidb"/>
+      <reporter type="stdout"/>
+    </scalatest>
+  </target>
+  -->
+
+  <!-- Neither Ant, nor the Scalatest ant task seem willing, at all,
+    to let me pass _anything_ through to the invoked test, no way to inform
+    it of the path where it might possibly be able to find it's shared
+    library.  As such, we're just going to run the Runner directly. -->
+  <target name="test" depends="compile.test, shared">
+    <java classname="org.scalatest.tools.Runner">
+      <!-- TODO: This is Linux specific. -->
+      <sysproperty key="linux.lib" value="${so.dir}/liblinux.so"/>
+      <classpath>
+	<pathelement location="${target}/jpool.jar"/>
+      </classpath>
+      <classpath refid="build.classpath"/>
+      <arg value="-p"/>
+      <arg value="${target}/jpool-tests.jar"/>
+      <arg value="-w"/>
+      <arg value="org.davidb"/>
+      <arg value="-o"/>
+    </java>
   </target>
 
 </project>
