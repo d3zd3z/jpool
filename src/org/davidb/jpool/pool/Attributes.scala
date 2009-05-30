@@ -51,7 +51,7 @@ object Attributes {
 }
 
 class Attributes(var kind: String, var name: String,
-  private val contents: Map[String, String]) extends scala.collection.Map[String, String]
+  val contents: Map[String, String]) extends scala.collection.Map[String, String]
 {
   // Map interface.
   def size: Int = contents.size
