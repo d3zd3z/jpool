@@ -26,7 +26,8 @@ object Dump extends AnyRef with Logger {
 
     val saver = new TreeSave(pool, args(1))
     val hash = saver.store(props)
-    printf("%s%n", hash)
+    info("backup saved: %s%n", hash)
+    Progress.show()
     pool.close()
   }
 

@@ -25,13 +25,15 @@ class TreeSave(pool: ChunkStore, rootPath: String) extends AnyRef with Logger {
   // Internal store, where we've already statted the nodes (avoids
   // duplicate stats, since directory traversal requires statting).
   private def internalStore(path: String, name: String, stat: Linux.StatInfo): Hash = {
-    handlers.get(stat("*kind*")) match {
+    val hash = handlers.get(stat("*kind*")) match {
       case None =>
         logError("Unknown filesystem entry kind: %s (%s)", stat("*kind*"), path)
         error("Cannot dump entry")
       case Some(handler) =>
       handler(path, name, stat)
     }
+    Progress.addNode()
+    hash
   }
 
   private var handlers = Map[String, (String, String, Linux.StatInfo) => Hash]()
