@@ -26,7 +26,7 @@ object Dump extends AnyRef with Logger {
 
     val saver = new TreeSave(pool, args(1))
     val hash = saver.store(props)
-    info("backup saved: %s%n", hash)
+    info("backup saved: %s", hash)
     Progress.show()
     pool.close()
   }
@@ -36,7 +36,7 @@ object Dump extends AnyRef with Logger {
       arg.split("=", 2) match {
         case Array(key, value) => props.setProperty(key, value)
         case _ =>
-          logError("Illegal key=valu argument '%s'%n", arg)
+          logError("Illegal key=valu argument '%s'", arg)
           System.exit(1)
       }
     }
