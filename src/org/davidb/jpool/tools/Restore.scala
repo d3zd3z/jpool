@@ -8,7 +8,7 @@ package org.davidb.jpool.tools
 
 import java.net.URI
 import java.nio.channels.Channels
-import org.davidb.jpool.pool.{Back, TarRestore, PoolFactory}
+import org.davidb.jpool.pool.{Back, TarRestore, TreeRestore, PoolFactory}
 
 import org.davidb.logging.Logger
 
@@ -41,7 +41,8 @@ object Restore extends AnyRef with Logger {
         exit(1)
       }
 
-      logError("TODO: Implement restore of snapshot backups")
+      val restorer = new TreeRestore(pool)
+      restorer.restore(hash, args(2))
     }
     pool.close
   }
