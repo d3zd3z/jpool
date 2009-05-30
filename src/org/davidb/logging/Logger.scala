@@ -19,12 +19,14 @@ trait Logger {
   private var myLogger = log4j.Logger.getLogger(this.getClass().getName())
   Logger.setupLogger
 
-  protected def trace(text: String, args: Any*) { myLogger.trace(text format (args : _*)) }
-  protected def debug(text: String, args: Any*) { myLogger.debug(text format (args : _*)) }
-  protected def info(text: String, args: Any*) { myLogger.info(text format (args : _*)) }
-  protected def warn(text: String, args: Any*) { myLogger.warn(text format (args : _*)) }
-  protected def logError(text: String, args: Any*) { myLogger.error(text format (args : _*)) }
-  protected def fatal(text: String, args: Any*) { myLogger.fatal(text format (args : _*)) }
+  /* These should all be declared as protected, however this provokes
+   * an occasional bug with Scala 2.7.4 with the varargs. */
+  /*protected*/ def trace(text: String, args: Any*) { myLogger.trace(text format (args : _*)) }
+  /*protected*/ def debug(text: String, args: Any*) { myLogger.debug(text format (args : _*)) }
+  /*protected*/ def info(text: String, args: Any*) { myLogger.info(text format (args : _*)) }
+  /*protected*/ def warn(text: String, args: Any*) { myLogger.warn(text format (args : _*)) }
+  /*protected*/ def logError(text: String, args: Any*) { myLogger.error(text format (args : _*)) }
+  /*protected*/ def fatal(text: String, args: Any*) { myLogger.fatal(text format (args : _*)) }
 
   // Queries.
   protected def isTraceEnabled: Boolean = myLogger.isTraceEnabled
