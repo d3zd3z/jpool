@@ -45,8 +45,8 @@ object List extends AnyRef with Logger {
 
     val rawDate = props.getProperty("_date").toLong
     val date = new Date(rawDate)
-    // val fmt = new SimpleDateFormat("yyyy-MM-dd hh:mm")
-    val fmt = new SimpleDateFormat("yyyy-MM-dd")
+    val fmt = new SimpleDateFormat("yyyy-MM-dd_hh:mm")
+    // val fmt = new SimpleDateFormat("yyyy-MM-dd")
     result.append(fmt.format(date))
 
     scala.util.Sorting.stableSort(allKeys)
