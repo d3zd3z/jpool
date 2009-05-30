@@ -19,10 +19,12 @@ class TreeWalk(pool: ChunkSource) extends AnyRef with Logger {
   // Recursively walk the nodes.  For directories, Visits the
   // directory with state set to 'Enter', then the nodes, and then the
   // state set to 'Leave'.
-  def walk(hash: Hash): Stream[Visitor] = {
+  def walk(hash: Hash): Stream[Visitor] = walk(hash, ".")
+
+  def walk(hash: Hash, path: String): Stream[Visitor] = {
     val back = Back.load(pool, hash)
     val node = pool(back.hash)
-    walk(node, ".", 0)
+    walk(node, path, 0)
   }
 
   def walk(node: Chunk, path: String, level: Int): Stream[Visitor] = {
@@ -33,7 +35,7 @@ class TreeWalk(pool: ChunkSource) extends AnyRef with Logger {
       return Stream.empty
     }
     val atts = Attributes.decode(node)
-    val fullPath = if (level == 0) "." else "%s/%s" format (path, atts.name)
+    val fullPath = if (level == 0) path else "%s/%s" format (path, atts.name)
     if (atts.kind == "DIR") {
       val children = Hash.ofString(atts("children"))
 

@@ -21,6 +21,7 @@ object Linux {
   @native def readlink(name: String): String
 
   @native def symlink(oldPath: String, newPath: String)
+  @native def mkdir(name: String)
 
   // Bulk read.  Reads the contents of the given file, in blocks of
   // the given chunks size, and calls 'process' with a fresh

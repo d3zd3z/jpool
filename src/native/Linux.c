@@ -500,6 +500,21 @@ JNIEXPORT int JNICALL Java_org_davidb_jpool_Linux_00024_readChunk
 	return total;
 }
 
+JNIEXPORT void JNICALL Java_org_davidb_jpool_Linux_00024_mkdir
+	(JNIEnv *env, jobject obj, jstring path)
+{
+	JSTRING_TO_C_STACK(env, cpath, path);
+
+	int result = mkdir(cpath, 0700);
+	if (result != 0) {
+		jstring myName = (*env)->NewStringUTF(env, "mkdir");
+		if (myName != NULL)
+			(*env)->CallObjectMethod(env, obj, throwNativeError,
+					myName, path, (jint) errno);
+		return;
+	}
+}
+
 /* Note that this is glibc specific, and depends on the _GNU_SOURCE
  * defined before including anything. */
 JNIEXPORT jstring JNICALL Java_org_davidb_jpool_Linux_00024_strerror

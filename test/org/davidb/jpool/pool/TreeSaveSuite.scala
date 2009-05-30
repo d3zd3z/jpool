@@ -6,6 +6,7 @@ package org.davidb.jpool.pool
 import scala.collection.mutable
 import org.scalatest.Suite
 import org.davidb.logging.Logger
+import java.io.File
 import java.util.Properties
 
 class TreeSaveSuite extends Suite with PoolTest with Logger {
@@ -21,8 +22,20 @@ class TreeSaveSuite extends Suite with PoolTest with Logger {
     var h2 = new TreeSave(pool, "/dev").store(someProps("dev"))
     printf("%s%n%s%n", h1, h2)
 
-    check(h1, "./bin/ls")
-    check(h2, "./dev/null")
+    check(h1, "./ls")
+    check(h2, "./null")
+
+    // Test a restore.
+    info("Testing restore")
+    val restDir = new File(tmpDir.path, "restore")
+    assert(restDir.mkdir())
+    new TreeRestore(pool).restore(h1, restDir.getPath())
+    Proc.run("cmp", "/bin/ls", "%s/ls" format restDir.getPath())
+
+    // Verify that some restore operations fail.
+    intercept[RuntimeException] {
+      new TreeRestore(pool).restore(h1, restDir.getPath())
+    }
   }
 
   // Iterate from a given hash, making sure that the tree is
@@ -42,8 +55,11 @@ class TreeSaveSuite extends Suite with PoolTest with Logger {
           assert(node.path === oldDir)
         case walker.Node =>
           assert(node.path startsWith dirs.top)
+          if (node.path == expected)
+            sawExpected = true
       }
     }
+    assert(sawExpected)
   }
 
   // Make up some properties.
