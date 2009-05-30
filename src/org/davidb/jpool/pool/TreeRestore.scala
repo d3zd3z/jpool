@@ -17,11 +17,13 @@ class TreeRestore(pool: ChunkSource) extends AnyRef with Logger {
             Linux.mkdir(node.path)
           }
         case walker.Leave =>
+          Linux.restoreStat(node.path, node.atts)
         case walker.Node =>
           if (node.atts.kind == "REG") {
             val dataHash = Hash.ofString(node.atts("data"))
             FileData.restore(pool, node.path, dataHash)
           }
+          Linux.restoreStat(node.path, node.atts)
       }
     }
   }
