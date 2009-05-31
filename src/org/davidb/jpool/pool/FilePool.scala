@@ -38,6 +38,8 @@ class FilePool(prefix: File) extends ChunkStore {
   private val hashIndex = new PoolHashIndex(metaPrefix.getPath, "data-index-")
   recover
 
+  val seenPrefix = new File(prefix, "seen").getAbsolutePath
+
   private final val defaultLimit = 640*1024*1024
   private var _limit = db.getProperty("limit", defaultLimit.toString).toInt
 
