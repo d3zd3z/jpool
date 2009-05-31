@@ -19,6 +19,7 @@ class TreeSaveSuite extends Suite with PoolTest with Logger {
     // These also test graceful handling of unreadable files.
     info("warnings are expected for this test")
     var h1 = new TreeSave(pool, "/bin").store(someProps("bin"))
+    var h1b = new TreeSave(pool, "/bin").store(someProps("bin"))
     var h2 = new TreeSave(pool, "/dev").store(someProps("dev"))
     printf("%s%n%s%n", h1, h2)
 
