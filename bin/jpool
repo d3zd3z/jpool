@@ -55,6 +55,9 @@ case "$CMD" in
 	show)
 		CMD=org.davidb.jpool.tools.Show
 		;;
+	h2)
+		CMD=org.h2.tools.Shell
+		;;
 	*)
 		echo "Unknown command: $CMD"
 		exit 1

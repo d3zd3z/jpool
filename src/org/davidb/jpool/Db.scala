@@ -133,6 +133,7 @@ class Db(path: String, schema: DbSchema) extends AnyRef with Logger {
         case b: Array[Byte] => stmt.setBytes(pos + 1, b)
         case s: String => stmt.setString(pos + 1, s)
         case i: Int => stmt.setInt(pos + 1, i)
+        case l: Long => stmt.setLong(pos + 1, l)
         case _ => error("Unsupported type for SQL statement")
       }
       pos += 1

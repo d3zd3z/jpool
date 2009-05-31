@@ -7,6 +7,10 @@ import scala.collection.mutable.ListBuffer
 import org.davidb.logging.Logger
 import java.util.Properties
 
+object TreeSave {
+  lazy val devMap = new DevMap
+}
+
 class TreeSave(pool: ChunkStore, rootPath: String) extends AnyRef with Logger {
   // Store the item, of whatever type it is, into the given storage
   // pool, returning the hash needed to retrieve it later.  If unable
@@ -19,7 +23,9 @@ class TreeSave(pool: ChunkStore, rootPath: String) extends AnyRef with Logger {
     val treeHash = internalStore(rootPath, "%root%", rootStat)
     props.setProperty("hash", treeHash.toString)
     props.setProperty("kind", "snapshot")
-    new Back(props).store(pool)
+    val back = new Back(props).store(pool)
+    seenDb.close()
+    back
   }
 
   // Internal store, where we've already statted the nodes (avoids
@@ -44,11 +50,28 @@ class TreeSave(pool: ChunkStore, rootPath: String) extends AnyRef with Logger {
     error("Cannot save")
   }
 
-  // TODO: Implement DirCache to avoid dumping files that are already
-  // known.
+  val devUuid =
+    try {
+      TreeSave.devMap(rootStat("dev").toLong)
+    } catch {
+      case e: java.util.NoSuchElementException =>
+        warn("Unable to determine UUID of filesystem, using device number")
+        "dev-" + rootStat("dev")
+    }
+  val seenPrefix = pool match {
+    case fp: FilePool => fp.seenPrefix
+    case _ => error("TODO: Unable to save to a non-local file pool")
+  }
+  val seenDb = new SeenDb(seenPrefix, devUuid)
+
+  private def seenNodeToMapping(node: SeenNode): (Long, SeenNode) = (node.inode, node)
 
   private def handleDir(path: String, name: String, stat: Linux.StatInfo): Hash = {
     var nstats = new ListBuffer[(String, Linux.StatInfo)]
+
+    val myIno = stat("ino").toLong
+    val previous = Map.apply(seenDb.getFiles(myIno).map(seenNodeToMapping _) : _*)
+    val updated = new ListBuffer[SeenNode]
 
     // Iterate over the names sorted by inode number, statting each
     // entry.  Don't descend directories that cross device boundaries.
@@ -72,14 +95,30 @@ class TreeSave(pool: ChunkStore, rootPath: String) extends AnyRef with Logger {
 
     for ((name, childStat) <- items) {
       val fullName = path + "/" + name
-      try {
-        val childHash = internalStore(fullName, name, childStat)
-        builder.add(childHash)
-      } catch {
-        case e: NativeError =>
-          warn("Unable to backup node, skipping: %s", fullName)
+      val childIno = childStat("ino").toLong
+      val childCtime = childStat("ctime").toLong
+
+      // See if this has already been seen.
+      previous.get(childIno) match {
+        case Some(node) if node.ctime == childCtime && pool.contains(node.hash) =>
+          builder.add(node.hash)
+          updated += node
+          Progress.addSkip(childStat("size").toLong)
+          Progress.addNode()
+        case _ =>
+          try {
+            val childHash = internalStore(fullName, name, childStat)
+            builder.add(childHash)
+            if (childStat("*kind*") == "REG")
+              updated += new SeenNode(childIno, childCtime, childHash)
+          } catch {
+            case e: NativeError =>
+              warn("Unable to backup node, skipping: %s", fullName)
+          }
       }
     }
+
+    seenDb.update(myIno, updated.toList)
 
     val children = builder.finish()
 
