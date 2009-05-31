@@ -85,8 +85,6 @@ class TreeSaveSuite extends Suite with PoolTest with Logger {
           fail("kind mismatch testing backup %s != %s" format (f.atts.kind, s.atts.kind))
         if (f.path != s.path)
           fail("path mismatch testing backup %s != %s" format (f.path, s.path))
-        if (f.atts.name != s.atts.name)
-          fail("name mismatch testing backup %s != %s" format (f.atts.name, s.atts.name))
 
         val fk = f.atts.contents - "ctime"
         val sk = f.atts.contents - "ctime"

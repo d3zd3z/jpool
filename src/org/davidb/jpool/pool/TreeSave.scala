@@ -20,7 +20,7 @@ class TreeSave(pool: ChunkStore, rootPath: String) extends AnyRef with Logger {
   // property to the root of this backup, and a 'kind=snapshot'
   // property to indicate that this is a tree snapshot.
   def store(props: Properties): Hash = {
-    val treeHash = internalStore(rootPath, "%root%", rootStat)
+    val treeHash = internalStore(rootPath, rootStat)
     props.setProperty("hash", treeHash.toString)
     props.setProperty("kind", "snapshot")
     val back = new Back(props).store(pool)
@@ -30,19 +30,18 @@ class TreeSave(pool: ChunkStore, rootPath: String) extends AnyRef with Logger {
 
   // Internal store, where we've already statted the nodes (avoids
   // duplicate stats, since directory traversal requires statting).
-  private def internalStore(path: String, name: String, stat: Linux.StatInfo): Hash = {
+  private def internalStore(path: String, stat: Linux.StatInfo): Hash = {
     val hash = handlers.get(stat("*kind*")) match {
       case None =>
         logError("Unknown filesystem entry kind: %s (%s)", stat("*kind*"), path)
         error("Cannot dump entry")
-      case Some(handler) =>
-      handler(path, name, stat)
+      case Some(handler) => handler(path, stat)
     }
     Progress.addNode()
     hash
   }
 
-  private var handlers = Map[String, (String, String, Linux.StatInfo) => Hash]()
+  private var handlers = Map[String, (String, Linux.StatInfo) => Hash]()
 
   private val rootStat = Linux.lstat(rootPath)
   if (rootStat("*kind*") != "DIR") {
@@ -66,7 +65,7 @@ class TreeSave(pool: ChunkStore, rootPath: String) extends AnyRef with Logger {
 
   private def seenNodeToMapping(node: SeenNode): (Long, SeenNode) = (node.inode, node)
 
-  private def handleDir(path: String, name: String, stat: Linux.StatInfo): Hash = {
+  private def handleDir(path: String, stat: Linux.StatInfo): Hash = {
     var nstats = new ListBuffer[(String, Linux.StatInfo)]
 
     val myIno = stat("ino").toLong
@@ -91,7 +90,7 @@ class TreeSave(pool: ChunkStore, rootPath: String) extends AnyRef with Logger {
     // unchanged directories to keep the same hash.
     val items = nstats.toList.sort(byName _)
 
-    val builder = TreeBuilder.makeBuilder("dir", pool)
+    val builder = new DirStore(pool, 256*1024)
 
     for ((name, childStat) <- items) {
       val fullName = path + "/" + name
@@ -101,14 +100,14 @@ class TreeSave(pool: ChunkStore, rootPath: String) extends AnyRef with Logger {
       // See if this has already been seen.
       previous.get(childIno) match {
         case Some(node) if node.ctime == childCtime && pool.contains(node.hash) =>
-          builder.add(node.hash)
+          builder.append(name, node.hash)
           updated += node
           Progress.addSkip(childStat("size").toLong)
           Progress.addNode()
         case _ =>
           try {
-            val childHash = internalStore(fullName, name, childStat)
-            builder.add(childHash)
+            val childHash = internalStore(fullName, childStat)
+            builder.append(name, childHash)
             if (childStat("*kind*") == "REG")
               updated += new SeenNode(childIno, childCtime, childHash)
           } catch {
@@ -126,24 +125,24 @@ class TreeSave(pool: ChunkStore, rootPath: String) extends AnyRef with Logger {
     // fullStat += ("path" -> path)
     fullStat += ("children" -> children.toString())
 
-    Attributes.ofLinuxStat(fullStat, name).store(pool)
+    Attributes.ofLinuxStat(fullStat).store(pool)
   }
   handlers += ("DIR" -> handleDir _)
 
-  private def handleLnk(path: String, name: String, stat: Linux.StatInfo): Hash = {
+  private def handleLnk(path: String, stat: Linux.StatInfo): Hash = {
     var target = Linux.readlink(path)
-    Attributes.ofLinuxStat(stat + ("target" -> target), name).store(pool)
+    Attributes.ofLinuxStat(stat + ("target" -> target)).store(pool)
   }
   handlers += ("LNK" -> handleLnk _)
 
-  private def handleReg(path: String, name: String, stat: Linux.StatInfo): Hash = {
+  private def handleReg(path: String, stat: Linux.StatInfo): Hash = {
     var dataHash = FileData.store(pool, path)
-    Attributes.ofLinuxStat(stat + ("data" -> dataHash.toString), name).store(pool)
+    Attributes.ofLinuxStat(stat + ("data" -> dataHash.toString)).store(pool)
   }
   handlers += ("REG" -> handleReg _)
 
-  private def handleSimple(path: String, name: String, stat: Linux.StatInfo): Hash =
-    Attributes.ofLinuxStat(stat, name).store(pool)
+  private def handleSimple(path: String, stat: Linux.StatInfo): Hash =
+    Attributes.ofLinuxStat(stat).store(pool)
   handlers += ("CHR" -> handleSimple)
   handlers += ("BLK" -> handleSimple)
   handlers += ("FIFO" -> handleSimple)

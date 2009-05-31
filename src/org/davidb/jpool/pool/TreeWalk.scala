@@ -35,15 +35,19 @@ class TreeWalk(pool: ChunkSource) extends AnyRef with Logger {
       return Stream.empty
     }
     val atts = Attributes.decode(node)
-    val fullPath = if (level == 0) path else "%s/%s" format (path, atts.name)
     if (atts.kind == "DIR") {
       val children = Hash.ofString(atts("children"))
 
-      Stream.cons(new Visitor(fullPath, level, atts, Enter),
-        Stream.concat(TreeBuilder.walk("dir", pool, children) map (walk(_, fullPath, level + 1))) append
-          Stream(new Visitor(fullPath, level, atts, Leave)))
+      def subWalk(node: (String, Hash)): Stream[Visitor] = {
+        val subNode = pool(node._2)
+        walk(subNode, path + "/" + node._1, level + 1)
+      }
+
+      Stream.cons(new Visitor(path, level, atts, Enter),
+        Stream.concat(DirStore.walk(pool, children) map (subWalk _)) append
+          Stream(new Visitor(path, level, atts, Leave)))
     } else {
-      Stream(new Visitor(fullPath, level, atts, Node))
+      Stream(new Visitor(path, level, atts, Node))
     }
   }
 

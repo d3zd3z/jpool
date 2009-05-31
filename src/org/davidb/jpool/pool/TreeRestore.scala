@@ -32,7 +32,7 @@ class TreeRestore(pool: ChunkSource) extends AnyRef with Logger {
   // directory.  It must be a directory, and it must contain either no
   // files, or a single directory called "lost+found".
   private def checkRoot(path: String) {
-    val atts = Attributes.ofLinuxStat(Linux.lstat(path), ".")
+    val atts = Attributes.ofLinuxStat(Linux.lstat(path))
     if (atts.kind != "DIR") {
       error("Root of restore is not a directory")
     }
@@ -40,7 +40,7 @@ class TreeRestore(pool: ChunkSource) extends AnyRef with Logger {
     Linux.readDir(path) match {
       case List() =>
       case List(("lost+found", _)) =>
-        val lfatts = Attributes.ofLinuxStat(Linux.lstat(path + "/lost+found"), "lost+found")
+        val lfatts = Attributes.ofLinuxStat(Linux.lstat(path + "/lost+found"))
         if (lfatts.kind != "DIR") {
           error("Root of restore has lost+found that isn't a directory")
         }

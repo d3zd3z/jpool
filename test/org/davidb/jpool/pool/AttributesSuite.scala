@@ -11,7 +11,7 @@ class AttributesSuite extends Suite with PoolTest {
     map += ("aaa" -> "123")
     map += ("bbb" -> "456")
     map += ("ugly" -> "This\370is\201ugly")
-    val att = new Attributes("SILLY", "silly attribute set", map)
+    val att = new Attributes("SILLY", map)
     val bin = att.toByteArray()
     // Pdump.dump(bin)
 
@@ -25,7 +25,7 @@ class AttributesSuite extends Suite with PoolTest {
     for (key <- 0 until 256) {
       map += (key.toString -> new String(Array(key.toChar)))
     }
-    val att = new Attributes("Kind", "this is my name", map)
+    val att = new Attributes("Kind", map)
     val bin = att.toByteArray()
     // Pdump.dump(bin)
     val attb = Attributes.decode(bin)
@@ -44,9 +44,9 @@ class AttributesSuite extends Suite with PoolTest {
   }
 
   def testPool {
-    val a1 = Attributes.ofLinuxStat(Linux.lstat("/bin/ls"), "ls")
+    val a1 = Attributes.ofLinuxStat(Linux.lstat("/bin/ls"))
     val h1 = a1.store(pool)
-    val a2 = Attributes.ofLinuxStat(Linux.lstat("/dev/null"), "null")
+    val a2 = Attributes.ofLinuxStat(Linux.lstat("/dev/null"))
     val h2 = a2.store(pool)
 
     assert(a1 === Attributes.decode(pool(h1)))
