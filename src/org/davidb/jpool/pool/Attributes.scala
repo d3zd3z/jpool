@@ -28,15 +28,14 @@ object Attributes {
       data.remaining, "UTF-8")
     val nodes = xml.XML.loadString(text)
     val kind = (nodes \ "@kind").text
-    val name = (nodes \ "@name").text
     val entries = for (child <- nodes \ "entry") yield decodeEntry(child)
-    new Attributes(kind, name, Map[String, String]() ++ entries)
+    new Attributes(kind, Map[String, String]() ++ entries)
   }
 
   // Convert the result of a Linux stat or lstat result into
   // Attributes.
-  def ofLinuxStat(att: Linux.StatInfo, name: String) =
-    new Attributes(att("*kind*"), name, att - "*kind*")
+  def ofLinuxStat(att: Linux.StatInfo) =
+    new Attributes(att("*kind*"), att - "*kind*")
 
   private def decodeEntry(node: xml.Node): (String, String) = {
     val key = node \ "@key"
@@ -50,7 +49,7 @@ object Attributes {
   }
 }
 
-class Attributes(var kind: String, var name: String,
+class Attributes(var kind: String,
   val contents: Map[String, String]) extends scala.collection.Map[String, String]
 {
   // Map interface.
@@ -69,7 +68,7 @@ class Attributes(var kind: String, var name: String,
   def toXML: xml.Elem = {
     val items = for (key <- contents.keys.toList.sort(_<_))
       yield entryEncode(key, contents(key))
-    <node kind={kind} name={name}>{items}</node>
+    <node kind={kind}>{items}</node>
   }
 
   // Encode this entry, using base-64 if necessary.  Also validates
@@ -100,11 +99,10 @@ class Attributes(var kind: String, var name: String,
   override def equals(that: Any): Boolean = that match {
     case other: Attributes =>
       kind == other.kind &&
-        name == other.name &&
         contents == other.contents
     case _ => false
   }
 
   override def hashCode(): Int =
-    ((kind.hashCode + 41) * 41 + name.hashCode) * 41 + contents.hashCode
+    (kind.hashCode + 41) * 41 + contents.hashCode
 }
