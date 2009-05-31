@@ -22,9 +22,11 @@ class TreeRestore(pool: ChunkSource) extends AnyRef with Logger {
           if (node.atts.kind == "REG") {
             val dataHash = Hash.ofString(node.atts("data"))
             FileData.restore(pool, node.path, dataHash)
+            Progress.addData(node.atts("size").toLong)
           }
           Linux.restoreStat(node.path, node.atts)
       }
+      Progress.addNode()
     }
   }
 
