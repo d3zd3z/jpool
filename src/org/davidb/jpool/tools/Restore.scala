@@ -43,6 +43,7 @@ object Restore extends AnyRef with Logger {
 
       val restorer = new TreeRestore(pool)
       restorer.restore(hash, args(2))
+      Progress.show()
     }
     pool.close
   }
