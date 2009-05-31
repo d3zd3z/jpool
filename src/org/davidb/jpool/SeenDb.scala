@@ -7,10 +7,11 @@ import java.util.Date
 import java.sql.ResultSet
 
 object SeenDbSchema extends DbSchema {
-  val schemaVersion = "1:2009-05-30"
+  val schemaVersion = "2:2009-05-30"
   val schemaText = Array(
     "create table seen (pino bigint not null, ino bigint not null," +
-    " ctime bigint not null, hash binary(20) not null, expire bigint not null)")
+    " ctime bigint not null, hash binary(20) not null, expire bigint not null)",
+    "create index seen_index on seen(pino)")
   def schemaUpgrade(oldVersion: String, db: Db) = error("Cannot upgrade schema")
 }
 
@@ -40,7 +41,7 @@ class SeenDb(prefix: String, id: String) {
   // Retrieve all of the nodes that were last recorded for a given
   // directory (and not expired).
   def getFiles(parentIno: Long): Seq[SeenNode] = {
-    db.query(getSeen _, "select (ino, ctime, hash, expire) from seen" +
+    db.query(getSeen _, "select ino, ctime, hash, expire from seen" +
       " where pino = ? and expire > ?",
       parentIno, startTime).toList
   }
