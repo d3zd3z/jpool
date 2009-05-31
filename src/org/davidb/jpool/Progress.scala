@@ -16,7 +16,7 @@ object Progress extends AnyRef with Logger {
   def addDup(count: Long) = synchronized { dup += count; check }
 
   // Data entirely skipped (file is already known).
-  def addSkip(count: Long) = synchronized { skip + count; check }
+  def addSkip(count: Long) = synchronized { skip += count; check }
 
   // Indicate files added.
   def addNode() { addNode(1) }
