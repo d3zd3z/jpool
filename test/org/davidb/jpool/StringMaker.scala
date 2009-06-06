@@ -32,8 +32,11 @@ object StringMaker {
   // web searching.  It only needs to be diverse enough that
   // choosing randomly will keep the zlib compression from being too
   // great.
-  private val words =
-      ("come get give go keep let make put seem take be do have say see " +
+  // Build this in pieces to avoid stack overflows in the compiler on
+  // some platforms.
+  private val words = makeWords
+  private def makeWords: Array[String] = {
+    var str = "come get give go keep let make put seem take be do have say see " +
        "send may will about across after against among at before between by " +
        "down from in off on over through to under up with as for of till " +
        "than a the all any every little much no other some such that this I " +
@@ -41,7 +44,8 @@ object StringMaker {
        "again ever far forward here near now out still then there together " +
        "well almost enough even not only quite so very tomorrow yesterday " +
        "north south east west please yes account act addition adjustment " +
-       "advertisement agreement air amount amusement animal answer " +
+       "advertisement agreement air amount amusement animal answer "
+    str +=
        "apparatus approval argument art attack attempt attention attraction " +
        "authority back balance base behavior belief birth bit bite blood " +
        "blow body brass bread breath brother building burn burst business " +
@@ -50,7 +54,8 @@ object StringMaker {
        "connection control cook copper copy cork cotton cough country cover " +
        "crack credit crime crush cry current curve damage danger daughter " +
        "day death debt decision degree design desire destruction detail " +
-       "development digestion direction discovery discussion disease " +
+       "development digestion direction discovery discussion disease "
+    str +=
        "disgust distance distribution division doubt drink driving dust " +
        "earth edge education effect end error event example exchange " +
        "existence expansion experience expert fact fall family father fear " +
@@ -59,7 +64,8 @@ object StringMaker {
        "grip group growth guide harbor harmony hate hearing heat help " +
        "history hole hope hour humor ice idea impulse increase industry ink " +
        "insect instrument insurance interest invention iron jelly join " +
-       "journey judge jump kick kiss knowledge land language laugh law lead " +
+       "journey judge jump kick kiss knowledge land language laugh law lead "
+    str +=
        "learning leather letter level lift light limit linen liquid list " +
        "look loss love machine man manager mark market mass meal measure " +
        "meat meeting memory metal middle milk mind mine minute mist money " +
@@ -68,7 +74,8 @@ object StringMaker {
        "opinion order organization ornament owner page pain paint paper " +
        "part paste payment peace person place plant play pleasure point " +
        "poison polish porter position powder power price print process " +
-       "produce profit property prose protest pull punishment purpose push " +
+       "produce profit property prose protest pull punishment purpose push "
+    str +=
        "quality question rain range rate ray reaction reading reason record " +
        "regret relation religion representative request respect rest reward " +
        "rhythm rice river road roll room rub rule run salt sand scale " +
@@ -77,7 +84,8 @@ object StringMaker {
        "slope smash smell smile smoke sneeze snow soap society son song " +
        "sort sound soup space stage start statement steam steel step stitch " +
        "stone stop story stretch structure substance sugar suggestion " +
-       "summer support surprise swim system talk taste tax teaching " +
+       "summer support surprise swim system talk taste tax teaching "
+    str +=
        "tendency test theory thing thought thunder time tin top touch trade " +
        "transport trick trouble turn twist unit use value verse vessel view " +
        "voice walk war wash waste water wave wax way weather week weight " +
@@ -86,7 +94,8 @@ object StringMaker {
        "bee bell berry bird blade board boat bone book boot bottle box boy " +
        "brain brake branch brick bridge brush bucket bulb button cake " +
        "camera card cart carriage cat chain cheese chest chin church circle " +
-       "clock cloud coat collar comb cord cow cup curtain cushion dog door " +
+       "clock cloud coat collar comb cord cow cup curtain cushion dog door "
+    str +=
        "drain drawer dress drop ear egg engine eye face farm feather finger " +
        "fish flag floor fly foot fork fowl frame garden girl glove goat gun " +
        "hair hammer hand hat head heart hook horn horse hospital house " +
@@ -95,7 +104,8 @@ object StringMaker {
        "nose nut office orange oven parcel pen pencil picture pig pin pipe " +
        "plane plate plow pocket pot potato prison pump rail rat " +
        "receipt ring rod roof root sail school scissors screw seed sheep " +
-       "shelf ship shirt shoe skin skirt snake sock spade sponge spoon " +
+       "shelf ship shirt shoe skin skirt snake sock spade sponge spoon "
+    str +=
        "spring square stamp star station stem stick stocking stomach store " +
        "street sun table tail thread throat thumb ticket toe tongue tooth " +
        "town train tray tree trousers umbrella wall watch wheel whip " +
@@ -104,7 +114,8 @@ object StringMaker {
        "common complex conscious cut deep dependent early elastic electric " +
        "equal fat fertile first fixed flat free frequent full general good " +
        "great grey/gray hanging happy hard healthy high hollow important " +
-       "kind like living long male married material medical military " +
+       "kind like living long male married material medical military "
+    str +=
        "natural necessary new normal open parallel past physical political " +
        "poor possible present private probable quick quiet ready red " +
        "regular responsible right round same second separate serious sharp " +
@@ -114,5 +125,7 @@ object StringMaker {
        "delicate different dirty dry false feeble female foolish future " +
        "green ill last late left loose loud low mixed narrow old opposite " +
        "public rough sad safe secret short shut simple slow small soft " +
-       "solid special strange thin white wrong").split(" ");
+       "solid special strange thin white wrong"
+    str.split(" ");
+  }
 }
