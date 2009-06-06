@@ -10,32 +10,23 @@ import org.scalatest.Suite
 
 class BerkeleyDbSuite extends Suite with TempDirTest {
   def testDb {
-    val envConfig = new EnvironmentConfig()
-    envConfig.setAllowCreate(true)
-    val env = new Environment(tmpDir.path, envConfig)
-
-    val dbConfig = new DatabaseConfig()
-    dbConfig.setAllowCreate(true)
-    val db = env.openDatabase(null, "sample", dbConfig)
+    val env = BerkeleyDb.makeEnvironment(tmpDir.path)
+    val db = new BerkeleyDb(env, "sample")
 
     def nums = Stream.concat(Stream.range(1, 256), Stream.range(256, 32768, 256), Stream(32767))
     for (i <- nums) {
       val name = StringMaker.generate(i, i)
       val hash = Hash("blob", name)
-      val key = new DatabaseEntry(hash.getBytes)
-      val data = new DatabaseEntry(name.getBytes("UTF-8"))
-      val stat = db.put(null, key, data)
-      assert(stat === OperationStatus.SUCCESS)
+      db.put(hash.getBytes, name.getBytes("UTF-8"))
     }
 
     for (i <- nums) {
       val name = StringMaker.generate(i, i)
       val hash = Hash("blob", name)
-      val key = new DatabaseEntry(hash.getBytes)
-      val data = new DatabaseEntry()
-      val stat = db.get(null, key, data, null)
-      assert(stat === OperationStatus.SUCCESS)
-      assert(name === new String(data.getData))
+      db.get(hash.getBytes) match {
+        case None => fail("Unable to find entry")
+        case Some(res) => assert(name === new String(res))
+      }
     }
 
     // Proc.run("sh", "-c",
