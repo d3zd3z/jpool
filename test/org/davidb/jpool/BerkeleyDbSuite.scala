@@ -14,11 +14,13 @@ class BerkeleyDbSuite extends Suite with TempDirTest {
     val db = new BerkeleyDb(env, "sample")
 
     def nums = Stream.concat(Stream.range(1, 256), Stream.range(256, 32768, 256), Stream(32767))
+    db.begin()
     for (i <- nums) {
       val name = StringMaker.generate(i, i)
       val hash = Hash("blob", name)
       db.put(hash.getBytes, name.getBytes("UTF-8"))
     }
+    db.commit()
 
     for (i <- nums) {
       val name = StringMaker.generate(i, i)
