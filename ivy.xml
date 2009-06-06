@@ -20,5 +20,6 @@
       <exclude org="javax.jms"/>
     </dependency>
     <dependency org="commons-codec" name="commons-codec" rev="1.3"/>
+    <dependency org="berkeleydb" name="je" rev="3.2.76"/>
   </dependencies>
 </ivy-module>
