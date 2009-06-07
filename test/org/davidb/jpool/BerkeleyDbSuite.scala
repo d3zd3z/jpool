@@ -9,7 +9,7 @@ import java.nio.ByteBuffer
 
 class BerkeleyDbSuite extends Suite with TempDirTest {
 
-  import bdb.StringCoder._
+  import bdb.Codecs._
 
   def testDb {
     val env = bdb.Environment.openEnvironment(tmpDir.path)
