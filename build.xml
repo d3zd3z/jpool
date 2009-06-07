@@ -28,7 +28,6 @@
       <pathelement location="${lib.dir}/h2-1.1.112.jar"/>
       <pathelement location="${lib.dir}/log4j-1.2.15.jar"/>
       <pathelement location="${lib.dir}/commons-codec-1.3.jar"/>
-      <pathelement location="${lib.dir}/je-3.2.76.jar"/>
       <pathelement location="${classes.dir}"/>
     </path>
     <taskdef resource="scala/tools/ant/antlib.xml">
