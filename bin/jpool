@@ -55,17 +55,8 @@ case "$CMD" in
 	show)
 		CMD=org.davidb.jpool.tools.Show
 		;;
-	convert)
-		CMD=org.davidb.jpool.tools.Convert
-		;;
 	h2)
 		CMD=org.h2.tools.Shell
-		;;
-	dbdump)
-		CMD=com.sleepycat.je.util.DbDump
-		;;
-	dbload)
-		CMD=com.sleepycat.je.util.DbLoad
 		;;
 	*)
 		echo "Unknown command: $CMD"
