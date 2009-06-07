@@ -9,7 +9,7 @@ package org.davidb.jpool
 import java.security.MessageDigest
 import java.nio.ByteBuffer
 
-object Hash {
+object Hash extends AnyRef with bdb.Decoder[Hash] {
   def makeDigest() = MessageDigest.getInstance("SHA-1")
   val HashLength = makeDigest().getDigestLength
 
@@ -45,9 +45,18 @@ object Hash {
     }
     new Hash(hash)
   }
+
+  // Decodes the hash from the next HashLength bytes of the buffer.
+  def decode(buf: ByteBuffer): Hash = {
+    require(buf.remaining >= HashLength)
+    val data = new Array[Byte](HashLength)
+    buf.get(data)
+    raw(data)
+  }
 }
 
 class Hash private (_digest: Array[Byte], _offset: Int, _length: Int) extends Ordered[Hash]
+  with bdb.Encodable
 {
   // TODO: There's got to be a better way.
   val rawBytes = {
@@ -73,6 +82,8 @@ class Hash private (_digest: Array[Byte], _offset: Int, _length: Int) extends Or
       tmp(i) = rawBytes(i)
     tmp
   }
+
+  def encode = getBuffer()
 
   def compare(that: Hash): Int = {
     val h1 = rawBytes
