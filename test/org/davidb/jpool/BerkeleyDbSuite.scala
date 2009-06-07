@@ -3,24 +3,21 @@
 
 package org.davidb.jpool
 
-import com.sleepycat.je.{ DatabaseConfig, DatabaseEntry, Environment, EnvironmentConfig,
-  OperationStatus }
-
 import org.scalatest.Suite
 
 class BerkeleyDbSuite extends Suite with TempDirTest {
   def testDb {
-    val env = BerkeleyDb.makeEnvironment(tmpDir.path)
-    val db = new BerkeleyDb(env, "sample")
+    val env = bdb.Environment.openEnvironment(tmpDir.path)
+    env.begin()
+    val db = env.openDatabase("sample")
 
     def nums = Stream.concat(Stream.range(1, 256), Stream.range(256, 32768, 256), Stream(32767))
-    db.begin()
     for (i <- nums) {
       val name = StringMaker.generate(i, i)
       val hash = Hash("blob", name)
       db.put(hash.getBytes, name.getBytes("UTF-8"))
     }
-    db.commit()
+    env.commit()
 
     for (i <- nums) {
       val name = StringMaker.generate(i, i)
