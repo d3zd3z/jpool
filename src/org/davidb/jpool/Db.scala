@@ -21,11 +21,14 @@ trait DbSchema {
 
   // Attempt to upgrade this database to the latest schema version,
   // given the old version.  Can raise an exception if the upgrade is
-  // not possible.
+  // not possible.  In general, should not 'commit' the database,
+  // since upon completion the management code will update the version
+  // number and do the commit, putting the entire upgrade inside of a
+  // single transaction.
   def schemaUpgrade(oldVersion: String, db: Db)
 }
 
-class Db(path: String, schema: DbSchema) extends AnyRef with Logger {
+class Db(val path: String, schema: DbSchema) extends AnyRef with Logger {
   private val conn = connectDatabase
   conn.setAutoCommit(false)
   checkSchema
@@ -72,6 +75,8 @@ class Db(path: String, schema: DbSchema) extends AnyRef with Logger {
 
   // Useful conversion functions.
   def getString1(rs: ResultSet): String = rs.getString(1)
+  def getLong1(rs: ResultSet): Long = rs.getLong(1)
+  def getBytes1(rs: ResultSet): Array[Byte] = rs.getBytes(1)
 
   private def checkSchema {
     val goodVersion = schema.schemaVersion
@@ -79,7 +84,16 @@ class Db(path: String, schema: DbSchema) extends AnyRef with Logger {
       getProperty("schema-version", null) match {
         case oldVersion if oldVersion == goodVersion =>
         case null => error("TODO: Handle corrupt database (missing version)")
-        case oldVersion => error("TODO: Implement Schema upgrade")
+        case oldVersion =>
+          // Invoke the upgrade, using the old version.  If it
+          // completes without raising an exception, assume the
+          // upgrade was successful, and change the version number.
+          // In general, the upgrade should be done within a single
+          // transaction, with the commit happening here, not in the
+          // upgrade.
+          schema.schemaUpgrade(oldVersion, this)
+          setProperty("schema-version", goodVersion)
+          commit()
       }
     } else {
       setSchema(goodVersion)
