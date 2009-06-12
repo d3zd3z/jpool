@@ -55,6 +55,9 @@ case "$CMD" in
 	show)
 		CMD=org.davidb.jpool.tools.Show
 		;;
+	compact)
+		CMD=org.davidb.jpool.tools.Compact
+		;;
 	h2)
 		CMD=org.h2.tools.Shell
 		;;

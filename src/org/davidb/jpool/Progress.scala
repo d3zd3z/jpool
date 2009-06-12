@@ -22,7 +22,13 @@ object Progress extends AnyRef with Logger {
   def addNode() { addNode(1) }
   def addNode(count: Long) = synchronized { nodes += count; check }
 
-  // def reset()
+  def reset() {
+    data = 0L
+    dup = 0L
+    skip = 0L
+    nodes = 0L
+    nextUpdates = null
+  }
 
   //////////////////////////////////////////////////////////////////////
   // Implementation.
