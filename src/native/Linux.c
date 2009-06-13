@@ -349,6 +349,19 @@ JNIEXPORT void JNICALL Java_org_davidb_jpool_Linux_00024_symlink
 	}
 }
 
+JNIEXPORT void JNICALL Java_org_davidb_jpool_Linux_00024_link
+	(JNIEnv *env, jobject obj, jstring oldPath, jstring newPath)
+{
+	JSTRING_TO_C_STACK(env, cOldPath, oldPath);
+	JSTRING_TO_C_STACK(env, cNewPath, newPath);
+
+	int result = link(cOldPath, cNewPath);
+	if (result != 0) {
+		path_error(env, obj, newPath, "link");
+		return;
+	}
+}
+
 JNIEXPORT jstring JNICALL Java_org_davidb_jpool_Linux_00024_readlink
 	(JNIEnv *env, jobject obj, jstring path)
 {

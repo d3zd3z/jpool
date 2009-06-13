@@ -3,6 +3,7 @@
 
 package org.davidb.jpool
 
+import java.io.{File, FileWriter}
 import java.nio.ByteBuffer
 import java.security.MessageDigest
 import org.scalatest.Suite
@@ -133,6 +134,20 @@ class LinuxSuite extends Suite {
       val dig1 = Hash.raw(md.digest)
       val dig2 = fileHash(fileName)
       assert(dig1 === dig2)
+    }
+  }
+
+  def testLink {
+    TempDir.withTempDir { tdir =>
+      val fw = new FileWriter(new File(tdir, "file1"))
+      fw.write(StringMaker.generate(1, 256*1024))
+      fw.close()
+      val n1 = "%s/file1" format tdir.getPath
+      val n2 = "%s/file2" format tdir.getPath
+      Linux.link(n1, n2)
+      val st1 = Linux.lstat(n1)
+      val st2 = Linux.lstat(n2)
+      assert(st1 === st2)
     }
   }
 
