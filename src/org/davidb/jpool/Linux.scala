@@ -25,6 +25,7 @@ object Linux extends AnyRef with Logger {
   @native def readlink(name: String): String
 
   @native def symlink(oldPath: String, newPath: String)
+  @native def link(oldPath: String, newPath: String)
   @native def mkdir(name: String)
 
   // Bulk read.  Reads the contents of the given file, in blocks of
