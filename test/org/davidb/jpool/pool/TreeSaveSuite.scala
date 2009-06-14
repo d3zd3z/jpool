@@ -6,13 +6,11 @@ package org.davidb.jpool.pool
 import scala.collection.mutable
 import org.scalatest.{Suite, TestFailedException}
 import org.davidb.logging.Logger
-import java.io.File
+import java.io.{File, FileWriter}
 import java.util.Properties
 
 class TreeSaveSuite extends Suite with PoolTest with Logger {
 
-  // Restore not implemented, so the best we can do is save something
-  // and generate a listing and make sure not fatal errors happen.
   // TODO: This is way too verbose, so not really want we're going to
   // want to be doing.  Better to use a generalized tree walker.
   def testSave {
@@ -45,6 +43,27 @@ class TreeSaveSuite extends Suite with PoolTest with Logger {
     } else {
       warn("Skipping permission restore test, since user is not root")
     }
+  }
+
+  // Make sure that restore can restore hardlinks properly.
+  def testHardLinks {
+    val d1 = new File(tmpDir.path, "orig")
+    assert(d1.mkdir())
+
+    val n1 = "%s/file1" format d1.getPath
+    val fw = new FileWriter(n1)
+    fw.write(StringMaker.generate(1, 32*1024))
+    fw.close()
+    Linux.link(n1, "%s/file2" format d1.getPath)
+
+    val h1 = new TreeSave(pool, d1.getPath).store(someProps("orig"))
+
+    // Restore it.
+    val r1 = restore("rest", h1)
+    val stat1 = Linux.lstat("%s/file1" format r1)
+    val stat2 = Linux.lstat("%s/file2" format r1)
+    assert(stat1("nlink") === "2")
+    assert(stat1 === stat2)
   }
 
   // Try restoring to a directory based on the given path.  Returns
