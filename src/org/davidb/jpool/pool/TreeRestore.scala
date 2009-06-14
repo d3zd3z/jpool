@@ -3,6 +3,7 @@
 
 package org.davidb.jpool.pool
 
+import scala.collection.mutable
 import org.davidb.logging.Logger
 
 class TreeRestore(pool: ChunkSource) extends AnyRef with Logger {
@@ -19,16 +20,36 @@ class TreeRestore(pool: ChunkSource) extends AnyRef with Logger {
         case walker.Leave =>
           Linux.restoreStat(node.path, node.atts)
         case walker.Node =>
-          if (node.atts.kind == "REG") {
-            val dataHash = Hash.ofString(node.atts("data"))
-            FileData.restore(pool, node.path, dataHash)
-            Progress.addData(node.atts("size").toLong)
-          }
+          if (node.atts.kind == "REG")
+            regRestore(node)
           Linux.restoreStat(node.path, node.atts)
       }
       Progress.addNode()
     }
   }
+
+  // Perform restore of a regular file.  Keeps track of restored
+  // hardlinks and recreates the links when they are discovered.
+  private def regRestore(node: TreeWalk#Visitor) {
+    val dataHash = Hash.ofString(node.atts("data"))
+    val nlink = node.atts("nlink").toInt
+    if (nlink == 1) {
+      FileData.restore(pool, node.path, dataHash)
+    } else {
+      val inum = node.atts("ino").toLong
+      if (links contains inum) {
+        Linux.link(links(inum).path, node.path)
+      } else {
+        FileData.restore(pool, node.path, dataHash)
+        links += (inum -> node)
+      }
+    }
+    Progress.addData(node.atts("size").toLong)
+  }
+
+  // TODO: Track link counts so we can delete nodes once we've written
+  // the last link.
+  private val links = mutable.Map.empty[Long, TreeWalk#Visitor]
 
   // Verify that the root of this restore is a (nearly) empty
   // directory.  It must be a directory, and it must contain either no
