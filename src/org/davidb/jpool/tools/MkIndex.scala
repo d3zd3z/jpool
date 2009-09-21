@@ -22,7 +22,11 @@ class TestHashIndex(val basePath: String, val prefix: String) extends {
       (file, offset)
     }
   }
-} with HashIndex[(Int,Int)]
+} with HashIndex[(Int,Int)] {
+  // Make this small enough so that tests complete in reasonable
+  // amounts of time.
+  override def ramMax = 370
+}
 
 object MkIndex {
   def main(args: Array[String]) {
