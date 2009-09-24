@@ -30,17 +30,19 @@ class TestHashIndex(val basePath: String, val prefix: String) extends {
 
 object MkIndex {
   def main(args: Array[String]) {
-    if (args.length != 3) {
-      System.err.println("Usage: MkIndex path basename count")
+    if (args.length < 3 || (args.length % 2 != 1)) {
+      System.err.println("Usage: MkIndex path [basename count ...]")
       System.exit(1)
     }
 
-    val hi = new TestHashIndex(args(0), args(1))
-    val limit = Integer.parseInt(args(2))
-    for (i <- 1 to limit) {
-      val hash = Hash("blob", i.toString)
-      hi += (hash -> (i, 42))
+    for (index <- 1 until args.length by 2) {
+      val hi = new TestHashIndex(args(0), args(index))
+      val limit = Integer.parseInt(args(index + 1))
+      for (i <- 1 to limit) {
+        val hash = Hash("blob", i.toString)
+        hi += (hash -> (i, 42))
+      }
+      hi.close()
     }
-    hi.close()
   }
 }
