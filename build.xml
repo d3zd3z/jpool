@@ -97,6 +97,23 @@
     <ivy:retrieve type="jar"/>
   </target>
 
+  <property name="my.version" value="1.0-SNAPSHOT"/>
+  <target name="tar" depends="build">
+    <tar destfile="${target}/jpool-bin-${my.version}.tar.gz"
+      compression="gzip">
+      <tarfileset prefix="jpool-bin-${my.version}/bin" file="bin/jpool" filemode="755"/>
+      <tarfileset prefix="jpool-bin-${my.version}" file="bin" filemode="755"/>
+      <tarfileset prefix="jpool-bin-${my.version}/target" dir="target">
+	<include name="jpool.jar"/>
+	<include name="so/*.so"/>
+      </tarfileset>
+      <tarfileset prefix="jpool-bin-${my.version}/target" file="so" filemode="755"/>
+      <tarfileset prefix="jpool-bin-${my.version}" file="target" filemode="755"/>
+      <tarfileset prefix="jpool-bin-${my.version}/lib" dir="lib" includes="*.jar"/>
+      <tarfileset prefix="jpool-bin-${my.version}" file="lib" filemode="755"/>
+    </tar>
+  </target>
+
   <!-- 
   <target name="broken-test" depends="compile.test, shared">
     <taskdef name="scalatest" classname="org.scalatest.tools.ScalaTestTask">
