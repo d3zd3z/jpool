@@ -109,7 +109,11 @@
       </tarfileset>
       <tarfileset prefix="jpool-bin-${my.version}/target" file="so" filemode="755"/>
       <tarfileset prefix="jpool-bin-${my.version}" file="target" filemode="755"/>
-      <tarfileset prefix="jpool-bin-${my.version}/lib" dir="lib" includes="*.jar"/>
+      <tarfileset prefix="jpool-bin-${my.version}/lib" dir="lib">
+	<include name="*.jar"/>
+	<exclude name="scala-compiler*"/>
+	<exclude name="scalatest*"/>
+      </tarfileset>
       <tarfileset prefix="jpool-bin-${my.version}" file="lib" filemode="755"/>
     </tar>
   </target>
