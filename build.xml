@@ -17,13 +17,10 @@
   <property name="headers.dir" value="${target}/headers"/>
   <property name="test.classes.dir" value="${target}/test-classes"/>
 
-  <!-- Gentoo specific value -->
-  <property name="scala.home" value="/usr/share/scala/lib"/>
-
   <target name="init" depends="resolve">
     <!-- Ant build tasks from scala. -->
     <path id="build.classpath">
-      <pathelement location="${scala.home}/scala-library.jar"/>
+      <pathelement location="${lib.dir}/scala-library-2.7.6.jar"/>
       <pathelement location="${lib.dir}/scalatest-0.9.5.jar"/>
       <pathelement location="${lib.dir}/h2-1.1.112.jar"/>
       <pathelement location="${lib.dir}/log4j-1.2.15.jar"/>
@@ -32,8 +29,8 @@
     </path>
     <taskdef resource="scala/tools/ant/antlib.xml">
       <classpath>
-	<pathelement location="${scala.home}/scala-compiler.jar"/>
-	<pathelement location="${scala.home}/scala-library.jar"/>
+	<pathelement location="${lib.dir}/scala-compiler-2.7.6.jar"/>
+	<pathelement location="${lib.dir}/scala-library-2.7.6.jar"/>
       </classpath>
     </taskdef>
     <taskdef uri="antlib:net.sf.antcontrib.cpptasks"
@@ -75,7 +72,7 @@
     <javah destdir="${headers.dir}">
       <classpath>
 	<pathelement location="${classes.dir}"/>
-	<pathelement location="${scala.home}/scala-library.jar"/>
+	<pathelement location="${lib.dir}/scala-library-2.7.6.jar"/>
       </classpath>
       <class name="org.davidb.jpool.Linux$$"/>
     </javah>
@@ -97,7 +94,7 @@
   </target>
 
   <target name="resolve">
-    <ivy:retrieve/>
+    <ivy:retrieve type="jar"/>
   </target>
 
   <!-- 

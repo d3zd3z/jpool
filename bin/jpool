@@ -70,6 +70,6 @@ case "$CMD" in
 		;;
 esac
 
-CLASSPATH="$BASEDIR"/target/classes:"$BASEDIR"/lib/'*' \
+CLASSPATH="$BASEDIR"/target/classes:"$BASEDIR"/target/jpool.jar:"$BASEDIR"/lib/'*' \
 LD_LIBRARY_PATH="${LD_LIBRARY_PATH}" \
-	exec scala "$CMD" "$@"
+	exec java "$CMD" "$@"
