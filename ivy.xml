@@ -6,7 +6,7 @@
     </dependency>
     <dependency org="org.scala-lang" name="scala-compiler" rev="2.7.6"/>
     <dependency org="org.scala-lang" name="scala-library" rev="2.7.6"/>
-    <dependency org="com.h2database" name="h2" rev="1.1.112"/>
+    <dependency org="com.h2database" name="h2" rev="1.2.126"/>
     <dependency org="ant-contrib" name="cpptasks" rev="1.0b5">
       <exclude org="ant" name="ant"/>
       <exclude org="xerces" name="xercesImpl"/>
