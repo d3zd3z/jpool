@@ -46,7 +46,7 @@ class PoolDbSuite extends Suite {
       db2.close()
 
       org.h2.tools.Script.main(Array("-url", "jdbc:h2:%s/meta".format(tdir.getPath),
-        "-user", "sa", "-password", "", "-script", "/tmp/debug.sql"))
+        "-user", "sa", "-password", "", "-script", "/tmp/debug.sql") : _*)
     }
   }
 
