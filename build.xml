@@ -97,7 +97,7 @@
     <ivy:retrieve type="jar"/>
   </target>
 
-  <property name="my.version" value="1.0"/>
+  <property name="my.version" value="1.0.1-SNAPSHOT"/>
   <target name="tar" depends="build">
     <tar destfile="${target}/jpool-bin-${my.version}.tar.gz"
       compression="gzip">
