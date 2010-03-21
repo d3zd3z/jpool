@@ -66,7 +66,7 @@ class TempDir {
 // Mix in with a testsuite to provide a 'tmpDir' field of type
 // TempDir, that will be setup and torn down before and after each
 // test.
-trait TempDirTest extends org.scalatest.BeforeAndAfter {
+trait TempDirTest extends org.scalatest.BeforeAndAfterEach {
   this: org.scalatest.Suite =>
 
   var tmpDir: TempDir = null

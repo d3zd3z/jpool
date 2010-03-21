@@ -5,7 +5,7 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <org_davidb_jpool_Linux_.h>
+#include <org_davidb_jpool_Linux__.h>
 
 #include <sys/types.h>
 #include <sys/stat.h>

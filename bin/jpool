@@ -20,7 +20,13 @@ done
 BASEDIR=`dirname $PRG`
 BASEDIR=`(cd "$BASEDIR"/.. && pwd)`
 
-if [ ! -f "$BASEDIR"/target/jpool.jar ]; then
+# For now, assume only one.
+JAR=`echo $BASEDIR/target/scala_*/jpool_*-*.jar`
+WORK_CLASSES=`echo $BASEDIR/target/scala_*/classes`
+
+LIBS=`find $BASEDIR/lib_managed -name '*.jar' -printf "%p:"`
+
+if [ ! -f $JAR ]; then
 	echo "Unable to locate program jarfile"
 	exit 1
 fi
@@ -70,6 +76,6 @@ case "$CMD" in
 		;;
 esac
 
-CLASSPATH="$BASEDIR"/target/classes:"$BASEDIR"/target/jpool.jar:"$BASEDIR"/lib/'*' \
+CLASSPATH="$WORK_CLASSES":"$LIBS":"$JAR" \
 LD_LIBRARY_PATH="${LD_LIBRARY_PATH}" \
 	exec java "$CMD" "$@"

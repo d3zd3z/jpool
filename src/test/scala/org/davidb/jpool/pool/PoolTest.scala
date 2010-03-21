@@ -4,9 +4,9 @@ package org.davidb.jpool.pool
 
 import java.io.File
 import java.net.URI
-import org.scalatest.{Suite, BeforeAndAfter}
+import org.scalatest.{Suite, BeforeAndAfterEach}
 
-trait PoolTest extends Suite with BeforeAndAfter with TempDirTest {
+trait PoolTest extends Suite with BeforeAndAfterEach with TempDirTest {
 
   class PerformedRecovery extends AssertionError("Recovery performed")
   class NoRecoveryPool(prefix: File) extends FilePool(prefix) {

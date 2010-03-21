@@ -1,0 +1,36 @@
+# Build the JNI for Linux.
+# Expects CLASSPATH to be set appropriately for running, and JAVA_HOME
+# to be passed in so we can find the tools.
+
+HDIR = target/headers
+OBJDIR = target/obj
+SODIR = target/so
+SRCDIR = src/main/c
+HEADERS = $(HDIR)/org_davidb_jpool_Linux__.h
+MAIN_CLASS = org.davidb.jpool.Linux$$
+CLASSFILES = $(COMPILE_PATH)/org/davidb/jpool/Linux$$.class
+
+INCLUDE = -I${JAVA_HOME}/include -I${JAVA_HOME}/include/linux \
+	-I${JAVA_HOME}/../include -I${JAVA_HOME}/../include/linux \
+	-I$(HDIR)
+
+C_OBJ = $(OBJDIR)/Linux.o
+C_SRC = $(SRCDIR)/Linux.c
+C_SO = $(SODIR)/liblinux.so
+
+.PHONY: all
+all: $(C_SO)
+
+$(C_SO): $(C_OBJ) $(SODIR)
+	gcc -shared -o $@ $(C_OBJ)
+$(C_OBJ): $(C_SRC) $(HEADERS) $(OBJDIR)
+	gcc -c -O -o $@ $(INCLUDE) -fpic $(C_SRC)
+$(HEADERS): $(HDIR) $(CLASSFILES)
+	javah -classpath $(CLASSPATH) -d $(HDIR) $(MAIN_CLASS)
+
+$(HDIR):
+	mkdir $(HDIR)
+$(OBJDIR):
+	mkdir $(OBJDIR)
+$(SODIR):
+	mkdir $(SODIR)
