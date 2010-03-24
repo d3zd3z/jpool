@@ -22,20 +22,60 @@ class LoggerSuite extends Suite with Logger {
     }
   }
 
-  def testWrapper {
+  def testSimpleWrapper {
+    val myTag = new Object
     var phase = 1
     def wrapper(thunk: => Unit) {
       expect(1)(phase)
-      println("Pre wrap")
+      // println("Pre wrap")
       thunk
-      println("Post wrap")
+      // println("Post wrap")
       phase += 1
     }
-    Logger.setWrapper(wrapper _)
+    Logger.pushWrapper(myTag, wrapper _)
     info("Wrapped message")
     expect(2)(phase)
-    Logger.clearWrapper()
+    Logger.popWrapper(myTag)
     info("Unwrapped message")
     expect(2)(phase)
+
+    intercept[RuntimeException] {
+      Logger.popWrapper(myTag)
+    }
+  }
+
+  def testNestedWrapper {
+    val tag1 = new Object
+    val tag2 = new Object
+    var phase = 0
+    def wrap1(thunk: => Unit) {
+      expect(0)(phase)
+      phase += 1
+      thunk
+      phase += 2
+      expect(15)(phase)
+    }
+    def wrap2(thunk: => Unit) {
+      expect(1)(phase)
+      phase += 4
+      thunk
+      phase += 8
+      expect(13)(phase)
+    }
+    Logger.pushWrapper(tag2, wrap2 _)
+    Logger.pushWrapper(tag1, wrap1 _)
+    info("Wrapped message")
+    Logger.popWrapper(tag1)
+    Logger.popWrapper(tag2)
+  }
+
+  def testBadPush {
+    val tag1 = new Object
+    def wrap1(thunk: => Unit) { thunk }
+    Logger.pushWrapper(tag1, wrap1 _)
+    intercept[RuntimeException] {
+      Logger.pushWrapper(tag1, wrap1 _)
+    }
+    Logger.popWrapper(tag1)
   }
 }

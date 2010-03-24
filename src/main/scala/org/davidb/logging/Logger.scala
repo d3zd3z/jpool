@@ -11,15 +11,32 @@ object Logger {
   // sufficient.
   private val stdout = System.console.writer
 
-  // Something else can set a wrapper that will be invoked around the
-  // write operation.
+  private val rootTag = new Object
+
+  case class Elt(tag: Object, wrapper: (=> Unit) => Unit)
+
+  // Each level of wrapper has an object associated with it, a tag,
+  // that is used to identify and ensure that we are wrapping the
+  // right thing.
   private def blankWrapper(thunk: => Unit) { thunk }
-  private var wrapper = blankWrapper _
+  private var wrapStack = List(Elt(rootTag, blankWrapper _))
 
   // Setting a wrapper.  The wrap function will be called with a
   // thunk, which must be called at some point.
-  def clearWrapper() { wrapper = blankWrapper _ }
-  def setWrapper(wrap: (=> Unit) => Unit) { wrapper = wrap }
+  def pushWrapper(tag: Object, wrapper: (=> Unit) => Unit) {
+    if (wrapStack.findIndexOf(_.tag eq tag) != -1)
+      error("Attempt to push duplicate wrapper tag.")
+    val next = wrapStack.head
+    def chain(thunk: => Unit) {
+      wrapper(next.wrapper(thunk))
+    }
+    wrapStack = Elt(tag, chain _) :: wrapStack
+  }
+  def popWrapper(tag: Object) {
+    if (wrapStack.head.tag ne tag)
+      error("PopWrapper of incorrect tag")
+    wrapStack = wrapStack.tail
+  }
 
   private class LogWriter extends Writer {
     private val buffer = new StringBuilder
@@ -27,7 +44,7 @@ object Logger {
       buffer.append(buf, offset, length)
     }
     def flush() {
-      wrapper {
+      wrapStack.head.wrapper {
         stdout.write(buffer.toString)
         stdout.flush()
         buffer.setLength(0)
