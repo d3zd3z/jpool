@@ -21,4 +21,21 @@ class LoggerSuite extends Suite with Logger {
       println("Should not be reached")
     }
   }
+
+  def testWrapper {
+    var phase = 1
+    def wrapper(thunk: => Unit) {
+      expect(1)(phase)
+      println("Pre wrap")
+      thunk
+      println("Post wrap")
+      phase += 1
+    }
+    Logger.setWrapper(wrapper _)
+    info("Wrapped message")
+    expect(2)(phase)
+    Logger.clearWrapper()
+    info("Unwrapped message")
+    expect(2)(phase)
+  }
 }
