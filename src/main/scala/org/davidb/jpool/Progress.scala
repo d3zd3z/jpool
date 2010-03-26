@@ -30,6 +30,18 @@ object Progress extends AnyRef with Logger {
     nextUpdates = null
   }
 
+  def open() = synchronized {
+    if (opened)
+      error("Progress meter already opened")
+    opened = true
+  }
+  def close() = synchronized {
+    if (!opened)
+      error("Progress meter not opened")
+    show()
+    opened = false
+  }
+
   //////////////////////////////////////////////////////////////////////
   // Implementation.
   private var data = 0L
@@ -37,7 +49,11 @@ object Progress extends AnyRef with Logger {
   private var skip = 0L
   private var nodes = 0L
 
+  private var opened = false
+
   private def check {
+    if (!opened)
+      error("Progress meter has not been opened")
     if (timeForUpdate()) {
       show()
     }

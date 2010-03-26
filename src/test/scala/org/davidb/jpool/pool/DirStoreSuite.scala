@@ -5,7 +5,7 @@ package org.davidb.jpool.pool
 
 import org.scalatest.Suite
 
-class DirStoreSuite extends Suite with PoolTest {
+class DirStoreSuite extends Suite with WrapProgress with PoolTest {
 
   def testDirStore {
     val store = new DirStore(pool, 256*1024)

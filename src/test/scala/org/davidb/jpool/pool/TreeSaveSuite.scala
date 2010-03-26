@@ -9,7 +9,7 @@ import org.davidb.logging.Logger
 import java.io.{File, FileWriter}
 import java.util.Properties
 
-class TreeSaveSuite extends Suite with PoolTest with Logger {
+class TreeSaveSuite extends Suite with WrapProgress with PoolTest with Logger {
 
   // TODO: This is way too verbose, so not really want we're going to
   // want to be doing.  Better to use a generalized tree walker.

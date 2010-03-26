@@ -20,6 +20,7 @@ object Restore extends AnyRef with Logger {
       exit(1)
     }
 
+    Progress.open()
     val pool = PoolFactory.getInstance(new URI(args(0)))
     val hash = Hash.ofString(args(1))
     val back = Back.load(pool, hash)
@@ -43,7 +44,7 @@ object Restore extends AnyRef with Logger {
 
       val restorer = new TreeRestore(pool)
       restorer.restore(hash, args(2))
-      Progress.show()
+      Progress.close()
     }
     pool.close
   }

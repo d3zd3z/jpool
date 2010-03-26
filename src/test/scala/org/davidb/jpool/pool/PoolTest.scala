@@ -29,3 +29,14 @@ trait PoolTest extends Suite with BeforeAndAfterEach with TempDirTest {
 
   protected def makeChunk(index: Int, size: Int) = Chunk.make("blob", StringMaker.generate(index, size))
 }
+
+// A trait to make it easier to test things that write progress but
+// aren't driven from the top level.
+trait WrapProgress extends Suite with BeforeAndAfterEach {
+  override def beforeEach() {
+    Progress.open()
+  }
+  override def afterEach() {
+    Progress.close()
+  }
+}

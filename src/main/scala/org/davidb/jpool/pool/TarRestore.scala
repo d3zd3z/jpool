@@ -9,6 +9,8 @@ import java.util.Properties
 
 class TarRestore(pool: ChunkSource, dest: WritableByteChannel) {
 
+  Progress.open()
+
   def decode(hash: Hash) {
     val back = Back.load(pool, hash)
     decodeTar(back.hash)
@@ -37,6 +39,7 @@ class TarRestore(pool: ChunkSource, dest: WritableByteChannel) {
       send(buf)
     }
     ship()
+    Progress.close()
   }
 
   private def decodeDirect(head: ByteBuffer) {

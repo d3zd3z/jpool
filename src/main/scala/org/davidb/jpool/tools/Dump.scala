@@ -19,6 +19,7 @@ object Dump extends AnyRef with Logger {
       System.exit(1)
     }
 
+    Progress.open()
     val pool = PoolFactory.getStoreInstance(new URI(args(0)))
     val props = new Properties
     props.setProperty("_date", new java.util.Date().getTime.toString)
@@ -27,7 +28,7 @@ object Dump extends AnyRef with Logger {
     val saver = new TreeSave(pool, args(1))
     val hash = saver.store(props)
     info("backup saved: %s", hash)
-    Progress.show()
+    Progress.close()
     pool.close()
   }
 
