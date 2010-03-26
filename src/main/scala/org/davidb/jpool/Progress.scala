@@ -31,6 +31,7 @@ object Progress extends AnyRef with Logger {
     if (opened)
       error("Progress meter already opened")
     opened = true
+    Logger.pushWrapper(logTag, logMessage _)
   }
   def close() = synchronized {
     if (!opened)
@@ -39,6 +40,7 @@ object Progress extends AnyRef with Logger {
     nextUpdate = None
     linesPrinted = 0
     opened = false
+    Logger.popWrapper(logTag)
   }
 
   // Information display.
@@ -80,6 +82,17 @@ object Progress extends AnyRef with Logger {
     if (timeForUpdate()) {
       show()
     }
+  }
+
+  // Called by the logger to wrap messages.
+  private val logTag = new Object
+  private def logMessage(thunk: => Unit) = synchronized {
+    val oldLines = linesPrinted
+    if (oldLines > 0)
+      clear
+    thunk
+    if (oldLines > 0)
+      show(true)
   }
 
   private var linesPrinted = 0
