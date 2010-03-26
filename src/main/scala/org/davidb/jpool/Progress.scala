@@ -10,24 +10,21 @@ object Progress extends AnyRef with Logger {
   // API used by things writing data.
 
   // Ordinary data written (as in chunk data).
-  def addData(count: Long) = synchronized { data += count; check }
+  def addData(count: Long) = synchronized { state.data += count; check }
 
   // Dedupped data.
-  def addDup(count: Long) = synchronized { dup += count; check }
+  def addDup(count: Long) = synchronized { state.dup += count; check }
 
   // Data entirely skipped (file is already known).
-  def addSkip(count: Long) = synchronized { skip += count; check }
+  def addSkip(count: Long) = synchronized { state.skip += count; check }
 
   // Indicate files added.
   def addNode() { addNode(1) }
-  def addNode(count: Long) = synchronized { nodes += count; check }
+  def addNode(count: Long) = synchronized { state.nodes += count; check }
 
   def reset() {
-    data = 0L
-    dup = 0L
-    skip = 0L
-    nodes = 0L
-    nextUpdates = null
+    state.reset()
+    nextUpdate = None
   }
 
   def open() = synchronized {
@@ -38,18 +35,44 @@ object Progress extends AnyRef with Logger {
   def close() = synchronized {
     if (!opened)
       error("Progress meter not opened")
-    show()
+    show(true)
+    nextUpdate = None
+    linesPrinted = 0
     opened = false
   }
 
+  // Information display.
+  abstract class Info {
+    // Return an info display consisting of an array of lines to
+    // display the information.
+    def getInfo: Array[String]
+  }
+
+  class BackupInfo {
+    var data = 0L
+    var dup = 0L
+    var skip = 0L
+    var nodes = 0L
+    def getInfo: Array[String] = {
+      Array("[data: %s, dup, %s, skip: %s, total: %s, nodes: %s]" format(
+        humanize(data), humanize(dup), humanize(skip),
+        humanize(data + dup + skip),
+        nodes))
+    }
+    def reset() {
+      data = 0L
+      dup = 0L
+      skip = 0L
+      nodes = 0L
+    }
+  }
+  private val state = new BackupInfo
+
   //////////////////////////////////////////////////////////////////////
   // Implementation.
-  private var data = 0L
-  private var dup = 0L
-  private var skip = 0L
-  private var nodes = 0L
 
   private var opened = false
+  private val stdout = System.console.writer
 
   private def check {
     if (!opened)
@@ -58,41 +81,38 @@ object Progress extends AnyRef with Logger {
       show()
     }
   }
-  // Print the update nicely.
-  def show() = synchronized {
-    info("data: %s, dup: %s, skip: %s, total: %s, nodes: %d",
-      humanize(data), humanize(dup), humanize(skip),
-      humanize(data + dup + skip),
-      nodes)
-  }
 
-  // Intervals for checking, this is a def to avoid keeping a ref to
-  // head.  The basic idea is to print results more quickly at the
-  // beginning and then settle on a slower interval to avoid
-  // overwhelming things.
-  private def intervals = Stream.concat(Stream.make(3, 10L), Stream(30L),
-    Stream.make(3, 60L), Stream.const(360L)) map (_ * 1000L)
-  private def updateTimes(nodes: Stream[Long], accum: Long): Stream[Long] = {
-    if (nodes.isEmpty) Stream.empty
-    else {
-      val sum = nodes.head + accum
-      Stream.cons(sum, updateTimes(nodes.tail, sum))
+  private var linesPrinted = 0
+  // Print the update nicely.
+  private def clear() = synchronized {
+    if (linesPrinted > 0) {
+      Console.printf("\033[%dA\033[J", linesPrinted)
+      linesPrinted = 0
     }
   }
 
-  private var nextUpdates: Stream[Long] = _
+  def show() { show(false) }
+  def show(force: Boolean) = synchronized {
+    clear()
+    val lines = state.getInfo
+    for (line <- lines)
+      Console.printf("%s\n", line)
+    linesPrinted = lines.length
+    Console.flush()
+  }
+
+  private var nextUpdate: Option[Long] = None
 
   // Is it time for the next update?
   private def timeForUpdate(): Boolean = {
     val now = new Date().getTime()
-    if (nextUpdates eq null)
-      nextUpdates = updateTimes(intervals, now)
-
-    if (now >= nextUpdates.head) {
-      nextUpdates = nextUpdates.tail
-      true
-    } else
-      false
+    nextUpdate match {
+      case Some(when) if (now < when) =>
+        false
+      case _ =>
+        nextUpdate = Some(now + 1000L)
+        nextUpdate != None
+    }
   }
 
   // Convert a large number into a nice human readable format.
