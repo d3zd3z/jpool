@@ -6,7 +6,18 @@ package org.davidb.jpool
 import java.util.Date
 import org.davidb.logging.{Logger, Loggable}
 
-object Progress extends AnyRef with Loggable {
+// Something that can log data and deduped data.
+trait DataProgress {
+  def addData(count: Long)
+  def addDup(count: Long)
+}
+
+object NullProgress extends DataProgress {
+  def addData(count: Long) {}
+  def addDup(count: Long) {}
+}
+
+object Progress extends AnyRef with Loggable with DataProgress {
   // API used by things writing data.
 
   // Ordinary data written (as in chunk data).

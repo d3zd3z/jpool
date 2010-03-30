@@ -21,6 +21,7 @@ object Dump extends AnyRef with Loggable {
 
     Progress.open()
     val pool = PoolFactory.getStoreInstance(new URI(args(0)))
+    pool.setProgress(Progress)
     val props = new Properties
     props.setProperty("_date", new java.util.Date().getTime.toString)
     scanProperties(args drop 2, props)

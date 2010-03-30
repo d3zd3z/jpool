@@ -22,6 +22,7 @@ object Restore extends AnyRef with Loggable {
 
     Progress.open()
     val pool = PoolFactory.getInstance(new URI(args(0)))
+    pool.setProgress(Progress)
     val hash = Hash.ofString(args(1))
     val back = Back.load(pool, hash)
     if (args(2) == "--tar") {

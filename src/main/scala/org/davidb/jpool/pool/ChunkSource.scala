@@ -13,6 +13,9 @@ trait ChunkSource extends collection.Map[Hash, Chunk] {
 
   // Flush out any pending data.
   def flush()
+
+  // Set a progress meter.
+  def setProgress(meter: DataProgress)
 }
 
 trait ChunkStore extends ChunkSource with collection.mutable.Map[Hash, Chunk] {

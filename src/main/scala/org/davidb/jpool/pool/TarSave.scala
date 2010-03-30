@@ -10,6 +10,7 @@ import java.util.Properties
 
 class TarSave(pool: ChunkStore, chan: ReadableByteChannel) {
   Progress.open()
+  pool.setProgress(Progress)
 
   private var tars = TreeBuilder.makeBuilder("tar", pool)
   private var tar = new TarParser(chan)

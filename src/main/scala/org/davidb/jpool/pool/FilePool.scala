@@ -70,10 +70,15 @@ class FilePool(prefix: File) extends ChunkStore {
   def -= (key: Hash) =
     new UnsupportedOperationException("Pools only support adding, not removal")
 
+  var progressMeter: DataProgress = NullProgress
+  def setProgress(meter: DataProgress) {
+    progressMeter = meter
+  }
+
   def update(key: Hash, value: Chunk) = {
     require(key == value.hash)
     if (!hashIndex.contains(key)) {
-      Progress.addData(value.dataLength)
+      progressMeter.addData(value.dataLength)
       needRoom(value)
       val fileNum = files.size - 1
       val file = files(fileNum)
@@ -85,7 +90,7 @@ class FilePool(prefix: File) extends ChunkStore {
       if (value.kind == "back")
         db.addBackup(key)
     } else {
-      Progress.addDup(value.dataLength)
+      progressMeter.addDup(value.dataLength)
     }
   }
 
