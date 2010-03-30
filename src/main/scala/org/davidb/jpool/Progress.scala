@@ -17,7 +17,17 @@ object NullProgress extends DataProgress {
   def addDup(count: Long) {}
 }
 
-object Progress extends AnyRef with Loggable with DataProgress {
+object TheProgress extends Progress
+
+object Progress {
+  def open(): Progress = {
+    TheProgress.open()
+    TheProgress
+  }
+}
+
+// Don't try creating more than one of these.
+class Progress extends AnyRef with Loggable with DataProgress {
   // API used by things writing data.
 
   // Ordinary data written (as in chunk data).

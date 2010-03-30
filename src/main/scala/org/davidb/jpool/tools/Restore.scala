@@ -20,9 +20,9 @@ object Restore extends AnyRef with Loggable {
       exit(1)
     }
 
-    Progress.open()
+    val meter = Progress.open()
     val pool = PoolFactory.getInstance(new URI(args(0)))
-    pool.setProgress(Progress)
+    pool.setProgress(meter)
     val hash = Hash.ofString(args(1))
     val back = Back.load(pool, hash)
     if (args(2) == "--tar") {
@@ -33,7 +33,7 @@ object Restore extends AnyRef with Loggable {
         exit(1)
       }
       val stdout = Channels.newChannel(System.out)
-      val restorer = new TarRestore(pool, stdout)
+      val restorer = new TarRestore(pool, stdout, meter)
       restorer.decode(hash)
       restorer.finish()
     } else {
@@ -43,9 +43,9 @@ object Restore extends AnyRef with Loggable {
         exit(1)
       }
 
-      val restorer = new TreeRestore(pool)
+      val restorer = new TreeRestore(pool, meter)
       restorer.restore(hash, args(2))
-      Progress.close()
+      meter.close()
     }
     pool.close
   }

@@ -5,7 +5,7 @@ package org.davidb.jpool.pool
 import java.net.URI
 import org.scalatest.{Suite, BeforeAndAfter}
 
-class TreeBuilderSuite extends Suite with WrapProgress with PoolTest {
+class TreeBuilderSuite extends Suite with ProgressPoolTest {
 
   def testSingle = {
     val hash = rangeCheck(1 to 1)

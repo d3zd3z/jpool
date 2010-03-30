@@ -5,7 +5,7 @@ package org.davidb.jpool.pool
 
 import org.scalatest.Suite
 
-class AttributesSuite extends Suite with WrapProgress with PoolTest {
+class AttributesSuite extends Suite with ProgressPoolTest {
   def testXML {
     var map = Map[String, String]()
     map += ("aaa" -> "123")

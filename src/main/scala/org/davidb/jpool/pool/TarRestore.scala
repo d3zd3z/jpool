@@ -7,9 +7,7 @@ import java.nio.channels.WritableByteChannel
 import java.nio.ByteBuffer
 import java.util.Properties
 
-class TarRestore(pool: ChunkSource, dest: WritableByteChannel) {
-
-  Progress.open()
+class TarRestore(pool: ChunkSource, dest: WritableByteChannel, meter: Progress) {
 
   def decode(hash: Hash) {
     val back = Back.load(pool, hash)
@@ -39,7 +37,6 @@ class TarRestore(pool: ChunkSource, dest: WritableByteChannel) {
       send(buf)
     }
     ship()
-    Progress.close()
   }
 
   private def decodeDirect(head: ByteBuffer) {

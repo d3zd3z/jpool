@@ -14,7 +14,7 @@ import java.util.Properties
 
 import scala.concurrent.SyncVar
 
-class TarSuite extends Suite with PoolTest {
+class TarSuite extends Suite with ProgressPoolTest {
 
   def testTar {
     genTar
@@ -37,7 +37,7 @@ class TarSuite extends Suite with PoolTest {
 
   private def viewTar(hash: Hash): Hash = {
     val (sink, digestBox) = simpleSummarize
-    val restore = new TarRestore(pool, sink)
+    val restore = new TarRestore(pool, sink, meter)
     restore.decode(hash)
     restore.finish()
     sink.close()

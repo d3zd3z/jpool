@@ -20,6 +20,8 @@ object Save {
     }
 
     val pool = PoolFactory.getStoreInstance(new URI(args(0)))
+    val meter = Progress.open()
+    pool.setProgress(meter)
 
     val props = new Properties
     props.setProperty("_date", new java.util.Date().getTime.toString)
@@ -30,6 +32,7 @@ object Save {
     val hash = saver.store(props)
     println(hash)
     pool.close
+    meter.close()
   }
 
   private def scanProperties(args: Array[String], props: Properties) {

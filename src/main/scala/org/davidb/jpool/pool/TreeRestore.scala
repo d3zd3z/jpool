@@ -6,7 +6,7 @@ package org.davidb.jpool.pool
 import scala.collection.mutable
 import org.davidb.logging.Loggable
 
-class TreeRestore(pool: ChunkSource) extends AnyRef with Loggable {
+class TreeRestore(pool: ChunkSource, meter: Progress) extends AnyRef with Loggable {
   // Restore the specified tree based at the named path.
   def restore(hash: Hash, path: String) {
     checkRoot(path)
@@ -24,7 +24,7 @@ class TreeRestore(pool: ChunkSource) extends AnyRef with Loggable {
             regRestore(node)
           Linux.restoreStat(node.path, node.atts)
       }
-      Progress.addNode()
+      meter.addNode()
     }
   }
 
@@ -44,7 +44,7 @@ class TreeRestore(pool: ChunkSource) extends AnyRef with Loggable {
         links += (inum -> node)
       }
     }
-    Progress.addData(node.atts("size").toLong)
+    meter.addData(node.atts("size").toLong)
   }
 
   // TODO: Track link counts so we can delete nodes once we've written

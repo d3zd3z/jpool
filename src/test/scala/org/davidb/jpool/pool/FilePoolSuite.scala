@@ -8,7 +8,7 @@ import org.scalatest.{Suite, BeforeAndAfter}
 
 import scala.collection.mutable.ArrayBuffer
 
-class FilePoolSuite extends Suite with WrapProgress with PoolTest {
+class FilePoolSuite extends Suite with ProgressPoolTest {
 
   def testSimplePool {
     val c1 = makeChunk(1, 1024)

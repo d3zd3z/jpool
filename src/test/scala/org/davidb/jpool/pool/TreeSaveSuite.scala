@@ -9,16 +9,16 @@ import org.davidb.logging.Loggable
 import java.io.{File, FileWriter}
 import java.util.Properties
 
-class TreeSaveSuite extends Suite with WrapProgress with PoolTest with Loggable {
+class TreeSaveSuite extends Suite with ProgressPoolTest with Loggable {
 
   // TODO: This is way too verbose, so not really want we're going to
   // want to be doing.  Better to use a generalized tree walker.
   def testSave {
     // These also test graceful handling of unreadable files.
     logger.info("warnings are expected for this test")
-    var h1 = new TreeSave(pool, "/bin").store(someProps("bin"))
-    var h1b = new TreeSave(pool, "/bin").store(someProps("bin"))
-    var h2 = new TreeSave(pool, "/dev").store(someProps("dev"))
+    var h1 = new TreeSave(pool, "/bin", meter).store(someProps("bin"))
+    var h1b = new TreeSave(pool, "/bin", meter).store(someProps("bin"))
+    var h2 = new TreeSave(pool, "/dev", meter).store(someProps("dev"))
     printf("%s%n%s%n", h1, h2)
 
     check(h1, "./ls")
@@ -34,7 +34,7 @@ class TreeSaveSuite extends Suite with WrapProgress with PoolTest with Loggable 
 
     // Verify that some restore operations fail.
     intercept[RuntimeException] {
-      new TreeRestore(pool).restore(h1, r1)
+      new TreeRestore(pool, meter).restore(h1, r1)
     }
 
     if (Linux.isRoot) {
@@ -56,7 +56,7 @@ class TreeSaveSuite extends Suite with WrapProgress with PoolTest with Loggable 
     fw.close()
     Linux.link(n1, "%s/file2" format d1.getPath)
 
-    val h1 = new TreeSave(pool, d1.getPath).store(someProps("orig"))
+    val h1 = new TreeSave(pool, d1.getPath, meter).store(someProps("orig"))
 
     // Restore it.
     val r1 = restore("rest", h1)
@@ -72,7 +72,7 @@ class TreeSaveSuite extends Suite with WrapProgress with PoolTest with Loggable 
     val dir = new File(tmpDir.path, prefix)
     val dirName = dir.getPath
     assert(dir.mkdir())
-    new TreeRestore(pool).restore(hash, dirName)
+    new TreeRestore(pool, meter).restore(hash, dirName)
     dirName
   }
 
@@ -84,7 +84,7 @@ class TreeSaveSuite extends Suite with WrapProgress with PoolTest with Loggable 
   // to be run as root.  I have had trouble running these tests under
   // fakeroot.
   private def compareBackup(first: Hash, secondDir: String) {
-    val second = new TreeSave(pool, secondDir).store(someProps("bin"))
+    val second = new TreeSave(pool, secondDir, meter).store(someProps("bin"))
 
     val firstWalk = new TreeWalk(pool).walk(first).elements
     val secondWalk = new TreeWalk(pool).walk(second).elements

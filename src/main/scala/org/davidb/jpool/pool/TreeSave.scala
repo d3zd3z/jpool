@@ -11,7 +11,7 @@ object TreeSave {
   lazy val devMap = new DevMap
 }
 
-class TreeSave(pool: ChunkStore, rootPath: String) extends AnyRef with Loggable {
+class TreeSave(pool: ChunkStore, rootPath: String, meter: Progress) extends AnyRef with Loggable {
   // Store the item, of whatever type it is, into the given storage
   // pool, returning the hash needed to retrieve it later.  If unable
   // to save the item, the exception will be propagated.  Directories
@@ -37,7 +37,7 @@ class TreeSave(pool: ChunkStore, rootPath: String) extends AnyRef with Loggable 
         error("Cannot dump entry")
       case Some(handler) => handler(path, stat)
     }
-    Progress.addNode()
+    meter.addNode()
     hash
   }
 
@@ -102,8 +102,8 @@ class TreeSave(pool: ChunkStore, rootPath: String) extends AnyRef with Loggable 
         case Some(node) if node.ctime == childCtime && pool.contains(node.hash) =>
           builder.append(name, node.hash)
           updated += node
-          Progress.addSkip(childStat("size").toLong)
-          Progress.addNode()
+          meter.addSkip(childStat("size").toLong)
+          meter.addNode()
         case _ =>
           try {
             val childHash = internalStore(fullName, childStat)

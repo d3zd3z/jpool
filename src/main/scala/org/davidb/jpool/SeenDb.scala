@@ -31,6 +31,7 @@ object SeenDbSchema extends DbSchema with Loggable {
       " info binary not null)")
     val total = db.query(db.getLong1 _, "select count(distinct pino) from seen").next
     logger.info("Performing schema upgrade of %s, %d inodes" format (db.path, total))
+    val meter = Progress.open()
     for (pino <- db.query(db.getLong1 _, "select distinct pino from seen")) {
       val nodes = new ArrayBuffer[SeenNode]
       for (node <- db.query(getSeen2 _, "select ino, ctime, hash, expire from seen" +
@@ -38,7 +39,7 @@ object SeenDbSchema extends DbSchema with Loggable {
       {
         nodes += node
       }
-      Progress.addNode()
+      meter.addNode()
       // info("pino: %d, min-expire: %d", pino, SeenDb.minExpire(nodes))
       // Pdump.dump(SeenDb.encodeNodes(nodes))
       db.updateQuery("insert into newseen values (?, ?, ?)",
@@ -48,8 +49,8 @@ object SeenDbSchema extends DbSchema with Loggable {
     db.updateQuery("drop table seen")
     db.updateQuery("alter table newseen rename to seen")
     db.updateQuery("create index seen_index on seen(pino)")
-    Progress.show()
-    Progress.reset()
+    meter.show()
+    meter.close()
   }
 
   private def getSeen2(rs: ResultSet): SeenNode = {

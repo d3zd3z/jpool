@@ -7,7 +7,7 @@ import java.io.{File, FileOutputStream}
 import java.nio.ByteBuffer
 import org.scalatest.Suite
 
-class FileDataSuite extends Suite with WrapProgress with PoolTest {
+class FileDataSuite extends Suite with ProgressPoolTest {
 
   def testFile {
     val name = new File(tmpDir.path, "file0000")

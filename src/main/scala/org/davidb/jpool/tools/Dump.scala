@@ -19,17 +19,17 @@ object Dump extends AnyRef with Loggable {
       System.exit(1)
     }
 
-    Progress.open()
+    val meter = Progress.open()
     val pool = PoolFactory.getStoreInstance(new URI(args(0)))
-    pool.setProgress(Progress)
+    pool.setProgress(meter)
     val props = new Properties
     props.setProperty("_date", new java.util.Date().getTime.toString)
     scanProperties(args drop 2, props)
 
-    val saver = new TreeSave(pool, args(1))
+    val saver = new TreeSave(pool, args(1), meter)
     val hash = saver.store(props)
     logger.info("backup saved: %s" format hash)
-    Progress.close()
+    meter.close()
     pool.close()
   }
 
