@@ -70,6 +70,9 @@ case "$CMD" in
 	mkindex)
 		CMD=org.davidb.jpool.tools.MkIndex
 		;;
+	check)
+		CMD=org.davidb.jpool.tools.Check
+		;;
 	*)
 		echo "Unknown command: $CMD"
 		exit 1
