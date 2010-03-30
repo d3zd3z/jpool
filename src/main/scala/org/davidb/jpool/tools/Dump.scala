@@ -6,16 +6,16 @@
 
 package org.davidb.jpool.tools
 
-import org.davidb.logging.Logger
+import org.davidb.logging.Loggable
 
 import jpool.pool.{TreeSave, PoolFactory}
 import java.net.URI
 import java.util.Properties
 
-object Dump extends AnyRef with Logger {
+object Dump extends AnyRef with Loggable {
   def main(args: Array[String]) {
     if (args.length < 3) {
-      logError("Usage: Dump jpool:file:///path dumpdir key=value key=value")
+      logger.error("Usage: Dump jpool:file:///path dumpdir key=value key=value")
       System.exit(1)
     }
 
@@ -27,7 +27,7 @@ object Dump extends AnyRef with Logger {
 
     val saver = new TreeSave(pool, args(1))
     val hash = saver.store(props)
-    info("backup saved: %s", hash)
+    logger.info("backup saved: %s" format hash)
     Progress.close()
     pool.close()
   }
@@ -37,7 +37,7 @@ object Dump extends AnyRef with Logger {
       arg.split("=", 2) match {
         case Array(key, value) => props.setProperty(key, value)
         case _ =>
-          logError("Illegal key=valu argument '%s'", arg)
+          logger.error("Illegal key=valu argument '%s'" format arg)
           System.exit(1)
       }
     }

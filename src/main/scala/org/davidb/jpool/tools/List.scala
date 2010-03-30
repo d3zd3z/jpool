@@ -10,13 +10,13 @@ import java.net.URI
 import java.text.{SimpleDateFormat}
 import java.util.{Date, Properties, TimeZone}
 import org.davidb.jpool.pool.{Back, TarRestore, PoolFactory}
-import org.davidb.logging.Logger
+import org.davidb.logging.Loggable
 import scala.collection.jcl
 
-object List extends AnyRef with Logger {
+object List extends AnyRef with Loggable {
   def main(args: Array[String]) {
     if (args.length < 1) {
-      logError("Usage: List jpool:file:///path {key=value ...}")
+      logger.error("Usage: List jpool:file:///path {key=value ...}")
       System.exit(1)
     }
 
@@ -67,7 +67,7 @@ object List extends AnyRef with Logger {
     def split(arg: String): (Properties => Boolean) = arg.split("=", 2) match {
       case Array(key, value) => (props => props.getProperty(key) == value)
       case _ =>
-        logError("Illegal key=value argument '%s'%n", arg)
+        logger.error("Illegal key=value argument '%s'%n" format arg)
         exit(1)
     }
     val pairs = args.map(split _)

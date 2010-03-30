@@ -4,14 +4,14 @@
 package org.davidb.jpool.pool
 
 import scala.collection.mutable.ListBuffer
-import org.davidb.logging.Logger
+import org.davidb.logging.Loggable
 import java.util.Properties
 
 object TreeSave {
   lazy val devMap = new DevMap
 }
 
-class TreeSave(pool: ChunkStore, rootPath: String) extends AnyRef with Logger {
+class TreeSave(pool: ChunkStore, rootPath: String) extends AnyRef with Loggable {
   // Store the item, of whatever type it is, into the given storage
   // pool, returning the hash needed to retrieve it later.  If unable
   // to save the item, the exception will be propagated.  Directories
@@ -33,7 +33,7 @@ class TreeSave(pool: ChunkStore, rootPath: String) extends AnyRef with Logger {
   private def internalStore(path: String, stat: Linux.StatInfo): Hash = {
     val hash = handlers.get(stat("*kind*")) match {
       case None =>
-        logError("Unknown filesystem entry kind: %s (%s)", stat("*kind*"), path)
+        logger.error("Unknown filesystem entry kind: %s (%s)" format (stat("*kind*"), path))
         error("Cannot dump entry")
       case Some(handler) => handler(path, stat)
     }
@@ -45,7 +45,7 @@ class TreeSave(pool: ChunkStore, rootPath: String) extends AnyRef with Logger {
 
   private val rootStat = Linux.lstat(rootPath)
   if (rootStat("*kind*") != "DIR") {
-    logError("Root of backup must be a directory: %s", rootPath)
+    logger.error("Root of backup must be a directory: %s" format rootPath)
     error("Cannot save")
   }
 
@@ -54,7 +54,7 @@ class TreeSave(pool: ChunkStore, rootPath: String) extends AnyRef with Logger {
       TreeSave.devMap(rootStat("dev").toLong)
     } catch {
       case e: java.util.NoSuchElementException =>
-        warn("Unable to determine UUID of filesystem, using device number")
+        logger.warn("Unable to determine UUID of filesystem, using device number")
         "dev-" + rootStat("dev")
     }
   val seenPrefix = pool match {
@@ -81,7 +81,7 @@ class TreeSave(pool: ChunkStore, rootPath: String) extends AnyRef with Logger {
           nstats += (name, stat)
         } catch {
           case e: NativeError =>
-            warn("Unable to stat file, skipping: %s", path)
+            logger.warn("Unable to stat file, skipping: %s" format path)
         }
       }
     }
@@ -112,7 +112,7 @@ class TreeSave(pool: ChunkStore, rootPath: String) extends AnyRef with Logger {
               updated += new SeenNode(childIno, childCtime, childHash)
           } catch {
             case e: NativeError =>
-              warn("Unable to backup node, skipping: %s", fullName)
+              logger.warn("Unable to backup node, skipping: %s" format fullName)
           }
       }
     }

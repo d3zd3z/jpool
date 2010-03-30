@@ -4,11 +4,11 @@ package org.davidb.jpool.tools
 
 import java.io.File
 
-import org.davidb.logging.Logger
+import org.davidb.logging.Loggable
 
 import org.h2.tools.{RunScript, Script, DeleteDbFiles}
 
-object Compact extends AnyRef with Logger {
+object Compact extends AnyRef with Loggable {
   def main(args: Array[String]) {
     if (args.length != 2) {
       printf("Usage: compact prefix h2-seen-db-name%n")
@@ -21,7 +21,7 @@ object Compact extends AnyRef with Logger {
     db.close()
 
     // This is out of the H2 manual.
-    info("Compacting database")
+    logger.info("Compacting database")
     val url = "jdbc:h2:" + args(0) + "/" + args(1)
     val file = args(0) + "/" + args(1) + ".sql"
     Script.execute(url, "sa", "", file)

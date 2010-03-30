@@ -5,9 +5,9 @@ package org.davidb.jpool
 
 import java.io.{BufferedReader, InputStreamReader}
 import scala.collection.mutable.ArrayBuffer
-import org.davidb.logging.Logger
+import org.davidb.logging.Loggable
 
-object Proc extends AnyRef with Logger {
+object Proc extends AnyRef with Loggable {
   // Run the program capturing all of the lines of output and
   // returning them.  Stderr is printed as a message prefixed by
   // args(0).  Raises an assertion failure if the program returns a
@@ -45,7 +45,7 @@ object Proc extends AnyRef with Logger {
       override def run() {
         val line = input.readLine()
         if (line ne null) {
-          logError("%s: '%s'", prefix, line)
+          logger.error("%s: '%s'" format(prefix, line))
           run()
         }
       }

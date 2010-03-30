@@ -5,12 +5,12 @@ package org.davidb.logging
 
 import org.scalatest.Suite
 
-class LoggerSuite extends Suite with Logger {
+class LoggerSuite extends Suite with Loggable {
   // Just make sure that logging is possible.
   def testBasic {
-    info("This is a message for: %s (%d)", "user", 42)
-    if (!isTraceEnabled) {
-      warn("Tracing is not enabled!")
+    logger.info("This is a message for: %s (%d)".format("user", 42))
+    if (!logger.isTraceEnabled) {
+      logger.warn("Tracing is not enabled!")
     }
   }
 
@@ -33,10 +33,10 @@ class LoggerSuite extends Suite with Logger {
       phase += 1
     }
     Logger.pushWrapper(myTag, wrapper _)
-    info("Wrapped message")
+    logger.info("Wrapped message")
     expect(2)(phase)
     Logger.popWrapper(myTag)
-    info("Unwrapped message")
+    logger.info("Unwrapped message")
     expect(2)(phase)
 
     intercept[RuntimeException] {
@@ -64,7 +64,7 @@ class LoggerSuite extends Suite with Logger {
     }
     Logger.pushWrapper(tag2, wrap2 _)
     Logger.pushWrapper(tag1, wrap1 _)
-    info("Wrapped message")
+    logger.info("Wrapped message")
     Logger.popWrapper(tag1)
     Logger.popWrapper(tag2)
   }

@@ -10,13 +10,13 @@ import java.net.URI
 import java.nio.channels.Channels
 import org.davidb.jpool.pool.{Back, TarRestore, TreeRestore, PoolFactory}
 
-import org.davidb.logging.Logger
+import org.davidb.logging.Loggable
 
-object Restore extends AnyRef with Logger {
+object Restore extends AnyRef with Loggable {
   def main(args: Array[String]) {
     if (args.length != 3) {
-      logError("Usage: Restore jpool:file:///path hash --tar > tarball")
-      logError("               jpool:file:///path hash path")
+      logger.error("Usage: Restore jpool:file:///path hash --tar > tarball")
+      logger.error("               jpool:file:///path hash path")
       exit(1)
     }
 
@@ -28,7 +28,7 @@ object Restore extends AnyRef with Logger {
       // Tar snapshots don't have a kind property, or it should be set to
       // 'tar' if it does have one.
       if (back.props.getProperty("kind", "tar") != "tar") {
-        logError("Specified --tar, but indicate backup hash is not a tar snapshot")
+        logger.error("Specified --tar, but indicate backup hash is not a tar snapshot")
         exit(1)
       }
       val stdout = Channels.newChannel(System.out)
@@ -38,7 +38,7 @@ object Restore extends AnyRef with Logger {
     } else {
       // Otherwise, this should be a 'snapshot' backup.
       if (back.props.getProperty("kind") != "snapshot") {
-        logError("Specified backup is not a snapshot backup")
+        logger.error("Specified backup is not a snapshot backup")
         exit(1)
       }
 

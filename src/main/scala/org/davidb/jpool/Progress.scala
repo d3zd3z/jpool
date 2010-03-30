@@ -4,9 +4,9 @@
 package org.davidb.jpool
 
 import java.util.Date
-import org.davidb.logging.Logger
+import org.davidb.logging.{Logger, Loggable}
 
-object Progress extends AnyRef with Logger {
+object Progress extends AnyRef with Loggable {
   // API used by things writing data.
 
   // Ordinary data written (as in chunk data).

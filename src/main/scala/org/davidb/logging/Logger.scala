@@ -63,24 +63,25 @@ object Logger {
       setupDone = true
     }
   }
+
+  private def loggerNameFor(cls: Class[_]) = {
+    val name = cls.getName
+    if (name endsWith "$")
+      name.substring(0, name.length - 1)
+    else
+      name
+  }
+
+  def apply(cls: Class[_]) = {
+    setupLogger
+    log4j.Logger.getLogger(loggerNameFor(cls))
+  }
+  def apply(name: String) = {
+    setupLogger
+    log4j.Logger.getLogger(name)
+  }
 }
 
-trait Logger {
-  private var myLogger = log4j.Logger.getLogger(this.getClass().getName())
-  Logger.setupLogger
-
-  /* If you get strange errors with these methods and are using Scala
-   * version < 2.7.7, comment out the 'protected' declarations to work
-   * around the bug. */
-  protected def trace(text: String, args: Any*) { myLogger.trace(text format (args : _*)) }
-  protected def debug(text: String, args: Any*) { myLogger.debug(text format (args : _*)) }
-  protected def info(text: String, args: Any*) { myLogger.info(text format (args : _*)) }
-  protected def warn(text: String, args: Any*) { myLogger.warn(text format (args : _*)) }
-  protected def logError(text: String, args: Any*) { myLogger.error(text format (args : _*)) }
-  protected def fatal(text: String, args: Any*) { myLogger.fatal(text format (args : _*)) }
-
-  // Queries.
-  protected def isTraceEnabled: Boolean = myLogger.isTraceEnabled
-  protected def isDebugEnabled: Boolean = myLogger.isDebugEnabled
-  protected def isInfoEnabled: Boolean = myLogger.isInfoEnabled
+trait Loggable {
+  @transient var logger = Logger(this.getClass)
 }

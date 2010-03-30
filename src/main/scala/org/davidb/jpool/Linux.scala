@@ -9,9 +9,9 @@ import scala.collection.immutable
 
 import org.davidb.jpool.pool.Attributes
 
-import org.davidb.logging.Logger
+import org.davidb.logging.Loggable
 
-object Linux extends AnyRef with Logger {
+object Linux extends AnyRef with Loggable {
   @native def setup
 
   @native def message: String
@@ -94,7 +94,7 @@ object Linux extends AnyRef with Logger {
     } else if (specialNode(stat.kind)) {
       val isDev = stat.contains("rdev")
       if (isDev && !isRoot) {
-        warn("Cannot restore device as non-root: %s", path)
+        logger.warn("Cannot restore device as non-root: %s" format path)
         return
       }
       val dev = if (isDev) stat("rdev").toLong else 0L
@@ -107,7 +107,7 @@ object Linux extends AnyRef with Logger {
       val mtime = stat("mtime").toLong
       utime(path, mtime, mtime)
     } else {
-      warn("TODO: Restore of %s: %s", stat.kind, path)
+      logger.warn("TODO: Restore of %s: %s".format(stat.kind, path))
     }
   }
 
@@ -117,7 +117,7 @@ object Linux extends AnyRef with Logger {
   createOp += ("BLK" -> ((path, stat) => {
       if (isRoot) {
       } else
-        warn("Cannot restore block device as non-root: %s", path)
+        logger.warn("Cannot restore block device as non-root: %s" format path)
     }))
 
   // Are we running as root?

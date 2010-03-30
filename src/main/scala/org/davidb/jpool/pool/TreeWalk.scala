@@ -3,12 +3,12 @@
 
 package org.davidb.jpool.pool
 
-import org.davidb.logging.Logger
+import org.davidb.logging.Loggable
 
 import java.util.Properties
 import java.io.ByteArrayInputStream
 
-class TreeWalk(pool: ChunkSource) extends AnyRef with Logger {
+class TreeWalk(pool: ChunkSource) extends AnyRef with Loggable {
 
   sealed class State
   case object Enter extends State
@@ -31,7 +31,7 @@ class TreeWalk(pool: ChunkSource) extends AnyRef with Logger {
     if (node.kind == "null")
       return Stream.empty
     if (node.kind != "node") {
-      warn("Backup node is not of type 'node': %s (%s)", node.hash, node.kind)
+      logger.warn("Backup node is not of type 'node': %s (%s)".format(node.hash, node.kind))
       return Stream.empty
     }
     val atts = Attributes.decode(node)

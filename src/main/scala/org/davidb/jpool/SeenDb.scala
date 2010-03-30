@@ -9,9 +9,9 @@ import java.sql.ResultSet
 
 import scala.collection.mutable.ArrayBuffer
 
-import org.davidb.logging.Logger
+import org.davidb.logging.Loggable
 
-object SeenDbSchema extends DbSchema with Logger {
+object SeenDbSchema extends DbSchema with Loggable {
   val schemaVersion = "3:2009-06-12"
   val schemaText = Array(
     "create table seen (pino bigint not null, expire bigint not null," +
@@ -30,7 +30,7 @@ object SeenDbSchema extends DbSchema with Logger {
     db.updateQuery("create table newseen (pino bigint not null, expire bigint not null," +
       " info binary not null)")
     val total = db.query(db.getLong1 _, "select count(distinct pino) from seen").next
-    info("Performing schema upgrade of %s, %d inodes", db.path, total)
+    logger.info("Performing schema upgrade of %s, %d inodes" format (db.path, total))
     for (pino <- db.query(db.getLong1 _, "select distinct pino from seen")) {
       val nodes = new ArrayBuffer[SeenNode]
       for (node <- db.query(getSeen2 _, "select ino, ctime, hash, expire from seen" +

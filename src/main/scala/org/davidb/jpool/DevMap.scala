@@ -25,9 +25,9 @@ package org.davidb.jpool
 import scala.util.parsing.combinator._
 import scala.util.parsing.input._
 
-import org.davidb.logging.Logger
+import org.davidb.logging.Loggable
 
-class DevMap extends scala.collection.Map[Long, String] with Logger {
+class DevMap extends scala.collection.Map[Long, String] with Loggable {
   def size: Int = theMap.size
   def get(key: Long): Option[String] = theMap.get(key)
   def elements: Iterator[(Long, String)] = theMap.elements
@@ -69,9 +69,9 @@ class DevMap extends scala.collection.Map[Long, String] with Logger {
           val rdev = stat("rdev").toLong
           val uuid = mp("UUID")
           if ((result contains rdev) && result(rdev) != uuid) {
-            logError("blkid output contains conflicting values")
-            logError("device %d maps to %s", rdev, result(rdev))
-            logError("and to %s", uuid)
+            logger.error("blkid output contains conflicting values")
+            logger.error("device %d maps to %s" format (rdev, result(rdev)))
+            logger.error("and to %s" format uuid)
             error("Fix blkid")
           }
           result += (rdev -> mp("UUID"))
@@ -80,12 +80,12 @@ class DevMap extends scala.collection.Map[Long, String] with Logger {
         case e: NativeError =>
           warns += 1
           if (warns == 1)
-            warn("blkid: %s", e.getMessage())
+            logger.warn("blkid: %s" format e.getMessage())
       }
     }
 
     if (warns > 1)
-      warn("blkid: %d additional warnings", warns - 1)
+      logger.warn("blkid: %d additional warnings" format(warns - 1))
     result
   }
   val theMap = parseIDs

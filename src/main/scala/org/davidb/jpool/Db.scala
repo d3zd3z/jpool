@@ -5,7 +5,7 @@ package org.davidb.jpool
 
 import java.sql.{Connection, Driver, ResultSet, PreparedStatement}
 
-import org.davidb.logging.Logger
+import org.davidb.logging.Loggable
 
 // Each database has a particular schema, and potentially the ability
 // to upgrade schema versions.
@@ -28,7 +28,7 @@ trait DbSchema {
   def schemaUpgrade(oldVersion: String, db: Db)
 }
 
-class Db(val path: String, schema: DbSchema) extends AnyRef with Logger {
+class Db(val path: String, schema: DbSchema) extends AnyRef with Loggable {
   private val conn = connectDatabase
   conn.setAutoCommit(false)
   checkSchema
@@ -101,7 +101,7 @@ class Db(val path: String, schema: DbSchema) extends AnyRef with Logger {
   }
 
   private def setSchema(version: String) {
-    warn("Creating database: %s", path)
+    logger.warn("Creating database: %s" format path)
     schema.schemaText.foreach(updateQuery(_))
     updateQuery("create table properties (key varchar not null primary key, value varchar)")
     setProperty("schema-version", version)

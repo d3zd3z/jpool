@@ -4,9 +4,9 @@
 package org.davidb.jpool.pool
 
 import scala.collection.mutable
-import org.davidb.logging.Logger
+import org.davidb.logging.Loggable
 
-class TreeRestore(pool: ChunkSource) extends AnyRef with Logger {
+class TreeRestore(pool: ChunkSource) extends AnyRef with Loggable {
   // Restore the specified tree based at the named path.
   def restore(hash: Hash, path: String) {
     checkRoot(path)

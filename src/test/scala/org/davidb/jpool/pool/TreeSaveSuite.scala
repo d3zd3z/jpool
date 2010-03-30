@@ -5,17 +5,17 @@ package org.davidb.jpool.pool
 
 import scala.collection.mutable
 import org.scalatest.{Suite, TestFailedException}
-import org.davidb.logging.Logger
+import org.davidb.logging.Loggable
 import java.io.{File, FileWriter}
 import java.util.Properties
 
-class TreeSaveSuite extends Suite with WrapProgress with PoolTest with Logger {
+class TreeSaveSuite extends Suite with WrapProgress with PoolTest with Loggable {
 
   // TODO: This is way too verbose, so not really want we're going to
   // want to be doing.  Better to use a generalized tree walker.
   def testSave {
     // These also test graceful handling of unreadable files.
-    info("warnings are expected for this test")
+    logger.info("warnings are expected for this test")
     var h1 = new TreeSave(pool, "/bin").store(someProps("bin"))
     var h1b = new TreeSave(pool, "/bin").store(someProps("bin"))
     var h2 = new TreeSave(pool, "/dev").store(someProps("dev"))
@@ -25,11 +25,11 @@ class TreeSaveSuite extends Suite with WrapProgress with PoolTest with Logger {
     check(h2, "./null")
 
     // Test a restore.
-    info("Testing restore: bin")
+    logger.info("Testing restore: bin")
     val r1 = restore("restore-bin", h1)
     Proc.run("cmp", "/bin/ls", "%s/ls" format r1)
 
-    info("Testing restore: dev")
+    logger.info("Testing restore: dev")
     val r2 = restore("restore-dev", h2)
 
     // Verify that some restore operations fail.
@@ -41,7 +41,7 @@ class TreeSaveSuite extends Suite with WrapProgress with PoolTest with Logger {
       compareBackup(h1, r1)
       compareBackup(h2, r2)
     } else {
-      warn("Skipping permission restore test, since user is not root")
+      logger.warn("Skipping permission restore test, since user is not root")
     }
   }
 
@@ -113,8 +113,8 @@ class TreeSaveSuite extends Suite with WrapProgress with PoolTest with Logger {
         }
       } catch {
         case e: TestFailedException =>
-          logError("first: %s", f)
-          logError("second: %s", f)
+          logger.error("first: %s" format f)
+          logger.error("second: %s" format f)
           Thread.sleep(30000)
           throw e
       }
