@@ -9,12 +9,62 @@ package org.davidb.jpool.tools
 import scala.actors.Actor
 import scala.actors.Actor._
 import java.io.File
+import java.util.Date
 import org.davidb.logging.Loggable
 import org.davidb.jpool.pool.PoolFile
 
 import java.util.concurrent.atomic.AtomicInteger
 
 object Check extends AnyRef with Loggable {
+
+  class CheckMeter extends ProgressMeter {
+    import ProgressMeter.humanize
+
+    private val start = new Date().getTime
+
+    // TODO: Generalize the rate computation, and make the value decay
+    // over time.
+    def formatState(forced: Boolean): Array[String] = {
+      val now = new Date().getTime
+      val rate = {
+        val delta = now - start
+        if (delta < 3000)
+          "???"
+        else
+          humanize((totalBytes.toDouble * 1000 / delta).round)
+      }
+      Array("Checking: \"%s\"" format rtrim(path, 50),
+        "    this: %s, " format (humanize(bytes)),
+        "   total: %s, %d errors, %s/sec" format (humanize(totalBytes), errorCount.intValue, rate))
+    }
+
+    private def rtrim(text: String, len: Int): String = {
+      if (text.length <= len)
+        text
+      "..." + text.substring(text.length - len + 3)
+    }
+
+    private var path: String = _
+    private var length = 0L
+    private var bytes = 0L
+    private var totalBytes = 0L
+
+    def setPath(path: String, length: Long) = synchronized {
+      this.path = path
+      this.length = length
+      bytes = 0
+    }
+
+    def addData(count: Long) = synchronized {
+      bytes += count
+      totalBytes += count
+      update()
+    }
+    def reset() = synchronized {
+      bytes = 0L
+      totalBytes = 0L
+    }
+  }
 
   val errorCount = new AtomicInteger(0)
 
@@ -28,7 +78,7 @@ object Check extends AnyRef with Loggable {
       v ! CheckValid(tmpChunk, tmpChunk.hash, self)
     }
 
-    val meter = new BackupProgressMeter
+    val meter = new CheckMeter
     ProgressMeter.register(meter)
     args.foreach(scan (_, meter))
     ProgressMeter.unregister(meter)
@@ -51,11 +101,10 @@ object Check extends AnyRef with Loggable {
 
   // TODO: Generalize the progress meter so that this display can give
   // more meaningful information.
-  def scan(path: String, meter: BackupProgressMeter) {
-    meter.reset()
-    logger.info("Scanning: %s" format path)
+  def scan(path: String, meter: CheckMeter) {
     val pf = new PoolFile(new File(path))
     val size = pf.size
+    meter.setPath(path, size)
     while (pf.position < size) {
       val pos = pf.position
       // TODO: Handle errors in the read (bad header), possibly
