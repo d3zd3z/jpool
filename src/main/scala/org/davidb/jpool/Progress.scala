@@ -20,7 +20,10 @@ object NullProgress extends DataProgress {
 // A progress meter is anything that can give status periodically.  It
 // should return an array of strings for the lines of the meter.
 trait ProgressMeter {
-  protected[jpool] def formatState(): Array[String]
+  // Return the current state formatted.  The 'forced' argument is a
+  // hint about whether this update was forced by something else
+  // (true), or a result of the periodic update.
+  protected[jpool] def formatState(forced: Boolean): Array[String]
 
   // Internally, the meter also has an update function available,
   // which can be registered.
@@ -99,7 +102,7 @@ object ProgressMeter {
   private def show() { show(false) }
   private def show(force: Boolean) = synchronized {
     clear()
-    val lines = meter.formatState()
+    val lines = meter.formatState(force)
     for (line <- lines)
       Console.printf("%s\n", line)
     linesPrinted = lines.length
@@ -136,7 +139,7 @@ class BackupProgressMeter extends ProgressMeter with DataProgress {
   private var dup = 0L
   private var skip = 0L
   private var nodes = 0L
-  def formatState() = Array(
+  def formatState(forced: Boolean) = Array(
     "[data: %s, dup: %s, skip: %s, total: %s, nodes: %s]" format(
       humanize(data), humanize(dup), humanize(skip),
       humanize(data + dup + skip),
