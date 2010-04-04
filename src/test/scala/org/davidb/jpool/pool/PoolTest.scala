@@ -33,16 +33,17 @@ trait PoolTest extends Suite with BeforeAndAfterEach with TempDirTest {
 // A trait to make it easier to test things that write progress but
 // aren't driven from the top level.
 trait ProgressPoolTest extends PoolTest {
-  var meter: Progress = null
+  var meter: BackupProgressMeter = null
   override def beforeEach() {
     super.beforeEach()
-    meter = Progress.open()
+    meter = new BackupProgressMeter
+    ProgressMeter.register(meter)
     pool.setProgress(meter)
   }
   override def afterEach() {
-    meter.close()
-    meter = null
     pool.setProgress(NullProgress)
+    ProgressMeter.unregister(meter)
+    meter = null
     super.afterEach()
   }
 }

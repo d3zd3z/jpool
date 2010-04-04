@@ -20,14 +20,30 @@ object NullProgress extends DataProgress {
 // A progress meter is anything that can give status periodically.  It
 // should return an array of strings for the lines of the meter.
 trait ProgressMeter {
-  def formatMeter(): Array[String]
+  protected[jpool] def formatState(): Array[String]
 
-  // It can expect to be able to call this update method to inform the
-  // meter framework that the meter is potentially changed.
-  protected def update()
+  // Internally, the meter also has an update function available,
+  // which can be registered.
+  protected def update() {
+    if (fn.isEmpty)
+      error("Progress meter not registered")
+    (fn.get)()
+  }
+  private var fn: Option[() => Unit] = None
+  private[jpool] def setUpdater(theFn: () => Unit) {
+    if (fn.isDefined)
+      error("ProgressState is already defined")
+    fn = Some(theFn)
+  }
+  private[jpool] def clearUpdater() {
+    if (fn.isEmpty)
+      error("Attempt to clearUpdater when already cleared")
+    fn = None
+  }
 }
 
 object ProgressMeter {
+
   // Convert a large number into a nice human readable format.
   // Largest result would be 1023.9GiB or 9 characters.
   def humanize(num: Double): String = {
@@ -40,36 +56,23 @@ object ProgressMeter {
     "%6.1f%s" format (answer, unit.head)
   }
   val units = List("B", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB", "YiB")
-}
 
-// The Progress object drives the progress meter.
-object Progress { prog =>
-  def open(): Progress = synchronized {
-    if (meter ne null)
-      error("Progress meter already opened")
+  def register(theMeter: ProgressMeter) = synchronized {
+    // TODO: Handle more than one meter.
+    require (meter eq null)
     Logger.pushWrapper(logTag, logMessage _)
-    val m = new BackupMeter
-    meter = m
-    m
+
+    theMeter.setUpdater(update _)
+    meter = theMeter
   }
-  def close() = synchronized {
-    if (meter eq null)
-      error("Progress meter not opened")
+  def unregister(theMeter: ProgressMeter) = synchronized {
+    require (meter ne null)
+    require (meter eq theMeter)
     show(true)
     meter = null
     Logger.popWrapper(logTag)
   }
 
-  class BackupMeter extends BackupProgressMeter {
-    // TODO: How to make these available.
-    def show() = prog.show()
-    def close() = prog.close()
-    def update() = prog.update()
-  }
-
-  trait Updater extends ProgressMeter {
-    def update() { prog.update() }
-  }
   private var meter: ProgressMeter = null
 
   private val stdout = System.console.writer // TODO: redirected stdout.
@@ -96,7 +99,7 @@ object Progress { prog =>
   private def show() { show(false) }
   private def show(force: Boolean) = synchronized {
     clear()
-    val lines = meter.formatMeter()
+    val lines = meter.formatState()
     for (line <- lines)
       Console.printf("%s\n", line)
     linesPrinted = lines.length
@@ -113,22 +116,14 @@ object Progress { prog =>
   }
 }
 
-trait Progress extends DataProgress {
-  def addSkip(count: Long)
-  def addNode(count: Long)
-  def addNode() { addNode(1) }
-  def close()
-  def reset()
-  def show()
-}
-
 // Backup data progress meter.
-abstract class BackupProgressMeter extends ProgressMeter with Progress {
+class BackupProgressMeter extends ProgressMeter with DataProgress {
   import ProgressMeter.humanize
 
   def addData(count: Long) = synchronized { data += count; update() }
   def addDup(count: Long) = synchronized { dup += count; update() }
   def addSkip(count: Long) = synchronized { skip += count; update() }
+  def addNode() { addNode(1) }
   def addNode(count: Long) = synchronized { nodes += count; update() }
   def reset() = synchronized {
     data = 0L
@@ -141,7 +136,7 @@ abstract class BackupProgressMeter extends ProgressMeter with Progress {
   private var dup = 0L
   private var skip = 0L
   private var nodes = 0L
-  def formatMeter() = Array(
+  def formatState() = Array(
     "[data: %s, dup: %s, skip: %s, total: %s, nodes: %s]" format(
       humanize(data), humanize(dup), humanize(skip),
       humanize(data + dup + skip),

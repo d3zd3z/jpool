@@ -20,7 +20,8 @@ object Restore extends AnyRef with Loggable {
       exit(1)
     }
 
-    val meter = Progress.open()
+    val meter = new BackupProgressMeter
+    ProgressMeter.register(meter)
     val pool = PoolFactory.getInstance(new URI(args(0)))
     pool.setProgress(meter)
     val hash = Hash.ofString(args(1))
@@ -45,7 +46,7 @@ object Restore extends AnyRef with Loggable {
 
       val restorer = new TreeRestore(pool, meter)
       restorer.restore(hash, args(2))
-      meter.close()
+      ProgressMeter.unregister(meter)
     }
     pool.close
   }

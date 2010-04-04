@@ -13,7 +13,7 @@ object TreeSave {
   lazy val devMap = new DevMap
 }
 
-class TreeSave(pool: ChunkStore, rootPath: String, meter: Progress) extends AnyRef with Loggable {
+class TreeSave(pool: ChunkStore, rootPath: String, meter: BackupProgressMeter) extends AnyRef with Loggable {
   // Store the item, of whatever type it is, into the given storage
   // pool, returning the hash needed to retrieve it later.  If unable
   // to save the item, the exception will be propagated.  Directories

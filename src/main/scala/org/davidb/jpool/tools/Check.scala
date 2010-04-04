@@ -28,9 +28,10 @@ object Check extends AnyRef with Loggable {
       v ! CheckValid(tmpChunk, tmpChunk.hash, self)
     }
 
-    val meter = Progress.open()
+    val meter = new BackupProgressMeter
+    ProgressMeter.register(meter)
     args.foreach(scan (_, meter))
-    meter.close()
+    ProgressMeter.unregister(meter)
 
     for (i <- 1 to numValidators) {
       receive {
@@ -50,7 +51,7 @@ object Check extends AnyRef with Loggable {
 
   // TODO: Generalize the progress meter so that this display can give
   // more meaningful information.
-  def scan(path: String, meter: Progress) {
+  def scan(path: String, meter: BackupProgressMeter) {
     meter.reset()
     logger.info("Scanning: %s" format path)
     val pf = new PoolFile(new File(path))
