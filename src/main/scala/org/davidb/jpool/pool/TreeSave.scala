@@ -7,6 +7,8 @@ import scala.collection.mutable.ListBuffer
 import org.davidb.logging.Loggable
 import java.util.Properties
 
+import org.apache.commons.codec.net.URLCodec
+
 object TreeSave {
   lazy val devMap = new DevMap
 }
@@ -54,8 +56,8 @@ class TreeSave(pool: ChunkStore, rootPath: String, meter: Progress) extends AnyR
       TreeSave.devMap(rootStat("dev").toLong)
     } catch {
       case e: java.util.NoSuchElementException =>
-        logger.warn("Unable to determine UUID of filesystem, using device number")
-        "dev-" + rootStat("dev")
+        logger.warn("Unable to determine UUID of filesystem, using mountpoint to generate UUID.")
+        "dev-" + (new URLCodec).encode(rootPath)
     }
   val seenPrefix = pool match {
     case fp: FilePool => fp.seenPrefix
