@@ -39,9 +39,10 @@ object Check extends AnyRef with Loggable {
     }
 
     private def rtrim(text: String, len: Int): String = {
-      if (text.length <= len)
+      if (text.length <= len + 3)
         text
-      "..." + text.substring(text.length - len + 3)
+      else
+        "..." + text.substring(text.length - len + 3)
     }
 
     private var path: String = _
