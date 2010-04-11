@@ -3,6 +3,7 @@
 
 package org.davidb.jpool.pool
 
+import org.davidb.jpool._
 import scala.collection.mutable.ListBuffer
 import org.davidb.logging.Loggable
 import java.util.Properties
@@ -77,10 +78,10 @@ class TreeSave(pool: ChunkStore, rootPath: String, meter: BackupProgressMeter) e
     // Iterate over the names sorted by inode number, statting each
     // entry.  Don't descend directories that cross device boundaries.
     if (stat("dev") == rootStat("dev")) {
-      for ((name, _) <- Linux.readDir(path).sort(byInode _)) {
+      for ((name, _) <- Linux.readDir(path).sortWith(byInode _)) {
         try {
           val stat = Linux.lstat(path + "/" + name)
-          nstats += (name, stat)
+          nstats += ((name, stat))
         } catch {
           case e: NativeError =>
             logger.warn("Unable to stat file, skipping: %s" format path)
@@ -90,7 +91,7 @@ class TreeSave(pool: ChunkStore, rootPath: String, meter: BackupProgressMeter) e
 
     // Sort the results by name.  The sort helps repeated backups of
     // unchanged directories to keep the same hash.
-    val items = nstats.toList.sort(byName _)
+    val items = nstats.toList.sortWith(byName _)
 
     val builder = new DirStore(pool, 256*1024)
 

@@ -3,6 +3,7 @@
 
 package org.davidb.jpool.pool
 
+import org.davidb.jpool._
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 import java.nio.ByteBuffer
 import java.util.Properties

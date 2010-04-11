@@ -8,13 +8,15 @@
 
 package org.davidb.jpool.pool
 
+import org.davidb.jpool._
 import java.nio.ByteBuffer
 
 object DirStore {
   // Iterate (lazily) through the directory specified by the given
   // hash.
   def walk(pool: ChunkSource, hash: Hash): Stream[(String, Hash)] = {
-    Stream.concat(TreeBuilder.walk("dir", pool, hash).map(decode _))
+    // Stream.concat(TreeBuilder.walk("dir", pool, hash).map(decode _))
+    error("TODO")
   }
 
   // This is a bit fragile, since the stream walks through a mutable

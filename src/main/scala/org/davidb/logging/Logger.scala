@@ -41,7 +41,7 @@ object Logger {
   private class LogWriter extends Writer {
     private val buffer = new StringBuilder
     def write(buf: Array[Char], offset: Int, length: Int) {
-      buffer.append(buf, offset, length)
+      buffer.appendAll(buf, offset, length)
     }
     def flush() {
       wrapStack.head.wrapper {

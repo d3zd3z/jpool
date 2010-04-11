@@ -6,6 +6,7 @@
 
 package org.davidb.jpool.tools
 
+import org.davidb.jpool._
 import scala.actors.Actor
 import scala.actors.Actor._
 import java.io.File

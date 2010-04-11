@@ -11,7 +11,7 @@ import java.text.{SimpleDateFormat}
 import java.util.{Date, Properties, TimeZone}
 import org.davidb.jpool.pool.{Back, TarRestore, PoolFactory}
 import org.davidb.logging.Loggable
-import scala.collection.jcl
+import scala.collection.JavaConversions._
 
 object List extends AnyRef with Loggable {
   def main(args: Array[String]) {
@@ -30,7 +30,7 @@ object List extends AnyRef with Loggable {
       (date, sane) = sanitize(back.props) }
       yield (date, sane, hash)
     pool.close
-    for ((date, sane, hash) <- sanity.toList.sort((a, b) => datelt(a._1, b._1))) {
+    for ((date, sane, hash) <- sanity.toList.sortWith((a, b) => datelt(a._1, b._1))) {
       printf("%s %s%n", hash, sane)
     }
   }
@@ -40,7 +40,7 @@ object List extends AnyRef with Loggable {
   }
 
   def sanitize(props: Properties): (Date, String) = {
-    val allKeys = (jcl.Set(props.stringPropertyNames) - "_date" - "hash").toArray
+    val allKeys = (Set.empty[String] ++ props.stringPropertyNames - "_date" - "hash").toArray
     val result = new StringBuilder
 
     val rawDate = props.getProperty("_date").toLong

@@ -3,6 +3,7 @@
 
 package org.davidb.jpool.pool
 
+import org.davidb.jpool._
 import java.io.ByteArrayOutputStream
 import java.nio.channels.{ReadableByteChannel}
 import java.nio.ByteBuffer

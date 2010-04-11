@@ -6,6 +6,7 @@
 
 package org.davidb.jpool.tools
 
+import org.davidb.jpool._
 import java.net.URI
 import java.util.Properties
 import java.nio.channels.Channels

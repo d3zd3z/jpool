@@ -7,7 +7,7 @@
 package org.davidb.jpool.tools
 
 import java.nio.ByteBuffer
-import org.davidb.jpool
+import org.davidb.jpool._
 
 class TestHashIndex(val basePath: String, val prefix: String) extends {
   protected val encoder = new FixedEncodable[(Int,Int)] {

@@ -3,6 +3,7 @@
 
 package org.davidb.jpool.pool
 
+import org.davidb.jpool._
 import scala.collection.mutable
 import org.davidb.logging.Loggable
 

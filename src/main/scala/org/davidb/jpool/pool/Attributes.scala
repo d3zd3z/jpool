@@ -12,6 +12,8 @@
 
 package org.davidb.jpool.pool
 
+import org.davidb.jpool._
+
 import org.apache.commons.codec.binary.Base64
 import scala.collection.mutable.ListBuffer
 import scala.xml
@@ -53,9 +55,11 @@ class Attributes(var kind: String,
   val contents: Map[String, String]) extends scala.collection.Map[String, String]
 {
   // Map interface.
-  def size: Int = contents.size
+  override def size: Int = contents.size
   def get(key: String): Option[String] = contents.get(key)
-  def elements = contents.elements
+  def iterator = contents.iterator
+  def - (key: String): Attributes = error("Cannot delete from Attributes")
+  def + [B >: String](kv: (String, B)): Attributes = error("Cannot add to Attributes")
 
   // Store these attributes into a storage pool.
   def store(pool: ChunkStore): Hash = {
@@ -66,7 +70,7 @@ class Attributes(var kind: String,
 
   // Convert this node into XML.
   def toXML: xml.Elem = {
-    val items = for (key <- contents.keys.toList.sort(_<_))
+    val items = for (key <- contents.keysIterator.toList.sortWith(_<_))
       yield entryEncode(key, contents(key))
     <node kind={kind}>{items}</node>
   }
@@ -94,7 +98,7 @@ class Attributes(var kind: String,
     buf.toString.getBytes("UTF-8")
   }
 
-  override def toString(): String = xml.Utility.toXML(toXML)
+  override def toString(): String = xml.Utility.toXML(toXML).toString
 
   override def equals(that: Any): Boolean = that match {
     case other: Attributes =>

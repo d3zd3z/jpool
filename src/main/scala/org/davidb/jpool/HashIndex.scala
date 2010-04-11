@@ -119,17 +119,17 @@ trait HashIndex[E] extends mutable.Map[Hash, E] {
         //   print(" " + k + " " + e.toString)
         // }
         // println()
-        fileMap += Some(mif)
+        fileMap.push(Some(mif))
       }
       nextIndex = lastIndex
 
       if (!partialLastIndex) {
-        fileMap += None
+        fileMap.push(None)
         nextIndex += 1
       }
     } else {
       // No existing files.
-      fileMap += None
+      fileMap.push(None)
       nextIndex = 0
     }
   }
@@ -148,8 +148,8 @@ trait HashIndex[E] extends mutable.Map[Hash, E] {
     // println("found: " + found.toList)
     // println("expec: " + expected.toList)
 
-    val f = found.elements.buffered
-    val e = expected.elements.buffered
+    val f = found.iterator.buffered
+    val e = expected.iterator.buffered
 
     while (f.hasNext && e.hasNext) {
       if (f.head < e.head)
@@ -200,7 +200,7 @@ trait HashIndex[E] extends mutable.Map[Hash, E] {
   // Number of index nodes in the tip.
   private def getTipSize: Int = {
     val base = ramMap.size
-    fileMap.last match {
+    fileMap.top match {
       case None => base
       case Some(t) => base + t.size
     }
@@ -213,7 +213,7 @@ trait HashIndex[E] extends mutable.Map[Hash, E] {
     val cc = HanoiCombiner.combineCount(nextIndex)
     combine(cc, true)
     nextIndex += 1
-    fileMap += None
+    fileMap.push(None)
   }
 
   private def combine(cc: Int, bumping: Boolean) {
@@ -250,7 +250,7 @@ trait HashIndex[E] extends mutable.Map[Hash, E] {
       r.path.delete()
     }
 
-    fileMap += Some(tip)
+    fileMap.push(Some(tip))
     ramMap = immutable.TreeMap[Hash, E]()
     dirtyProperties = false
   }
@@ -261,7 +261,8 @@ trait HashIndex[E] extends mutable.Map[Hash, E] {
 
   // mutable.Map implementations.
   def -= (key: Hash) = throw new UnsupportedOperationException("HashIndex can only be added to")
-  def update(key: Hash, value: E) {
+  def += (kv: (Hash, E)): this.type = {
+    val (key, value) = kv
     get(key) match {
       case Some(v2) =>
         if (value != v2)
@@ -271,6 +272,7 @@ trait HashIndex[E] extends mutable.Map[Hash, E] {
         if (getTipSize >= ramMax)
           mergeFiles()
     }
+    this
   }
   def get(key: Hash): Option[E] = {
     ramMap.get(key) match {
@@ -279,7 +281,7 @@ trait HashIndex[E] extends mutable.Map[Hash, E] {
     }
   }
   private def getMapped(key: Hash, index: Int): Option[E] = {
-    if (index >= fileMap.size)
+    if (index >= fileMap.length)
       None
     else {
       fileMap(index) match {
@@ -293,6 +295,5 @@ trait HashIndex[E] extends mutable.Map[Hash, E] {
     }
   }
 
-  def size: Int = error("TODO")
-  def elements: Iterator[(Hash, E)] = error("TODO")
+  def iterator: Iterator[(Hash, E)] = error("TODO")
 }

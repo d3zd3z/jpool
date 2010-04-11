@@ -6,7 +6,8 @@
 
 package org.davidb.jpool.tools
 
-import jpool.pool.{TreeWalk, PoolFactory}
+import org.davidb.jpool._
+import org.davidb.jpool.pool.{TreeWalk, PoolFactory}
 import java.net.URI
 
 object Show {

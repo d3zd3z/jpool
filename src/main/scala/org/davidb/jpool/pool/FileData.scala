@@ -3,6 +3,7 @@
 
 package org.davidb.jpool.pool
 
+import org.davidb.jpool._
 import java.nio.ByteBuffer
 
 object FileData {
@@ -22,7 +23,7 @@ object FileData {
   // Restore the file previously stored with 'store' into a file at
   // the named path.
   def restore(pool: ChunkSource, path: String, hash: Hash) {
-    Linux.writeFile(path, TreeBuilder.walk("ind", pool, hash).map(_.data).elements)
+    Linux.writeFile(path, TreeBuilder.walk("ind", pool, hash).map(_.data).iterator)
   }
 
   // Chunk size to use.  This is a 'var' but it really isn't intended

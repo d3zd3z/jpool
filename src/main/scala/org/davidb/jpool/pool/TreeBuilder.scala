@@ -2,6 +2,7 @@
 
 package org.davidb.jpool.pool
 
+import org.davidb.jpool._
 import scala.collection.mutable.Stack
 import java.nio.ByteBuffer
 
@@ -27,7 +28,8 @@ object TreeBuilder {
         def hasNext: Boolean = buffer.remaining > 0
         def next: Stream[Chunk] = walk(prefix, pool, getHash(buffer))
       }
-      Stream.concat(iter)
+      // Stream.concat(iter)
+      error("TODO")
     } else
       Stream.cons(chunk, Stream.empty)
   }

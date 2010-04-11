@@ -4,6 +4,8 @@
 
 package org.davidb.jpool.pool
 
+import org.davidb.jpool._
+
 trait ChunkSource extends collection.Map[Hash, Chunk] {
   // Retrieve all of the backups available in this source.
   def getBackups: Set[Hash]

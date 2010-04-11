@@ -28,9 +28,11 @@ import scala.util.parsing.input._
 import org.davidb.logging.Loggable
 
 class DevMap extends scala.collection.Map[Long, String] with Loggable {
-  def size: Int = theMap.size
+  override def size: Int = theMap.size
   def get(key: Long): Option[String] = theMap.get(key)
-  def elements: Iterator[(Long, String)] = theMap.elements
+  def iterator: Iterator[(Long, String)] = theMap.iterator
+  def - (key: Long) = error("Cannot delete from devmap")
+  def + [B >: String] (kv: (Long, B)) = error("Cannot add to devmap")
 
   object BlkIDParse extends RegexParsers {
     override val whiteSpace = "".r

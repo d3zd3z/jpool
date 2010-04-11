@@ -3,6 +3,7 @@
 
 package org.davidb.jpool.pool
 
+import org.davidb.jpool._
 import org.davidb.logging.Loggable
 
 import java.util.Properties
@@ -10,7 +11,7 @@ import java.io.ByteArrayInputStream
 
 class TreeWalk(pool: ChunkSource) extends AnyRef with Loggable {
 
-  sealed class State
+  sealed abstract class State
   case object Enter extends State
   case object Leave extends State
   case object Node extends State
@@ -43,9 +44,12 @@ class TreeWalk(pool: ChunkSource) extends AnyRef with Loggable {
         walk(subNode, path + "/" + node._1, level + 1)
       }
 
+      /*
       Stream.cons(new Visitor(path, level, atts, Enter),
         Stream.concat(DirStore.walk(pool, children) map (subWalk _)) append
           Stream(new Visitor(path, level, atts, Leave)))
+        */
+        error("TODO")
     } else {
       Stream(new Visitor(path, level, atts, Node))
     }

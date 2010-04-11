@@ -3,6 +3,7 @@
 
 package org.davidb.jpool.pool
 
+import org.davidb.jpool._
 import java.io.{File, RandomAccessFile}
 import java.nio.channels.FileChannel
 

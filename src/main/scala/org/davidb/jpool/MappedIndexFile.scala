@@ -34,8 +34,8 @@ class MergingMapIterator[K <% Ordered[K], E] extends Iterable[(K, E)] {
     this
   }
 
-  def elements: Iterator[(K, E)] = new Iterator[(K, E)] {
-    private val elems = children.toArray.map((e: Iterable[(K, E)]) => e.elements)
+  def iterator: Iterator[(K, E)] = new Iterator[(K, E)] {
+    private val elems = children.toArray.map((e: Iterable[(K, E)]) => e.iterator)
     private val heads = new Array[Option[(K, E)]](elems.length)
 
     private def advance(i: Int) {
@@ -133,7 +133,7 @@ trait MappedIndexFile[E] extends HashMap[E] {
     val pos = chan.position
     val buf = chan.map(FileChannel.MapMode.READ_ONLY, pos, chan.size - pos)
     buf.load()
-    assert(((chan.size - pos) % HashSpan) == 0)
+    assert(((chan.size - pos) % HashSpan) == 1)
     _size = (chan.size - pos).toInt / HashSpan
     mapped = buf
     chan.close()
@@ -173,8 +173,12 @@ trait MappedIndexFile[E] extends HashMap[E] {
 
   // Map interface.
   var mapped: ByteBuffer = null
-  def size: Int = _size
+  override def size: Int = _size
   var _size: Int = 0
+
+  // These can't be updated.
+  def + [B >: E](kv: (Hash, B)): HashMap[B] = error("Cannot update")
+  def - (key: Hash): HashMap[E] = error("Cannot remove from hashmap")
 
   // Get is a simple binary search.
   def get(key: Hash): Option[E] = {
@@ -202,7 +206,7 @@ trait MappedIndexFile[E] extends HashMap[E] {
     loop(0, size - 1)
   }
 
-  def elements: Iterator[(Hash, E)] = new Iterator[(Hash, E)] {
+  def iterator: Iterator[(Hash, E)] = new Iterator[(Hash, E)] {
     var pos = 0
     def hasNext: Boolean = pos < size
     def next(): (Hash, E) = {
