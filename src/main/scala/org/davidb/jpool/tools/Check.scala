@@ -45,7 +45,7 @@ object Check extends AnyRef with Loggable {
         "..." + text.substring(text.length - len + 3)
     }
 
-    private var path: String = _
+    private var path: String = ""
     private var length = 0L
     private var bytes = 0L
     private var totalBytes = 0L
