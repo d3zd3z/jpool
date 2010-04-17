@@ -3,6 +3,8 @@
 
 package org.davidb.jpool.pool
 
+import org.davidb.jpool._
+
 import java.io.File
 import java.io.{InputStream, InputStreamReader, BufferedReader}
 import java.util.UUID

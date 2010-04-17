@@ -130,7 +130,7 @@ class LinuxSuite extends Suite {
         md.update(buf.duplicate)
         buf
       }
-      Linux.writeFile(fileName, pieces.elements)
+      Linux.writeFile(fileName, pieces.iterator)
       val dig1 = Hash.raw(md.digest)
       val dig2 = fileHash(fileName)
       assert(dig1 === dig2)
@@ -160,7 +160,7 @@ class LinuxSuite extends Suite {
           // Find generates a blank name for '.', which
           // Linux.readDir skips.
           if (name.length > 0)
-            result += (name, num.toLong)
+            result += ((name, num.toLong))
         case _ =>
           printf("Unknown output from find: '%s'%n", line)
       }

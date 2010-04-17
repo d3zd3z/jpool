@@ -3,6 +3,7 @@
 
 package org.davidb.jpool.pool
 
+import org.davidb.jpool._
 import org.scalatest.Suite
 
 class DirStoreSuite extends Suite with ProgressPoolTest {

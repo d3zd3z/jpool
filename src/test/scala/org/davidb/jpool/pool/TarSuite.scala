@@ -3,6 +3,8 @@
 
 package org.davidb.jpool.pool
 
+import org.davidb.jpool._
+
 import org.scalatest.Suite
 
 import java.io.File

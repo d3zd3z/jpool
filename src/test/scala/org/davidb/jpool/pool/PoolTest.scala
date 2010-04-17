@@ -2,6 +2,8 @@
 
 package org.davidb.jpool.pool
 
+import org.davidb.jpool._
+
 import java.io.File
 import java.net.URI
 import org.scalatest.{Suite, BeforeAndAfterEach}

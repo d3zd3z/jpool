@@ -3,6 +3,8 @@
 
 package org.davidb.jpool.pool
 
+import org.davidb.jpool._
+
 import java.io.{File, FileOutputStream}
 import java.nio.ByteBuffer
 import org.scalatest.Suite

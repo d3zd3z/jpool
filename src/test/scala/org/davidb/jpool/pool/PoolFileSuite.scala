@@ -3,6 +3,8 @@
 
 package org.davidb.jpool.pool
 
+import org.davidb.jpool._
+
 import scala.collection.mutable.ArrayBuffer
 import java.io.{File, FileNotFoundException}
 
@@ -49,7 +51,7 @@ class PoolFileSuite extends Suite with TempDirTest {
       val chunk = makeChunk(info.size, 128 + rnd.nextInt(8192))
       val pos = pf.append(chunk)
       assert (pos > lastPos)
-      info += (pos, chunk.hash)
+      info += ((pos, chunk.hash))
 
       if ((info.size % 37) == 0)
         checkMany(pf, info)

@@ -15,9 +15,13 @@ class JPoolProject(info: ProjectInfo) extends DefaultProject(info) {
       </dependency>
     </dependencies>
 
-  val scalatest = "org.scalatest" % "scalatest" % "1.0" % "test"
+  // val scalatest = "org.scalatest" % "scalatest" % "1.0" % "test"
+  val scalatest = "org.scalatest" % "scalatest" % "1.0.1-for-scala-2.8.0.Beta1-RC8-SNAPSHOT" % "test"
   val codec = "commons-codec" % "commons-codec" % "1.3"
   val h2 = "com.h2database" % "h2" % "1.2.131"
+
+  val snapshots = "Nexus snapshots" at
+    "http://nexus.scala-tools.org/content/repositories/snapshots/"
 
   val libLinux = path("target") / "so" / "liblinux.so"
 
