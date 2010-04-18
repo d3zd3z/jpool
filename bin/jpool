@@ -24,6 +24,9 @@ BASEDIR=`(cd "$BASEDIR"/.. && pwd)`
 JAR=`echo $BASEDIR/target/scala_*/jpool_*-*.jar`
 WORK_CLASSES=`echo $BASEDIR/target/scala_*/classes`
 
+# Unfortunately, this has to be hard coded.
+SCALA_LIB=`echo $BASEDIR/project/boot/scala-2.7.*/lib/scala-library.jar`
+
 LIBS=`find $BASEDIR/lib_managed -name '*.jar' -printf "%p:"`
 
 if [ ! -f $JAR ]; then
@@ -79,6 +82,6 @@ case "$CMD" in
 		;;
 esac
 
-CLASSPATH="$WORK_CLASSES":"$LIBS":"$JAR" \
+CLASSPATH="$WORK_CLASSES":"$LIBS":"$JAR":"$SCALA_LIB" \
 LD_LIBRARY_PATH="${LD_LIBRARY_PATH}" \
 	exec java "$CMD" "$@"
