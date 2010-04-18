@@ -16,9 +16,14 @@ class JPoolProject(info: ProjectInfo) extends DefaultProject(info) {
     </dependencies>
 
   // val scalatest = "org.scalatest" % "scalatest" % "1.0" % "test"
-  val scalatest = "org.scalatest" % "scalatest" % "1.0.1-for-scala-2.8.0.Beta1-RC8-SNAPSHOT" % "test"
+  // val scalatest = "org.scalatest" % "scalatest" % "1.0.1-for-scala-2.8.0.Beta1-RC8-SNAPSHOT" % "test"
+  val scalatest = "org.scalatest" % "scalatest" % "1.0.1-for-scala-2.8.0.RC1-SNAPSHOT" % "test"
   val codec = "commons-codec" % "commons-codec" % "1.3"
   val h2 = "com.h2database" % "h2" % "1.2.131"
+
+  // This seems to be buggy?
+  // override def compileOptions = super.compileOptions ++
+  //   List(CompileOption("-no-specialization"))
 
   val snapshots = "Nexus snapshots" at
     "http://nexus.scala-tools.org/content/repositories/snapshots/"

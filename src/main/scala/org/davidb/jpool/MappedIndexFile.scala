@@ -82,6 +82,8 @@ trait FixedEncodable[E] {
 }
 
 trait MappedIndexFile[E] extends HashMap[E] {
+  mif =>
+
   protected val encoder: FixedEncodable[E]
 
   val path: File
@@ -133,7 +135,7 @@ trait MappedIndexFile[E] extends HashMap[E] {
     val pos = chan.position
     val buf = chan.map(FileChannel.MapMode.READ_ONLY, pos, chan.size - pos)
     buf.load()
-    assert(((chan.size - pos) % HashSpan) == 1)
+    assert(((chan.size - pos) % HashSpan) == 0)
     _size = (chan.size - pos).toInt / HashSpan
     mapped = buf
     chan.close()
@@ -208,9 +210,9 @@ trait MappedIndexFile[E] extends HashMap[E] {
 
   def iterator: Iterator[(Hash, E)] = new Iterator[(Hash, E)] {
     var pos = 0
-    def hasNext: Boolean = pos < size
+    def hasNext: Boolean = pos < mif.size
     def next(): (Hash, E) = {
-      if (pos < size) {
+      if (pos < mif.size) {
         mapped.position(pos * HashSpan)
         val rawHash = new Array[Byte](Hash.HashLength)
         mapped.get(rawHash)
