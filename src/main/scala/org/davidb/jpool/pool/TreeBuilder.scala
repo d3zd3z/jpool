@@ -28,8 +28,7 @@ object TreeBuilder {
         def hasNext: Boolean = buffer.remaining > 0
         def next: Stream[Chunk] = walk(prefix, pool, getHash(buffer))
       }
-      // Stream.concat(iter)
-      error("TODO")
+      iter.toStream.flatten
     } else
       Stream.cons(chunk, Stream.empty)
   }

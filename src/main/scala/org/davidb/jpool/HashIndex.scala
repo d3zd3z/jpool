@@ -285,7 +285,7 @@ trait HashIndex[E] extends mutable.Map[Hash, E] {
       None
     else {
       fileMap(index) match {
-        case None => None
+        case None => getMapped(key, index + 1)
         case Some(m) =>
           m.get(key) match {
             case result @ Some(_) => result

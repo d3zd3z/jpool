@@ -44,12 +44,9 @@ class TreeWalk(pool: ChunkSource) extends AnyRef with Loggable {
         walk(subNode, path + "/" + node._1, level + 1)
       }
 
-      /*
       Stream.cons(new Visitor(path, level, atts, Enter),
-        Stream.concat(DirStore.walk(pool, children) map (subWalk _)) append
+        (DirStore.walk(pool, children) map (subWalk _)).toStream.flatten append
           Stream(new Visitor(path, level, atts, Leave)))
-        */
-        error("TODO")
     } else {
       Stream(new Visitor(path, level, atts, Node))
     }
