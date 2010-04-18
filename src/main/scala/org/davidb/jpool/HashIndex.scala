@@ -277,21 +277,18 @@ trait HashIndex[E] extends mutable.Map[Hash, E] {
   def get(key: Hash): Option[E] = {
     ramMap.get(key) match {
       case result @ Some(_) => result
-      case None => getMapped(key, 0)
+      case None => getMapped(key, fileMap.toList)
     }
   }
-  private def getMapped(key: Hash, index: Int): Option[E] = {
-    if (index >= fileMap.length)
-      None
-    else {
-      fileMap(index) match {
-        case None => getMapped(key, index + 1)
-        case Some(m) =>
-          m.get(key) match {
-            case result @ Some(_) => result
-            case None => getMapped(key, index + 1)
-          }
-      }
+  private def getMapped(key: Hash, fm: List[Option[MIF]]): Option[E] = {
+    fm match {
+      case Nil => None
+      case None::r => getMapped(key, r)
+      case Some(m)::r =>
+        m.get(key) match {
+          case result @ Some(_) => result
+          case None => getMapped(key, r)
+        }
     }
   }
 
