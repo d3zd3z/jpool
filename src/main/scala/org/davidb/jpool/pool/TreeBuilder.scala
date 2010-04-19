@@ -35,14 +35,14 @@ object TreeBuilder {
   // Perform a GC walk of the given tree.  Will call 'mark' for each
   // directory node to visit, and nodeWalk to walk each of the nodes
   // in the directory.
-  def gcWalk(prefix: String, pool: ChunkSource, hash: Hash, mark: GC.MarkFn, nodeWalk: Chunk => Unit) {
+  def gcWalk(prefix: String, pool: ChunkSource, hash: Hash, visitor: GC.Visitor, nodeWalk: Chunk => Unit) {
     val chunk = pool(hash)
     val kind = chunk.kind
     if (kind.startsWith(prefix) && kind(3).isDigit) {
-      if (mark(chunk.hash, () => chunk) != GC.Seen) {
+      visitor.visit(chunk) {
         val buffer = chunk.data
         while (buffer.remaining > 0)
-          gcWalk(prefix, pool, getHash(buffer), mark, nodeWalk)
+          gcWalk(prefix, pool, getHash(buffer), visitor, nodeWalk)
       }
     } else {
       nodeWalk(chunk)

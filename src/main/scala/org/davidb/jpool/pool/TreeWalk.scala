@@ -66,18 +66,18 @@ class TreeWalk(pool: ChunkSource) extends AnyRef with Loggable {
   // many chunks will have already been read in as part of the
   // traversal.
 
-  def gcWalk(hash: Hash, mark: GC.MarkFn) {
+  def gcWalk(hash: Hash, visitor: GC.Visitor) {
     val node = pool(hash)
-    gcWalk(node, mark)
+    gcWalk(node, visitor)
   }
-  def gcWalk(node: Chunk, mark: GC.MarkFn) {
-    if (mark(node.hash, () => node) != GC.Seen) {
+  def gcWalk(node: Chunk, visitor: GC.Visitor) {
+    visitor.visit(node) {
       node.kind match {
         case "back" =>
           // This reloads the same chunk, but doesn't happen very
           // often.
           val back = Back.load(pool, node.hash)
-          gcWalk(back.hash, mark)
+          gcWalk(back.hash, visitor)
 
         case "node" =>
           val atts = Attributes.decode(node)
@@ -85,19 +85,20 @@ class TreeWalk(pool: ChunkSource) extends AnyRef with Loggable {
             val children = Hash.ofString(atts("children"))
             def childWalk(chunk: Chunk) {
               require(chunk.kind == "dir " || chunk.kind == "null")
-              mark(chunk.hash, () => chunk)
-              DirStore.gcWalk(chunk, (hash: Hash) => gcWalk(hash, mark))
+              visitor.visit(chunk) {
+                DirStore.gcWalk(chunk, (hash: Hash) => gcWalk(hash, visitor))
+              }
             }
-            TreeBuilder.gcWalk("dir", pool, children, mark, childWalk _)
+            TreeBuilder.gcWalk("dir", pool, children, visitor, childWalk _)
           } else if (atts.kind == "REG") {
             val data = Hash.ofString(atts("data"))
             def pieceWalk(chunk: Chunk) {
               // TODO: Make this not read all of the data if it is not
               // needed.
               require(chunk.kind == "blob" || chunk.kind == "null")
-              mark(chunk.hash, () => chunk)
+              visitor.visit(chunk) { }
             }
-            TreeBuilder.gcWalk("ind", pool, data, mark, pieceWalk _)
+            TreeBuilder.gcWalk("ind", pool, data, visitor, pieceWalk _)
           } else {
             // Otherwise, this node has no extra data, so we're done
             // with it.

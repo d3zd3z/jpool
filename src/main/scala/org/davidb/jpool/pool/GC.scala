@@ -6,14 +6,32 @@ package org.davidb.jpool.pool
 import org.davidb.jpool._
 
 object GC {
-  sealed abstract class MarkVisited
-  case object Seen extends MarkVisited
-  case object Unseen extends MarkVisited
+  // An object with this trait is used by the garbage collector to
+  // mark the traversal.  The GC will call isSeen() before descending
+  // through the children of a node to determine if this node is
+  // already present.  A node is marked only after all of it's
+  // children are visited.
+  //
+  // The visit method is used by the garbage collector itself to
+  // perform an operation bracketed by this check and the trailing
+  // mark operation.
+  trait Visitor {
+    // Has this node been visited?  This will be called pre-order in
+    // the GC scan.
+    def isSeen(hash: Hash): Boolean
 
-  // Marker function passed around the garbage collector.  Given a
-  // hash, and a thunk to possibly read the chunk itself (used for
-  // copy-type GC).  The function should return 'Seen' or 'Unseen' to
-  // indicate if this particular hash was seen before (the GC will use
-  // this to avoid walking parts of the tree that are already marked.
-  type MarkFn = (Hash, () => Chunk) => MarkVisited
+    // Mark this node.  This will be called post-order, such that it's
+    // children will always have been called first.  'visit' will only
+    // be called if isSeen had returned Unseen.
+    def mark(chunk: Chunk)
+
+    // A common pattern is to check if seen, do something and then
+    // mark when finished.  Capture that with this method.
+    def visit(chunk: Chunk)(thunk: => Unit) {
+      if (!isSeen(chunk.hash)) {
+        thunk
+        mark(chunk)
+      }
+    }
+  }
 }
