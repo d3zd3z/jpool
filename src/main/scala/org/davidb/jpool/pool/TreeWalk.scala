@@ -57,4 +57,55 @@ class TreeWalk(pool: ChunkSource) extends AnyRef with Loggable {
       printf("%5s %4s %s%n", node.state, node.atts.kind, node.path)
     }
   }
+
+  // Traverse all chunks within a particular tree, calling 'mark' on
+  // each chunk.  'mark' should return status as to whether or not it
+  // has seen the chunk before or not.  'mark' can also will be called
+  // with a 'get' argument which can be used to return the chunk.
+  // This should be used instead of directly reading the chunk, since
+  // many chunks will have already been read in as part of the
+  // traversal.
+
+  def gcWalk(hash: Hash, mark: GC.MarkFn) {
+    val node = pool(hash)
+    gcWalk(node, mark)
+  }
+  def gcWalk(node: Chunk, mark: GC.MarkFn) {
+    if (mark(node.hash, () => node) != GC.Seen) {
+      node.kind match {
+        case "back" =>
+          // This reloads the same chunk, but doesn't happen very
+          // often.
+          val back = Back.load(pool, node.hash)
+          gcWalk(back.hash, mark)
+
+        case "node" =>
+          val atts = Attributes.decode(node)
+          if (atts.kind == "DIR") {
+            val children = Hash.ofString(atts("children"))
+            def childWalk(chunk: Chunk) {
+              require(chunk.kind == "dir " || chunk.kind == "null")
+              mark(chunk.hash, () => chunk)
+              DirStore.gcWalk(chunk, (hash: Hash) => gcWalk(hash, mark))
+            }
+            TreeBuilder.gcWalk("dir", pool, children, mark, childWalk _)
+          } else if (atts.kind == "REG") {
+            val data = Hash.ofString(atts("data"))
+            def pieceWalk(chunk: Chunk) {
+              // TODO: Make this not read all of the data if it is not
+              // needed.
+              require(chunk.kind == "blob" || chunk.kind == "null")
+              mark(chunk.hash, () => chunk)
+            }
+            TreeBuilder.gcWalk("ind", pool, data, mark, pieceWalk _)
+          } else {
+            // Otherwise, this node has no extra data, so we're done
+            // with it.
+            // error("TODO: Kind '%s'" format atts.kind)
+          }
+
+        case x => error("Unknown backup node '%s'" format x)
+      }
+    }
+  }
 }

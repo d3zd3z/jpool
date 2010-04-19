@@ -76,6 +76,9 @@ case "$CMD" in
 	check)
 		CMD=org.davidb.jpool.tools.Check
 		;;
+	clone)
+		CMD=org.davidb.jpool.tools.Clone
+		;;
 	*)
 		echo "Unknown command: $CMD"
 		exit 1
