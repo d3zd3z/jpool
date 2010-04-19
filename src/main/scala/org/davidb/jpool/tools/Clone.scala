@@ -47,7 +47,9 @@ object Clone extends AnyRef with Loggable {
         update()
       }
       def addDup(count: Long) {
-        error("There shouldn't be any duping.")
+        // This really shouldn't be possible, since it would require a
+        // block to be able to contain it's own hash.
+        error("Dup on write suggests corruption")
       }
     }
   }
@@ -68,20 +70,18 @@ object Clone extends AnyRef with Loggable {
 
     val walker = new TreeWalk(inPool)
 
-    for (i <- 2 until args.length) {
-      def mark(hash: Hash, get: () => Chunk): GC.MarkVisited = {
-        val chunk = get()
+    object visitor extends GC.Visitor {
+      def isSeen(hash: Hash): Boolean = {
         meter.addReadChunk()
-        meter.reader.addData(chunk.dataLength)
-        if (outPool.contains(hash))
-          GC.Seen
-        else {
-          outPool += (chunk.hash -> chunk)
-          GC.Unseen
-        }
+        outPool.contains(hash)
       }
+      def mark(chunk: Chunk) {
+        outPool += (chunk.hash -> chunk)
+      }
+    }
 
-      walker.gcWalk(Hash.ofString(args(i)), mark _)
+    for (i <- 2 until args.length) {
+      walker.gcWalk(Hash.ofString(args(i)), visitor)
     }
 
     ProgressMeter.unregister(meter)
