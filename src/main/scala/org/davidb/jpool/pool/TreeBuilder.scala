@@ -33,6 +33,23 @@ object TreeBuilder {
       Stream.cons(chunk, Stream.empty)
   }
 
+  // Perform a GC walk of the given tree.  Will call 'mark' for each
+  // directory node to visit, and nodeWalk to walk each of the nodes
+  // in the directory.
+  def gcWalk(prefix: String, pool: ChunkSource, hash: Hash, mark: GC.MarkFn, nodeWalk: Chunk => Unit) {
+    val chunk = pool(hash)
+    val kind = chunk.kind
+    if (kind.startsWith(prefix) && kind(3).isDigit) {
+      if (mark(chunk.hash, () => chunk) != GC.Seen) {
+        val buffer = chunk.data
+        while (buffer.remaining > 0)
+          gcWalk(prefix, pool, getHash(buffer), mark, nodeWalk)
+      }
+    } else {
+      nodeWalk(chunk)
+    }
+  }
+
   // (Mutably) get the next hash from the given buffer.
   protected def getHash(buffer: ByteBuffer): Hash = {
     val raw = new Array[Byte](Hash.HashLength)

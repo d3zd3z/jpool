@@ -18,6 +18,21 @@ object DirStore {
     TreeBuilder.walk("dir", pool, hash).map(decode _).toStream.flatten
   }
 
+  // Perform a GC walk across a node.
+  def gcWalk(node: Chunk, visit: Hash => Unit) {
+    val data = node.data
+    while (data.remaining > 0) {
+      val nameLength = data.getShort
+      val nameEncoded = new Array[Byte](nameLength)
+      data.get(nameEncoded)
+      val name = new String(nameEncoded, "iso8859-1")
+      val hashBuf = new Array[Byte](Hash.HashLength)
+      data.get(hashBuf)
+      val hash = Hash.raw(hashBuf)
+      visit(hash)
+    }
+  }
+
   // This is a bit fragile, since the stream walks through a mutable
   // structure.
   private def decode(chunk: Chunk): Stream[(String, Hash)] = decodeData(chunk.data)
