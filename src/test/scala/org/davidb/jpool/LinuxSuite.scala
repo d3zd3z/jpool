@@ -124,13 +124,13 @@ class LinuxSuite extends Suite {
     val md = MessageDigest.getInstance("SHA-1")
     TempDir.withTempDir { tdir =>
       val fileName = "%s/file" format tdir.getPath
-      val pieces = Stream.range(1, 40) map { index =>
+      val pieces = Iterator.range(1, 40) map { index =>
         val text = StringMaker.generate(index, 256*1024)
         val buf = ByteBuffer.wrap(text.getBytes)
         md.update(buf.duplicate)
         buf
       }
-      Linux.writeFile(fileName, pieces.iterator)
+      Linux.writeFile(fileName, pieces)
       val dig1 = Hash.raw(md.digest)
       val dig2 = fileHash(fileName)
       assert(dig1 === dig2)

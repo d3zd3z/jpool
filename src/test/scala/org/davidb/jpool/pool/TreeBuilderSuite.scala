@@ -34,7 +34,7 @@ class TreeBuilderSuite extends Suite with ProgressPoolTest {
 
   private def check(hash: Hash, nums: Range) {
     val walker = TreeBuilder.walk("tmp", pool, hash)
-    val expected = nums map (makeChunk(_, 1))
+    val expected = nums.map(makeChunk(_, 1)).iterator
     assert ((walker map (_.hash)) sameElements (expected map (_.hash)))
   }
 

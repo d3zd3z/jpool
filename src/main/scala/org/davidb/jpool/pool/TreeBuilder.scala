@@ -19,18 +19,18 @@ object TreeBuilder {
 
   // Iterate (lazily) through a tree rooted at a given hash.  Must use
   // the same prefix used to build the tree.
-  def walk(prefix: String, pool: ChunkSource, hash: Hash): Stream[Chunk] = {
+  def walk(prefix: String, pool: ChunkSource, hash: Hash): Iterator[Chunk] = {
     val chunk = pool(hash)
     val kind = chunk.kind
     if (kind.startsWith(prefix) && kind(3).isDigit) {
       val buffer = chunk.data
-      val iter = new Iterator[Stream[Chunk]] {
+      val iter = new Iterator[Iterator[Chunk]] {
         def hasNext: Boolean = buffer.remaining > 0
-        def next: Stream[Chunk] = walk(prefix, pool, getHash(buffer))
+        def next: Iterator[Chunk] = walk(prefix, pool, getHash(buffer))
       }
-      iter.toStream.flatten
+      iter.flatten
     } else
-      Stream.cons(chunk, Stream.empty)
+      Iterator.single(chunk)
   }
 
   // Perform a GC walk of the given tree.  Will call 'mark' for each

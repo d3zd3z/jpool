@@ -20,26 +20,26 @@ class TreeWalk(pool: ChunkSource) extends AnyRef with Loggable {
   // Recursively walk the nodes.  For directories, Visits the
   // directory with state set to 'Enter', then the nodes, and then the
   // state set to 'Leave'.
-  def walk(hash: Hash): Stream[Visitor] = walk(hash, ".")
+  def walk(hash: Hash): Iterator[Visitor] = walk(hash, ".")
 
-  def walk(hash: Hash, path: String): Stream[Visitor] = {
+  def walk(hash: Hash, path: String): Iterator[Visitor] = {
     val back = Back.load(pool, hash)
     val node = pool(back.hash)
     walk(node, path, 0)
   }
 
-  def walk(node: Chunk, path: String, level: Int): Stream[Visitor] = {
+  def walk(node: Chunk, path: String, level: Int): Iterator[Visitor] = {
     if (node.kind == "null")
-      return Stream.empty
+      return Iterator.empty
     if (node.kind != "node") {
       logger.warn("Backup node is not of type 'node': %s (%s)".format(node.hash, node.kind))
-      return Stream.empty
+      return Iterator.empty
     }
     val atts = Attributes.decode(node)
     if (atts.kind == "DIR") {
       val children = Hash.ofString(atts("children"))
 
-      def subWalk(node: (String, Hash)): Stream[Visitor] = {
+      def subWalk(node: (String, Hash)): Iterator[Visitor] = {
         val subNode = pool(node._2)
         walk(subNode, path + "/" + node._1, level + 1)
       }
@@ -48,10 +48,11 @@ class TreeWalk(pool: ChunkSource) extends AnyRef with Loggable {
         node <- DirStore.walk(pool, children)
         elt <- subWalk(node)
       } yield elt
-      Stream.cons(new Visitor(path, level, atts, Enter),
-        subtree append Stream(new Visitor(path, level, atts, Leave)))
+      Iterator.single(new Visitor(path, level, atts, Enter)) ++
+        subtree ++
+        Iterator.single(new Visitor(path, level, atts, Leave))
     } else {
-      Stream(new Visitor(path, level, atts, Node))
+      Iterator.single(new Visitor(path, level, atts, Node))
     }
   }
 

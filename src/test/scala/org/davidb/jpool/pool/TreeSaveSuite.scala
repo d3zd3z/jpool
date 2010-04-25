@@ -88,8 +88,8 @@ class TreeSaveSuite extends Suite with ProgressPoolTest with Loggable {
   private def compareBackup(first: Hash, secondDir: String) {
     val second = new TreeSave(pool, secondDir, meter).store(someProps("bin"))
 
-    val firstWalk = new TreeWalk(pool).walk(first).iterator
-    val secondWalk = new TreeWalk(pool).walk(second).iterator
+    val firstWalk = new TreeWalk(pool).walk(first)
+    val secondWalk = new TreeWalk(pool).walk(second)
 
     while (firstWalk.hasNext && secondWalk.hasNext) {
       val f = firstWalk.next
