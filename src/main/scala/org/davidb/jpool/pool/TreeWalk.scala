@@ -44,9 +44,12 @@ class TreeWalk(pool: ChunkSource) extends AnyRef with Loggable {
         walk(subNode, path + "/" + node._1, level + 1)
       }
 
+      val subtree = for {
+        node <- DirStore.walk(pool, children)
+        elt <- subWalk(node)
+      } yield elt
       Stream.cons(new Visitor(path, level, atts, Enter),
-        (DirStore.walk(pool, children) map (subWalk _)).toStream.flatten append
-          Stream(new Visitor(path, level, atts, Leave)))
+        subtree append Stream(new Visitor(path, level, atts, Leave)))
     } else {
       Stream(new Visitor(path, level, atts, Node))
     }
