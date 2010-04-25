@@ -14,7 +14,10 @@ object DirStore {
   // Iterate (lazily) through the directory specified by the given
   // hash.
   def walk(pool: ChunkSource, hash: Hash): Stream[(String, Hash)] = {
-    Stream.concat(TreeBuilder.walk("dir", pool, hash).map(decode _))
+    for {
+      node <- TreeBuilder.walk("dir", pool, hash)
+      entry <- decode(node)
+    } yield entry
   }
 
   // Perform a GC walk across a node.
