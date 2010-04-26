@@ -9,6 +9,7 @@
 
 package org.davidb.jpool
 
+import scala.annotation.tailrec
 import java.io.{ FileOutputStream, BufferedOutputStream, DataOutputStream,
   FileInputStream, DataInputStream,
   ByteArrayOutputStream, ByteArrayInputStream }
@@ -185,7 +186,7 @@ trait MappedIndexFile[E] extends HashMap[E] {
   // Get is a simple binary search.
   def get(key: Hash): Option[E] = {
     val tmp = new Array[Byte](Hash.HashLength)
-    def loop(low: Int, high: Int): Option[E] = {
+    @tailrec def loop(low: Int, high: Int): Option[E] = {
       if (low <= high) {
         val mid = (low + high) >>> 1;
 
