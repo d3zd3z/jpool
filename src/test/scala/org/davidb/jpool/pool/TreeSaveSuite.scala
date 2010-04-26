@@ -1,9 +1,8 @@
 //////////////////////////////////////////////////////////////////////
 // Testing tree saving.
 
-package org.davidb.jpool.pool
-
-import org.davidb.jpool._
+package org.davidb.jpool
+package pool
 
 import scala.collection.mutable
 import org.scalatest.{Suite, TestFailedException}

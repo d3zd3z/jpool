@@ -4,9 +4,9 @@
 // Usage:
 //   Show jpool:file:///path hash
 
-package org.davidb.jpool.tools
+package org.davidb.jpool
+package tools
 
-import org.davidb.jpool._
 import org.davidb.jpool.pool.{TreeWalk, PoolFactory}
 import java.net.URI
 

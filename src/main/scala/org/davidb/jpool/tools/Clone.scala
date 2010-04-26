@@ -4,9 +4,9 @@
 // Usage:
 //   Clone jpool:file:///path1 jpool:file:///path2 backuphash backuphash...
 
-package org.davidb.jpool.tools
+package org.davidb.jpool
+package tools
 
-import org.davidb.jpool._
 import org.davidb.jpool.pool._
 import org.davidb.logging.Loggable
 

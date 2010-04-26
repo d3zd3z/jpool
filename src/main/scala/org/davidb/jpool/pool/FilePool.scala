@@ -1,8 +1,8 @@
 // Storage of data in a "pool" consisting of a set of pool files.
 
-package org.davidb.jpool.pool
+package org.davidb.jpool
+package pool
 
-import org.davidb.jpool._
 import scala.collection.mutable
 import java.io.File
 import java.nio.ByteBuffer

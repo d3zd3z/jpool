@@ -1,8 +1,7 @@
 // Test the tree builder.
 
-package org.davidb.jpool.pool
-
-import org.davidb.jpool._
+package org.davidb.jpool
+package pool
 
 import java.net.URI
 import org.scalatest.{Suite, BeforeAndAfter}

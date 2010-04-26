@@ -1,9 +1,9 @@
 //////////////////////////////////////////////////////////////////////
 // Listing backup contents.
 
-package org.davidb.jpool.pool
+package org.davidb.jpool
+package pool
 
-import org.davidb.jpool._
 import org.davidb.logging.Loggable
 
 import java.util.Properties

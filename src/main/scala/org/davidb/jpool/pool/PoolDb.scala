@@ -1,9 +1,9 @@
 //////////////////////////////////////////////////////////////////////
 // Pool metadata database.
 
-package org.davidb.jpool.pool
+package org.davidb.jpool
+package pool
 
-import org.davidb.jpool._
 import java.io.File
 import java.io.{InputStream, InputStreamReader, BufferedReader}
 import java.sql.{Connection, Driver, ResultSet, PreparedStatement}

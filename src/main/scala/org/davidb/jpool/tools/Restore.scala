@@ -4,9 +4,9 @@
 // Usage:
 //   Restore jpool:file:///path hash > tarball
 
-package org.davidb.jpool.tools
+package org.davidb.jpool
+package tools
 
-import org.davidb.jpool._
 import java.net.URI
 import java.nio.channels.Channels
 import org.davidb.jpool.pool.{Back, TarRestore, TreeRestore, PoolFactory}

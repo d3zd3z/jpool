@@ -1,9 +1,9 @@
 //////////////////////////////////////////////////////////////////////
 // Restoring tree data.
 
-package org.davidb.jpool.pool
+package org.davidb.jpool
+package pool
 
-import org.davidb.jpool._
 import scala.collection.mutable
 import org.davidb.logging.Loggable
 

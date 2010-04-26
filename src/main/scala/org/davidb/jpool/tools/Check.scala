@@ -4,9 +4,9 @@
 // Usage:
 //   Check poolpath poolpath ...
 
-package org.davidb.jpool.tools
+package org.davidb.jpool
+package tools
 
-import org.davidb.jpool._
 import scala.actors.Actor
 import scala.actors.Actor._
 import java.io.File

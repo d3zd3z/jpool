@@ -1,10 +1,10 @@
 //////////////////////////////////////////////////////////////////////
 
-package org.davidb.jpool.tools
+package org.davidb.jpool
+package tools
 
 import java.io.File
 
-import org.davidb.jpool._
 import org.davidb.logging.Loggable
 
 import org.h2.tools.{RunScript, Script, DeleteDbFiles}

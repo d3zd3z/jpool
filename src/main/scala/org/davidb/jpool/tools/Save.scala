@@ -4,9 +4,9 @@
 // Usage:
 //   Save jpool:file:///path key=value key=value key=value ... < tarball
 
-package org.davidb.jpool.tools
+package org.davidb.jpool
+package tools
 
-import org.davidb.jpool._
 import java.net.URI
 import java.util.Properties
 import java.nio.channels.Channels

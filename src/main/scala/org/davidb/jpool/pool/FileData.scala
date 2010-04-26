@@ -1,9 +1,9 @@
 //////////////////////////////////////////////////////////////////////
 // Store and retrieve file data into the pool.
 
-package org.davidb.jpool.pool
+package org.davidb.jpool
+package pool
 
-import org.davidb.jpool._
 import java.nio.ByteBuffer
 
 object FileData {

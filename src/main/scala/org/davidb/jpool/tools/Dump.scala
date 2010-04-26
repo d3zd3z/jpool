@@ -4,9 +4,9 @@
 // Usage:
 //   Dump jpool:file:///path path
 
-package org.davidb.jpool.tools
+package org.davidb.jpool
+package tools
 
-import org.davidb.jpool._
 import org.davidb.logging.Loggable
 
 import org.davidb.jpool.pool.{TreeSave, PoolFactory}

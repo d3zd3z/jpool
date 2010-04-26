@@ -1,8 +1,7 @@
 // Testing the Pool Factory.
 
-package org.davidb.jpool.pool
-
-import org.davidb.jpool._
+package org.davidb.jpool
+package pool
 
 import java.net.{URI, UnknownServiceException}
 import org.scalatest.Suite

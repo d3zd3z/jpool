@@ -1,9 +1,8 @@
 //////////////////////////////////////////////////////////////////////
 // Pool file handling test.
 
-package org.davidb.jpool.pool
-
-import org.davidb.jpool._
+package org.davidb.jpool
+package pool
 
 import scala.collection.mutable.ArrayBuffer
 import java.io.{File, FileNotFoundException}

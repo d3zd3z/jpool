@@ -1,9 +1,8 @@
 //////////////////////////////////////////////////////////////////////
 // Garbage collection operations on pools.
 
-package org.davidb.jpool.pool
-
-import org.davidb.jpool._
+package org.davidb.jpool
+package pool
 
 object GC {
   // An object with this trait is used by the garbage collector to

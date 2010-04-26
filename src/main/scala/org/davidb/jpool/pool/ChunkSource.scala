@@ -2,9 +2,8 @@
 // A ChunkSource is somethign that contains chunks, and can retrieve
 // them.
 
-package org.davidb.jpool.pool
-
-import org.davidb.jpool._
+package org.davidb.jpool
+package pool
 
 trait ChunkSource extends collection.Map[Hash, Chunk] {
   // Retrieve all of the backups available in this source.

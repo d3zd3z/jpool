@@ -10,9 +10,8 @@
 // but the conversion will be reversable, and allows the malformed
 // filenames allowed under Linux.
 
-package org.davidb.jpool.pool
-
-import org.davidb.jpool._
+package org.davidb.jpool
+package pool
 
 import org.apache.commons.codec.binary.Base64
 import scala.collection.mutable.ListBuffer
