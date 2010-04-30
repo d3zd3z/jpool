@@ -9,7 +9,7 @@ import java.io.Writer
 object Logger {
   // If there is nothing happening, just printing the messages out is
   // sufficient.
-  private val stdout = System.console.writer
+  private val stdout = System.out
 
   private val rootTag = new Object
 
@@ -45,7 +45,7 @@ object Logger {
     }
     def flush() {
       wrapStack.head.wrapper {
-        stdout.write(buffer.toString)
+        stdout.print(buffer.toString)
         stdout.flush()
         buffer.setLength(0)
       }
