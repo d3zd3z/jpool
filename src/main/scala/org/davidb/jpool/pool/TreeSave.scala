@@ -65,6 +65,7 @@ class TreeSave(pool: ChunkStore, rootPath: String, meter: BackupProgressMeter) e
     case _ => error("TODO: Unable to save to a non-local file pool")
   }
   val seenDb = new SeenDb(seenPrefix, devUuid)
+  seenDb.purge()
 
   private def seenNodeToMapping(node: SeenNode): (Long, SeenNode) = (node.inode, node)
 

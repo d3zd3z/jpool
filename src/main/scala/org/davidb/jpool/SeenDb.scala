@@ -12,13 +12,15 @@ import scala.collection.mutable.ArrayBuffer
 import org.davidb.logging.Loggable
 
 object SeenDbSchema extends DbSchema with Loggable {
-  val schemaVersion = "3:2009-06-12"
+  val schemaVersion = "4:2010-04-30"
   val schemaText = Array(
     "create table seen (pino bigint not null, expire bigint not null," +
     " info binary not null)",
-    "create index seen_index on seen(pino)")
+    "create index seen_index on seen(pino)",
+    "create index seen_expire_index on seen(expire)")
   def schemaUpgrade(oldVersion: String, db: Db) = oldVersion match {
     case "2:2009-05-30" => upgradeFrom2(db)
+    case "3:2009-06-12" => upgradeFrom3(db)
     case _ => error("Cannot upgrade schema")
   }
 
@@ -41,16 +43,24 @@ object SeenDbSchema extends DbSchema with Loggable {
         nodes += node
       }
       meter.addNode()
-      // info("pino: %d, min-expire: %d", pino, SeenDb.minExpire(nodes))
+      // info("pino: %d, min-expire: %d", pino, SeenDb.maxExpire(nodes))
       // Pdump.dump(SeenDb.encodeNodes(nodes))
+      val (encoded, maxExpire) = SeenDb.encodeNodes(nodes)
       db.updateQuery("insert into newseen values (?, ?, ?)",
-        pino, SeenDb.minExpire(nodes), SeenDb.encodeNodes(nodes))
+        pino, maxExpire, encoded)
     }
     db.updateQuery("drop index seen_index")
     db.updateQuery("drop table seen")
     db.updateQuery("alter table newseen rename to seen")
     db.updateQuery("create index seen_index on seen(pino)")
     ProgressMeter.unregister(meter)
+  }
+
+  private def upgradeFrom3(db: Db) {
+    // Only change is the addition of an index on the expiration.
+    logger.info("Adding seen database index")
+    db.updateQuery("create index seen_expire_index on seen(expire)")
+    logger.info("Done adding seen database index")
   }
 
   private def getSeen2(rs: ResultSet): SeenNode = {
@@ -66,26 +76,22 @@ case class SeenNode(inode: Long, ctime: Long, hash: Hash, expire: Long) {
 }
 
 object SeenDb {
-  def minExpire(nodes: Seq[SeenNode]): Long = {
-    require(!nodes.isEmpty)
-    var minimum = nodes(0).expire
-    for (node <- nodes) {
-      minimum = minimum min nodes(0).expire
-    }
-    minimum
-  }
-
   private final val RecordLength = 8 * 3 + Hash.HashLength
 
-  def encodeNodes(nodes: Seq[SeenNode]): Array[Byte] = {
+  // Computes the encoded node values as well as a maximum expiration.
+  def encodeNodes(nodes: Seq[SeenNode]): (Array[Byte], Long) = {
     val buf = ByteBuffer.allocate(RecordLength * nodes.length)
+    var maximum = -1L
     for (node <- nodes) {
+      val expire = if (node.expire >= 0) node.expire else getExpire
+      maximum = maximum max expire
+
       buf.putLong(node.inode)
       buf.putLong(node.ctime)
-      buf.putLong(if (node.expire >= 0) node.expire else getExpire)
+      buf.putLong(expire)
       buf.put(node.hash.getBytes)
     }
-    buf.array
+    (buf.array, maximum)
   }
 
   def decodeNodes(bytes: Array[Byte]): Seq[SeenNode] = {
@@ -113,6 +119,22 @@ object SeenDb {
   private def getExpire: Long = {
     random.nextInt(28 * 86400) + (14 * 86400) + startTime
   }
+
+  // Utility, shows the number of nodes in the seen database, and runs
+  // a purge (which will give an exception if the database is not
+  // writable).
+  def main(args: Array[String]) {
+    if (args.length != 2)
+      error("Usage: SeenDb prefix id")
+
+    val sdb = new SeenDb(args(0), args(1))
+    val expCount = sdb.db.query(sdb.db.getLong1 _, "select count(*) from seen where expire < 0")
+    printf("bogus expires: %d\n", expCount.next)
+    val count = sdb.db.query(sdb.db.getLong1 _, "select count(*) from seen")
+    printf("total expires: %d\n", count.next)
+    sdb.purge()
+    sdb.close()
+  }
 }
 
 class SeenDb(prefix: String, id: String) {
@@ -123,9 +145,9 @@ class SeenDb(prefix: String, id: String) {
   def update(parentIno: Long, files: Seq[SeenNode]) {
     db.updateQuery("delete from seen where pino = ?", parentIno)
     if (!files.isEmpty) {
+      val (encoded, maxExpire) = SeenDb.encodeNodes(files)
       db.updateQuery("insert into seen values (?, ?, ?)",
-        parentIno,
-        SeenDb.minExpire(files), SeenDb.encodeNodes(files))
+        parentIno, maxExpire, encoded)
     }
     db.commit()
   }
@@ -146,8 +168,7 @@ class SeenDb(prefix: String, id: String) {
   // to purge entries from directories that are no longer present.
   // Files in directories that are present will be purged already.
   def purge() {
-    error("TODO: purge")
-    // db.updateQuery("delete from seen where expire < ?", startTime)
+    db.updateQuery("delete from seen where expire < ?", SeenDb.startTime)
     db.commit()
   }
 

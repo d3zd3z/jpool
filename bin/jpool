@@ -79,6 +79,9 @@ case "$CMD" in
 	clone)
 		CMD=org.davidb.jpool.tools.Clone
 		;;
+	seendb)
+		CMD=org.davidb.jpool.SeenDb
+		;;
 	*)
 		echo "Unknown command: $CMD"
 		exit 1
