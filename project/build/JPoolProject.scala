@@ -55,7 +55,7 @@ class JPoolProject(info: ProjectInfo) extends DefaultProject(info) {
     val home = System.getProperty("java.home")
     val p = "make" :: "-f" :: "Makefile.native" ::
       "CLASSPATH=" + Path.makeString(cp.get) ::
-      "HOME=" + home ::
+      "JAVA_HOME=" + home ::
       "COMPILE_PATH=" + mainCompilePath ::
       Nil
     val status = Process(p) ! log
