@@ -45,7 +45,7 @@ class AttributesSuite extends Suite with ProgressPoolTest {
   }
 
   def testPool {
-    val a1 = Attributes.ofLinuxStat(Linux.lstat("/bin/ls"))
+    val a1 = Attributes.ofLinuxStat(Linux.lstat("/etc/passwd"))
     val h1 = a1.store(pool)
     val a2 = Attributes.ofLinuxStat(Linux.lstat("/dev/null"))
     val h2 = a2.store(pool)
