@@ -101,8 +101,11 @@ class PoolDb(metaPrefix: File) {
     private val tmpName = new File(metaPrefix, base + ".tmp")
     def write() {
       try {
-        val out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(tmpName)))
+        val fos = new FileOutputStream(tmpName)
+        val out = new BufferedWriter(new OutputStreamWriter(fos))
         emitItems(line => { out.write(line); out.newLine() })
+        out.flush()
+        fos.getChannel.force(true)
         out.close()
         tmpName.renameTo(realName)
       } catch {
