@@ -6,7 +6,7 @@ import java.util.UUID
 class JPoolProject(info: ProjectInfo) extends DefaultProject(info) {
   override def ivyXML =
     <dependencies>
-      <dependency org="log4j" name="log4j" rev="1.2.15">
+      <dependency org="log4j" name="log4j" rev="1.2.16">
         <exclude org="com.sun.jdmk"/>
         <exclude org="com.sun.jmx"/>
         <exclude org="javax.mail"/>
@@ -17,9 +17,9 @@ class JPoolProject(info: ProjectInfo) extends DefaultProject(info) {
 
   // val scalatest = "org.scalatest" % "scalatest" % "1.0" % "test"
   // val scalatest = "org.scalatest" % "scalatest" % "1.0.1-for-scala-2.8.0.Beta1-RC8-SNAPSHOT" % "test"
-  val scalatest = "org.scalatest" % "scalatest" % "1.2-for-scala-2.8.0.RC3-SNAPSHOT" % "test"
-  val codec = "commons-codec" % "commons-codec" % "1.3"
-  val h2 = "com.h2database" % "h2" % "1.2.131"
+  val scalatest = "org.scalatest" % "scalatest" % "1.2-for-scala-2.8.0.RC5-SNAPSHOT" % "test"
+  val codec = "commons-codec" % "commons-codec" % "1.4"
+  val h2 = "com.h2database" % "h2" % "1.2.137"
 
   // This seems to be buggy?
   // override def compileOptions = super.compileOptions ++
