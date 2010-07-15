@@ -1,7 +1,8 @@
 //////////////////////////////////////////////////////////////////////
 // Storage of tar files into the storage pool.
 
-package org.davidb.jpool.pool
+package org.davidb.jpool
+package pool
 
 import java.io.ByteArrayOutputStream
 import java.nio.channels.{ReadableByteChannel}

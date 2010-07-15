@@ -4,11 +4,12 @@
 // Usage:
 //   Dump jpool:file:///path path
 
-package org.davidb.jpool.tools
+package org.davidb.jpool
+package tools
 
 import org.davidb.logging.Loggable
 
-import jpool.pool.{TreeSave, PoolFactory}
+import org.davidb.jpool.pool.{TreeSave, PoolFactory}
 import java.net.URI
 import java.util.Properties
 

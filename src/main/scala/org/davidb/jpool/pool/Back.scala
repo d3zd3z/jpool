@@ -1,7 +1,8 @@
 //////////////////////////////////////////////////////////////////////
 // Management of overall backup properties.
 
-package org.davidb.jpool.pool
+package org.davidb.jpool
+package pool
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 import java.nio.ByteBuffer

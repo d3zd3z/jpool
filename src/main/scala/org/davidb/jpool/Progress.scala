@@ -78,7 +78,7 @@ object ProgressMeter {
 
   private var meter: ProgressMeter = null
 
-  private val stdout = System.console.writer // TODO: redirected stdout.
+  private val hasConsole = System.console ne null
   private val logTag = new Object
   private def logMessage(thunk: => Unit) = synchronized {
     val oldLines = linesPrinted
@@ -94,13 +94,14 @@ object ProgressMeter {
   }
   private var linesPrinted = 0
   private def clear() = synchronized {
-    if (linesPrinted > 0) {
+    if (hasConsole && linesPrinted > 0) {
       Console.printf("\033[%dA\033[J", linesPrinted)
       linesPrinted = 0
     }
   }
   private def show() { show(false) }
-  private def show(force: Boolean) = synchronized {
+  private def show(force: Boolean): Unit = synchronized {
+    if (!hasConsole) return
     clear()
     val lines = meter.formatState(force)
     for (line <- lines)

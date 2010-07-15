@@ -1,7 +1,8 @@
 //////////////////////////////////////////////////////////////////////
 // Test storage and retrieval of file data.
 
-package org.davidb.jpool.pool
+package org.davidb.jpool
+package pool
 
 import java.io.{File, FileOutputStream}
 import java.nio.ByteBuffer

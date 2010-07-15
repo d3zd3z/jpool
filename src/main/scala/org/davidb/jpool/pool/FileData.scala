@@ -1,7 +1,8 @@
 //////////////////////////////////////////////////////////////////////
 // Store and retrieve file data into the pool.
 
-package org.davidb.jpool.pool
+package org.davidb.jpool
+package pool
 
 import java.nio.ByteBuffer
 
@@ -22,7 +23,7 @@ object FileData {
   // Restore the file previously stored with 'store' into a file at
   // the named path.
   def restore(pool: ChunkSource, path: String, hash: Hash) {
-    Linux.writeFile(path, TreeBuilder.walk("ind", pool, hash).map(_.data).elements)
+    Linux.writeFile(path, TreeBuilder.walk("ind", pool, hash).map(_.data))
   }
 
   // Chunk size to use.  This is a 'var' but it really isn't intended

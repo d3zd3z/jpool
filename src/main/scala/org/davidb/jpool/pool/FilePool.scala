@@ -1,6 +1,7 @@
 // Storage of data in a "pool" consisting of a set of pool files.
 
-package org.davidb.jpool.pool
+package org.davidb.jpool
+package pool
 
 import scala.collection.mutable
 import java.io.File
@@ -64,18 +65,18 @@ class FilePool(prefix: File) extends ChunkStore {
   // it.
   override def contains(hash: Hash): Boolean = hashIndex.contains(hash)
 
-  def size: Int = error("TODO")
-  def elements: Iterator[(Hash, Chunk)] = error("TODO")
+  def iterator: Iterator[(Hash, Chunk)] = error("TODO")
 
   def -= (key: Hash) =
-    new UnsupportedOperationException("Pools only support adding, not removal")
+    throw new UnsupportedOperationException("Pools only support adding, not removal")
 
   var progressMeter: DataProgress = NullProgress
   def setProgress(meter: DataProgress) {
     progressMeter = meter
   }
 
-  def update(key: Hash, value: Chunk) = {
+  def += (kv: (Hash, Chunk)): this.type = {
+    val (key, value) = kv
     require(key == value.hash)
     if (!hashIndex.contains(key)) {
       progressMeter.addData(value.dataLength)
@@ -92,6 +93,7 @@ class FilePool(prefix: File) extends ChunkStore {
     } else {
       progressMeter.addDup(value.dataLength)
     }
+    this
   }
 
   // Scan the pool directory for the pool files.

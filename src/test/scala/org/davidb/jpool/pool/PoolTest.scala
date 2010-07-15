@@ -1,6 +1,7 @@
 // A trait to make for easier tests of pool-based things.
 
-package org.davidb.jpool.pool
+package org.davidb.jpool
+package pool
 
 import java.io.File
 import java.net.URI

@@ -2,6 +2,7 @@
 
 package org.davidb.jpool
 
+import scala.annotation.tailrec
 import java.nio.channels.{Channels, ReadableByteChannel}
 import java.nio.ByteBuffer
 
@@ -84,7 +85,7 @@ object TarDecode {
   def main(args: Array[String]) {
     val stdin = Channels.newChannel(System.in)
     val tar = new TarParser(stdin)
-    def loop {
+    @tailrec def loop {
       tar.getHeader match {
         case None => println("EOF")
         case Some(x) =>

@@ -1,7 +1,8 @@
 //////////////////////////////////////////////////////////////////////
 // Restoring tar files from the storage pool.
 
-package org.davidb.jpool.pool
+package org.davidb.jpool
+package pool
 
 import java.nio.channels.WritableByteChannel
 import java.nio.ByteBuffer

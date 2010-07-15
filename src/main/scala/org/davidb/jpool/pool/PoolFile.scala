@@ -1,7 +1,8 @@
 //////////////////////////////////////////////////////////////////////
 // A single file holding a bunch of chunks in the storage pool.
 
-package org.davidb.jpool.pool
+package org.davidb.jpool
+package pool
 
 import java.io.{File, RandomAccessFile}
 import java.nio.channels.FileChannel

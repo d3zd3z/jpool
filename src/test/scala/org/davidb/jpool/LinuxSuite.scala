@@ -9,14 +9,17 @@ import java.security.MessageDigest
 import org.scalatest.Suite
 import scala.collection.mutable.ListBuffer
 
+// Testing this is harder than you might think.  For example, on
+// NixOS, very few of the standard directories are present.
+
 class LinuxSuite extends Suite {
   def testNative {
     assert(Linux.message == "Hello world")
   }
 
   def testDirs {
-    val usrBinSet = Set() ++ Linux.readDir("/usr/bin")
-    val findSet = Set() ++ findReadDir("/usr/bin")
+    val usrBinSet = Set() ++ Linux.readDir("/tmp")
+    val findSet = Set() ++ findReadDir("/tmp")
     assert(usrBinSet === findSet)
   }
 
@@ -40,7 +43,7 @@ class LinuxSuite extends Suite {
 
   def testStats {
     // TODO: Device nodes and such aren't that portable.
-    checkName("/bin/ls", "REG")
+    checkName("/etc/passwd", "REG")
     checkName("/dev/null", "CHR")
     checkName("/dev/sda", "BLK")
     checkName(".", "DIR")
@@ -102,7 +105,7 @@ class LinuxSuite extends Suite {
   }
 
   def testReads {
-    hashFileIn("/bin/ls", 32768)
+    hashFileIn("/etc/passwd", 32768)
     // Test on a large file to demonstrate there is no space leak.
     // hashFileIn("hugefile", 32768)
   }
@@ -115,7 +118,7 @@ class LinuxSuite extends Suite {
     // making sure that the descriptor gets closed.
     for (i <- 1 to 2050) {
       intercept[SimpleException] {
-        Linux.readFile("/bin/ls", 32768, handle _)
+        Linux.readFile("/etc/passwd", 32768, handle _)
       }
     }
   }
@@ -124,13 +127,13 @@ class LinuxSuite extends Suite {
     val md = MessageDigest.getInstance("SHA-1")
     TempDir.withTempDir { tdir =>
       val fileName = "%s/file" format tdir.getPath
-      val pieces = Stream.range(1, 40) map { index =>
+      val pieces = Iterator.range(1, 40) map { index =>
         val text = StringMaker.generate(index, 256*1024)
         val buf = ByteBuffer.wrap(text.getBytes)
         md.update(buf.duplicate)
         buf
       }
-      Linux.writeFile(fileName, pieces.elements)
+      Linux.writeFile(fileName, pieces)
       val dig1 = Hash.raw(md.digest)
       val dig2 = fileHash(fileName)
       assert(dig1 === dig2)
@@ -160,7 +163,7 @@ class LinuxSuite extends Suite {
           // Find generates a blank name for '.', which
           // Linux.readDir skips.
           if (name.length > 0)
-            result += (name, num.toLong)
+            result += ((name, num.toLong))
         case _ =>
           printf("Unknown output from find: '%s'%n", line)
       }

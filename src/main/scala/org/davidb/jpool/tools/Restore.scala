@@ -4,7 +4,8 @@
 // Usage:
 //   Restore jpool:file:///path hash > tarball
 
-package org.davidb.jpool.tools
+package org.davidb.jpool
+package tools
 
 import java.net.URI
 import java.nio.channels.Channels

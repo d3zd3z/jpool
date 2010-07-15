@@ -1,7 +1,9 @@
 // Test file pools.
 
-package org.davidb.jpool.pool
+package org.davidb.jpool
+package pool
 
+import scala.annotation.tailrec
 import java.io.File
 import java.net.URI
 import org.scalatest.{Suite, BeforeAndAfter}
@@ -79,7 +81,7 @@ class FilePoolSuite extends Suite with ProgressPoolTest {
 
     // Assure that multiple files were opened.
     var limit = -1
-    def loop(index: Int) {
+    @tailrec def loop(index: Int) {
       val f = new File(tmpDir.path, "pool-data-%04d.data" format index)
       if (f.isFile) {
         // printf("File: %d len = %x%n", index, f.length)

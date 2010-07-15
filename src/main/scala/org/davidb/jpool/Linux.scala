@@ -3,6 +3,7 @@
 
 package org.davidb.jpool
 
+import scala.annotation.tailrec
 import java.nio.ByteBuffer
 import java.io.IOException
 import scala.collection.immutable
@@ -34,7 +35,7 @@ object Linux extends AnyRef with Loggable {
   def readFile(path: String, chunkSize: Int, process: ByteBuffer => Unit) {
     val fd = openForRead(path)
     try {
-      def loop {
+      @tailrec def loop {
         val buf = ByteBuffer.allocate(chunkSize)
         val count = readChunk(fd, buf.array, buf.arrayOffset + buf.position,
           buf.remaining)

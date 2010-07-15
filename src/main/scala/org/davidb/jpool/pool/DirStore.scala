@@ -6,14 +6,15 @@
 // a directory.  It is essentially a list of pairs of names and
 // hashes.
 
-package org.davidb.jpool.pool
+package org.davidb.jpool
+package pool
 
 import java.nio.ByteBuffer
 
 object DirStore {
   // Iterate (lazily) through the directory specified by the given
   // hash.
-  def walk(pool: ChunkSource, hash: Hash): Stream[(String, Hash)] = {
+  def walk(pool: ChunkSource, hash: Hash): Iterator[(String, Hash)] = {
     for {
       node <- TreeBuilder.walk("dir", pool, hash)
       entry <- decode(node)
@@ -37,12 +38,11 @@ object DirStore {
 
   // This is a bit fragile, since the stream walks through a mutable
   // structure.
-  private def decode(chunk: Chunk): Stream[(String, Hash)] = decodeData(chunk.data)
+  private def decode(chunk: Chunk): Iterator[(String, Hash)] = decodeData(chunk.data)
 
-  private def decodeData(data: ByteBuffer): Stream[(String, Hash)] = {
-    if (data.remaining == 0)
-      Stream.empty
-    else {
+  private def decodeData(data: ByteBuffer): Iterator[(String, Hash)] = new Iterator[(String, Hash)] {
+    def hasNext = (data.remaining > 0)
+    def next(): (String, Hash) = {
       val nameLength = data.getShort
       val nameEncoded = new Array[Byte](nameLength)
       data.get(nameEncoded)
@@ -50,7 +50,7 @@ object DirStore {
       val hashBuf = new Array[Byte](Hash.HashLength)
       data.get(hashBuf)
       val hash = Hash.raw(hashBuf)
-      Stream.cons((name, hash), decodeData(data))
+      (name, hash)
     }
   }
 }

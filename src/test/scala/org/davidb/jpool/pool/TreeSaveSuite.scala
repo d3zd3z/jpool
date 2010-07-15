@@ -1,7 +1,8 @@
 //////////////////////////////////////////////////////////////////////
 // Testing tree saving.
 
-package org.davidb.jpool.pool
+package org.davidb.jpool
+package pool
 
 import scala.collection.mutable
 import org.scalatest.{Suite, TestFailedException}
@@ -21,13 +22,13 @@ class TreeSaveSuite extends Suite with ProgressPoolTest with Loggable {
     var h2 = new TreeSave(pool, "/dev", meter).store(someProps("dev"))
     printf("%s%n%s%n", h1, h2)
 
-    check(h1, "./ls")
+    check(h1, "./sh")
     check(h2, "./null")
 
     // Test a restore.
     logger.info("Testing restore: bin")
     val r1 = restore("restore-bin", h1)
-    Proc.run("cmp", "/bin/ls", "%s/ls" format r1)
+    Proc.run("cmp", "/bin/sh", "%s/sh" format r1)
 
     logger.info("Testing restore: dev")
     val r2 = restore("restore-dev", h2)
@@ -86,8 +87,8 @@ class TreeSaveSuite extends Suite with ProgressPoolTest with Loggable {
   private def compareBackup(first: Hash, secondDir: String) {
     val second = new TreeSave(pool, secondDir, meter).store(someProps("bin"))
 
-    val firstWalk = new TreeWalk(pool).walk(first).elements
-    val secondWalk = new TreeWalk(pool).walk(second).elements
+    val firstWalk = new TreeWalk(pool).walk(first)
+    val secondWalk = new TreeWalk(pool).walk(second)
 
     while (firstWalk.hasNext && secondWalk.hasNext) {
       val f = firstWalk.next

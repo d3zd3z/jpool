@@ -1,6 +1,7 @@
 //////////////////////////////////////////////////////////////////////
 
-package org.davidb.jpool.tools
+package org.davidb.jpool
+package tools
 
 import java.io.File
 
@@ -18,6 +19,7 @@ object Compact extends AnyRef with Loggable {
     // Just open the seen database perform an expire, and close it.
     // This should be sufficient to perform the conversion.
     val db = new SeenDb(args(0), args(1))
+    db.purge()
     db.close()
 
     // This is out of the H2 manual.

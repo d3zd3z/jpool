@@ -25,7 +25,7 @@ JAR=`echo $BASEDIR/target/scala_*/jpool_*-*.jar`
 WORK_CLASSES=`echo $BASEDIR/target/scala_*/classes`
 
 # Unfortunately, this has to be hard coded.
-SCALA_LIB=`echo $BASEDIR/project/boot/scala-2.7.*/lib/scala-library.jar`
+SCALA_LIB=`echo $BASEDIR/project/boot/scala-2.8.*/lib/scala-library.jar`
 
 LIBS=`find $BASEDIR/lib_managed -name '*.jar' -printf "%p:"`
 
@@ -78,6 +78,9 @@ case "$CMD" in
 		;;
 	clone)
 		CMD=org.davidb.jpool.tools.Clone
+		;;
+	seendb)
+		CMD=org.davidb.jpool.SeenDb
 		;;
 	*)
 		echo "Unknown command: $CMD"

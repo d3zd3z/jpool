@@ -4,9 +4,10 @@
 // Usage:
 //   Show jpool:file:///path hash
 
-package org.davidb.jpool.tools
+package org.davidb.jpool
+package tools
 
-import jpool.pool.{TreeWalk, PoolFactory}
+import org.davidb.jpool.pool.{TreeWalk, PoolFactory}
 import java.net.URI
 
 object Show {

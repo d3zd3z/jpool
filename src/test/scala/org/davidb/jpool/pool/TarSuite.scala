@@ -1,7 +1,8 @@
 //////////////////////////////////////////////////////////////////////
 // Test tar saving and restoring.
 
-package org.davidb.jpool.pool
+package org.davidb.jpool
+package pool
 
 import org.scalatest.Suite
 

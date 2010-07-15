@@ -19,9 +19,9 @@ class HanoiCombinerSuite extends Suite {
         vals.pop()
       }
 
-      vals += i
+      vals.push(i)
 
-      assert(vals sameElements HanoiCombiner.presentSet(i))
+      assert(vals.reverse sameElements HanoiCombiner.presentSet(i))
     }
   }
 }

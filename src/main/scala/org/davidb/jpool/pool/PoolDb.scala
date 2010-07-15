@@ -1,10 +1,12 @@
 //////////////////////////////////////////////////////////////////////
 // Pool metadata database.
 
-package org.davidb.jpool.pool
+package org.davidb.jpool
+package pool
 
 import java.io.File
 import java.io.{InputStream, InputStreamReader, BufferedReader}
+import java.io.{FileOutputStream, OutputStreamWriter, BufferedWriter}
 import java.sql.{Connection, Driver, ResultSet, PreparedStatement}
 import java.security.MessageDigest
 import java.util.UUID
@@ -30,6 +32,7 @@ class PoolDb(metaPrefix: File) {
   def setProperty(key: String, value: String) {
     db.setProperty(key, value)
     db.commit()
+    writeProperties()
   }
 
   // Add a record that the specified backup is present.
@@ -38,6 +41,7 @@ class PoolDb(metaPrefix: File) {
     db.updateQuery("delete from backups where hash = ?", b)
     db.updateQuery("insert into backups values (?)", b)
     db.commit()
+    writeBackups()
   }
 
   def getBackups(): Set[Hash] = {
@@ -88,4 +92,52 @@ class PoolDb(metaPrefix: File) {
         None
     } else None
   }
+
+  // Write all of the metadata to plain text files as well.  Assume
+  // all of the fields are plain text, and the keys don't have any
+  // equal signs in them.
+  abstract class DataWriter(base: String) {
+    private val realName = new File(metaPrefix, base + ".txt")
+    private val tmpName = new File(metaPrefix, base + ".tmp")
+    def write() {
+      try {
+        val fos = new FileOutputStream(tmpName)
+        val out = new BufferedWriter(new OutputStreamWriter(fos))
+        emitItems(line => { out.write(line); out.newLine() })
+        out.flush()
+        fos.getChannel.force(true)
+        out.close()
+        tmpName.renameTo(realName)
+      } catch {
+        case _ =>
+      }
+    }
+    def emitItems(writeLine: (String => Unit))
+
+    def checkWrite() {
+      if (!realName.exists())
+        write()
+    }
+  }
+
+  object PropWriter extends DataWriter("props") {
+    def emitItems(writeLine: (String => Unit)) {
+      for ((key, value) <- db.query(getString2 _, "select key, value from properties")) {
+        writeLine("%s=%s".format(key, value))
+      }
+    }
+  }
+  def writeProperties() = PropWriter.write()
+  PropWriter.checkWrite()
+
+  object BackWriter extends DataWriter("backups") {
+    def emitItems(writeLine: (String => Unit)) {
+      for (back <- getBackups())
+        writeLine(back.toString())
+    }
+  }
+  def writeBackups() = BackWriter.write()
+  BackWriter.checkWrite()
+
+  def getString2(rs: ResultSet): (String, String) = (rs.getString(1), rs.getString(2))
 }

@@ -103,12 +103,12 @@ JNIEXPORT void JNICALL Java_org_davidb_jpool_Linux_00024_setup
 		return;
 
 	lbAppend = (*env)->GetMethodID(env, ListBufferClass, "$plus$eq",
-			"(Ljava/lang/Object;)V");
+			"(Ljava/lang/Object;)Lscala/collection/mutable/ListBuffer;");
 	if (lbAppend == NULL)
 		return;
 
 	lbToList = (*env)->GetMethodID(env, ListBufferClass, "toList",
-			"()Lscala/List;");
+			"()Lscala/collection/immutable/List;");
 	if (lbToList == NULL)
 		return;
 
