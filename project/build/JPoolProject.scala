@@ -19,7 +19,7 @@ class JPoolProject(info: ProjectInfo) extends DefaultProject(info) {
   // val scalatest = "org.scalatest" % "scalatest" % "1.0.1-for-scala-2.8.0.Beta1-RC8-SNAPSHOT" % "test"
   val scalatest = "org.scalatest" % "scalatest" % "1.2-for-scala-2.8.0.final-SNAPSHOT" % "test"
   val codec = "commons-codec" % "commons-codec" % "1.4"
-  val h2 = "com.h2database" % "h2" % "1.2.139"
+  val h2 = "com.h2database" % "h2" % "1.2.141"
 
   // This seems to be buggy?
   // override def compileOptions = super.compileOptions ++
