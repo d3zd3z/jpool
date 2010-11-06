@@ -153,19 +153,23 @@ trait HashIndex[E] extends mutable.Map[Hash, E] {
 
     while (f.hasNext && e.hasNext) {
       if (f.head < e.head)
-        error("TODO: Found extra file")
+        error("TODO: Found extra file: " + mkpath(f.head))
       else if (e.head < f.head)
-        error("TODO: File missing")
+        error("TODO: File missing: " + mkpath(e.head))
       else {
         f.next
         e.next
       }
     }
 
-    if (f.hasNext)
-      error("TODO: Found extra file")
-    if (e.hasNext)
-      error("TODO: File missing")
+    if (f.hasNext) {
+      f.next
+      error("TODO: Found extra file: " + mkpath(f.head))
+    }
+    if (e.hasNext) {
+      e.next
+      error("TODO: File missing: " + mkpath(e.head))
+    }
   }
 
   def flush() {
