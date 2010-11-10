@@ -21,6 +21,12 @@ class JPoolProject(info: ProjectInfo) extends DefaultProject(info) {
   val codec = "commons-codec" % "commons-codec" % "1.4"
   val h2 = "com.h2database" % "h2" % "1.2.141"
 
+  // Unfortunately, this seems to be specialized to the particular JDK
+  // version we're running.  We could extract this from the
+  // properties, but then the code would depend on the VM it was built
+  // on.
+  val bouncyCastle = "org.bouncycastle" % "bcprov-jdk16" % "1.45"
+
   // This seems to be buggy?
   // override def compileOptions = super.compileOptions ++
   //   List(CompileOption("-no-specialization"))
@@ -72,4 +78,6 @@ class JPoolProject(info: ProjectInfo) extends DefaultProject(info) {
   } dependsOn(compile)
   override def testCompileAction = super.testCompileAction dependsOn(native)
 
+  // Temporary.
+  override def mainClass = Some("org.davidb.jpool.crypto.Crypto")
 }

@@ -82,6 +82,9 @@ case "$CMD" in
 	seendb)
 		CMD=org.davidb.jpool.SeenDb
 		;;
+	crypto)
+		CMD=org.davidb.jpool.crypto.Crypto
+		;;
 	*)
 		echo "Unknown command: $CMD"
 		exit 1
