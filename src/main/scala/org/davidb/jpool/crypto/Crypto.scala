@@ -137,7 +137,10 @@ abstract class RSAInfo {
 
   // Write the private key to a file, encrypted with the given
   // password.
-  def savePrivate(file: File, secret: Array[Char]) {
+  def savePrivate(file: File, pin: PinReader) {
+    val secret = pin.getInitial()
+    if (secret.length == 0)
+      error("Need a pin to be able to save")
     val salt = new Array[Byte](8)
     Crypto.rand.nextBytes(salt)
     val keyspec = new PBEKeySpec(secret, salt, 100)
@@ -146,6 +149,7 @@ abstract class RSAInfo {
     val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding", "BC")
     cipher.init(Cipher.ENCRYPT_MODE, key, Crypto.rand)
     val ctext = cipher.doFinal(priv.getEncoded)
+    pin.wipePin(secret)
 
     val pw = new PEMWriter(file)
     pw.writeHeader("JPOOL SECRET KEY")
@@ -236,7 +240,7 @@ object RSAInfo {
   }
 
   // Load a private key.
-  def readPrivate(file: File, secret: Array[Char]): PrivateKey = {
+  def readPrivate(file: File, pin: PinReader): PrivateKey = {
     val pr = new PrivateKeyReader(file)
     pr.readHeader("JPOOL SECRET KEY")
     pr.readProc()
@@ -244,12 +248,16 @@ object RSAInfo {
     val ctext = pr.readChunk()
     pr.close()
 
+    val secret = pin.getPin("Enter key password: ")
+    if (secret.length == 0)
+      error("Need password to read key")
     val keyspec = new PBEKeySpec(secret, salt, 100)
     val kf = SecretKeyFactory.getInstance("PBEWithSHA1And256BitAES-CBC-BC")
     val key = kf.generateSecret(keyspec)
     val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding", "BC")
     cipher.init(Cipher.DECRYPT_MODE, key, Crypto.rand)
     val text = cipher.doFinal(ctext)
+    pin.wipePin(secret)
 
     // Decode the key
     val keyFact = KeyFactory.getInstance("RSA", "BC")
@@ -257,13 +265,13 @@ object RSAInfo {
     keyFact.generatePrivate(spec)
   }
 
-  // Load a keypair from public/private info.
-  def loadPair(certFile: File, keyFile: File, secret: Array[Char]): RSAInfo = {
+  // Load a keypair from public/private info.  Won't prompt for the
+  // pin until the private key is actually needed.
+  def loadPair(certFile: File, keyFile: File, pin: PinReader): RSAInfo = {
     val lcert = readCert(certFile)
-    val lpriv = readPrivate(keyFile, secret)
     new RSAInfo {
       val public = lcert.getPublicKey
-      val priv = lpriv
+      lazy val priv = readPrivate(keyFile, pin)
       val cert = lcert
     }
   }
@@ -326,13 +334,15 @@ object Crypto {
 
   def main(args: Array[String]) {
     // bench1()
+    val pinread = new FixedPinReader("secret")
+    // val pinread = new JavaConsolePinReader()
     val info = RSAInfo.generate()
     info.saveCert(new File("backup.crt"))
-    info.savePrivate(new File("backup.key"), "secret".toCharArray)
+    info.savePrivate(new File("backup.key"), pinread)
     info.verifyMatch()
 
     val info2 = RSAInfo.loadCert(new File("backup.crt"))
-    val priv = RSAInfo.loadPair(new File("backup.crt"), new File("backup.key"), "secret".toCharArray)
+    val priv = RSAInfo.loadPair(new File("backup.crt"), new File("backup.key"), pinread)
     if (priv.priv != info.priv)
       error("Unable to reload key")
     priv.verifyMatch()
