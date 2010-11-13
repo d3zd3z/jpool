@@ -589,6 +589,32 @@ JNIEXPORT void JNICALL Java_org_davidb_jpool_Linux_00024_makeSpecial
 		path_error(env, obj, path, "mknod");
 }
 
+JNIEXPORT jstring JNICALL Java_org_davidb_jpool_Linux_00024_ttyname
+	(JNIEnv *env, jobject obj, int fd)
+{
+	/* The ttyname_r call appears to be broken on linux (off by
+	 * one).  If the name doesn't quite fit in the buffer, it will
+	 * consider it success, but obliterate the last character with
+	 * the nul.  To help, just make this big enough. */
+	int size = 1024;
+	char *buffer = malloc(size);
+	if (buffer == NULL) {
+		(*env)->ThrowNew(env, oomClass, "Unable to allocate ttyname buffer");
+		return NULL;
+	}
+
+	int err = ttyname_r(fd, buffer, size);
+	if (err != 0) {
+		free(buffer);
+		path_error(env, obj, NULL, "ttyname");
+		return NULL;
+	}
+
+	jstring result = (*env)->NewStringUTF(env, buffer);
+	free(buffer);
+	return result;
+}
+
 /* Note that this is glibc specific, and depends on the _GNU_SOURCE
  * defined before including anything. */
 JNIEXPORT jstring JNICALL Java_org_davidb_jpool_Linux_00024_strerror

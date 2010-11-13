@@ -28,6 +28,7 @@ object Linux extends AnyRef with Loggable {
   @native def symlink(oldPath: String, newPath: String)
   @native def link(oldPath: String, newPath: String)
   @native def mkdir(name: String)
+  @native def ttyname(fd: Int): String
 
   // Bulk read.  Reads the contents of the given file, in blocks of
   // the given chunks size, and calls 'process' with a fresh
