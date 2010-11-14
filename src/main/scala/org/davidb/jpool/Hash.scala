@@ -32,9 +32,12 @@ object Hash {
   def apply(kind: String, payload: String): Hash = Hash(kind, payload.getBytes())
 
   // Build a hash out of a raw payload.
-  def raw(rawHash: Array[Byte]): Hash = new Hash(rawHash)
-  def raw(rawHash: Array[Byte], offset: Int, length: Int): Hash =
-    new Hash(rawHash, offset, length)
+  def raw(rawHash: Array[Byte]): Hash = raw(rawHash, 0, rawHash.length)
+  def raw(rawHash: Array[Byte], offset: Int, length: Int): Hash = {
+    val buf = new Array[Byte](length)
+    Array.copy(rawHash, offset, buf, 0, length)
+    new Hash(buf)
+  }
 
   def ofString(text: String): Hash = {
     require(text.length == HashLength * 2)
@@ -47,30 +50,15 @@ object Hash {
   }
 }
 
-class Hash private (_digest: Array[Byte], _offset: Int, _length: Int) extends Ordered[Hash]
+class Hash private (val rawBytes: Array[Byte]) extends Ordered[Hash]
 {
-  // TODO: There's got to be a better way.
-  val rawBytes = {
-    val HL = Hash.HashLength
-    require(_length == HL)
-    require(_offset >= 0)
-    require(_offset + _length <= _digest.length)
-
-    // val raw2 = Array.concat(_digest.slice(_offset, _offset + _length).force)
-    val raw2 = new Array[Byte](HL)
-    for (i <- 0 until HL)
-      raw2(i) = _digest(i + _offset)
-    raw2
-  }
-
-  private def this(_digest: Array[Byte]) = this(_digest, 0, _digest.length)
+  assert(rawBytes.length == Hash.HashLength)
 
   def getBuffer() = ByteBuffer.wrap(getBytes)
   def getBytes(): Array[Byte] = {
     val HL = Hash.HashLength
     val tmp = new Array[Byte](HL)
-    for (i <- 0 until HL)
-      tmp(i) = rawBytes(i)
+    Array.copy(rawBytes, 0, tmp, 0, HL)
     tmp
   }
 
