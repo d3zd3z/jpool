@@ -11,6 +11,7 @@ import java.security.KeyFactory
 import java.security.KeyPairGenerator
 import java.security.PublicKey
 import java.security.PrivateKey
+import java.security.MessageDigest
 import java.security.SecureRandom
 import java.security.Security
 import java.security.cert.CertificateFactory
@@ -32,36 +33,86 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider
 import org.bouncycastle.jce.X509Principal
 import org.bouncycastle.x509.X509V1CertificateGenerator
 
-class BackupSecret private (val key: Key) {
+class BackupSecret private (val key: Key, val ivSeed: Array[Byte]) {
+  // Return the key encrypted with an RSA public key.
+  def wrap(rsa: RSAInfo): Array[Byte] = {
+    // Buffer big enough to hold the key and the IV seed.
+
+    val buf = new Array[Byte](32)
+    val plain = key.getEncoded()
+    try {
+      assert(plain.length == 16)
+      assert(ivSeed.length == 16)
+      Array.copy(plain, 0, buf, 0, 16)
+      Array.copy(ivSeed, 0, buf, 16, 16)
+      rsa.encrypt(buf)
+    } finally {
+      Crypto.wipe(plain)
+      Crypto.wipe(buf)
+    }
+  }
+
+  // Generate an IV for a given offset.  The offset is a string of
+  // bytes that will be hashed to make this IV unique.  It is
+  // important to never encrypt more than one thing with the same
+  // key/offset.
+  def makeIV(offset: Array[Byte]): IvParameterSpec = {
+    val md = MessageDigest.getInstance("SHA-1")
+    md.update(ivSeed)
+    md.update(offset)
+    val iv = new Array[Byte](16)
+    Array.copy(md.digest(), 0, iv, 0, 16)
+    new IvParameterSpec(iv)
+  }
+
+  // Encrypt with a given offset.
+  def encrypt(plainText: Array[Byte], offset: Array[Byte]): Array[Byte] = {
+    val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding", "BC")
+    cipher.init(Cipher.ENCRYPT_MODE, key, makeIV(offset), Crypto.rand)
+    cipher.doFinal(plainText)
+  }
+
+  // Decrypt with a given offset.
+  def decrypt(cipherText: Array[Byte], offset: Array[Byte]): Array[Byte] = {
+    val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding", "BC")
+    cipher.init(Cipher.DECRYPT_MODE, key, makeIV(offset), Crypto.rand)
+    cipher.doFinal(cipherText)
+  }
+
+  override def equals(other: Any): Boolean = other match {
+    case oth: BackupSecret =>
+      key == oth.key && java.util.Arrays.equals(ivSeed, oth.ivSeed)
+    case _ => false
+  }
+
+  override def hashCode(): Int = {
+    // Use the ivSeed, since that doesn't need to be secret.
+    (ivSeed(0) << 24) |
+      ((ivSeed(1) & 0xff) << 16) |
+      ((ivSeed(2) & 0xff) << 8) |
+      (ivSeed(3) & 0xff)
+  }
 }
 object BackupSecret {
   def generate() = {
     val kgen = KeyGenerator.getInstance("AES", "BC")
     kgen.init(128, Crypto.rand)
-    new BackupSecret(kgen.generateKey())
-  }
-}
-
-case class Encrypted(cipherText: Array[Byte], iv: Array[Byte]) {
-  def decrypt(key: Key): Array[Byte] = {
-    val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding", Encrypted.provider)
-    cipher.init(Cipher.DECRYPT_MODE, key, new IvParameterSpec(iv), Crypto.rand)
-    cipher.doFinal(cipherText)
-  }
-}
-object Encrypted {
-  def encrypt(key: Key, plainText: Array[Byte]): Encrypted = {
-    val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding", provider)
-    cipher.init(Cipher.ENCRYPT_MODE, key, Crypto.rand)
-    val iv = cipher.getIV
-    val cipherText = cipher.doFinal(plainText)
-    new Encrypted(cipherText, iv)
+    val ivSeed = new Array[Byte](16) // TODO: Get from cipher.
+    Crypto.rand.nextBytes(ivSeed)
+    new BackupSecret(kgen.generateKey(), ivSeed)
   }
 
-  // The BouncyCastle seems to be a bit faster than the SunJCE
-  // provider.  Not a lot.
-  val provider = "BC"
-  // val provider = "SunJCE"
+  // Unwrap a secret based on a given key.
+  def unwrap(rsa: RSAInfo, wrapped: Array[Byte]): BackupSecret = {
+    val bytes = rsa.decrypt(wrapped)
+    assert(bytes.length == 32)
+    val keyBytes = new Array[Byte](16)
+    val ivSeed = new Array[Byte](16)
+    Array.copy(bytes, 0, keyBytes, 0, 16)
+    Array.copy(bytes, 16, ivSeed, 0, 16)
+    val key = new SecretKeySpec(keyBytes, "AES")
+    new BackupSecret(key, ivSeed)
+  }
 }
 
 class PEMWriter(file: File) {
@@ -125,6 +176,11 @@ abstract class RSAInfo {
   def public: PublicKey
   def priv: PrivateKey
   def cert: X509Certificate
+
+  def getFingerprint(): Array[Byte] = {
+    val md = MessageDigest.getInstance("SHA-1")
+    md.digest(cert.getEncoded())
+  }
 
   // Write the certificate to the given file.
   def saveCert(file: File) {
@@ -327,12 +383,47 @@ object Crypto {
 
   Security.addProvider(new BouncyCastleProvider)
 
-  def rand = new SecureRandom()
+  val rand = new SecureRandom()
+
+  def wipe(bytes: Array[Byte]) {
+    val len = bytes.length
+    var offset = 0
+    while (offset < len) {
+      bytes(offset) = 0
+      offset += 1
+    }
+  }
 
   val secretBlock = Array.tabulate(1024 * 1024)(_.toByte)
   val smallBlock = Array.tabulate(16)(_.toByte)
 
   def main(args: Array[String]) {
+    val pinread = new FixedPinReader("secret")
+    val info = RSAInfo.generate()
+    info.saveCert(new File("backup.crt"))
+    info.savePrivate(new File("backup.key"), pinread)
+    val pf = new pool.EncryptedPoolFile(new File("testpool.data"), info)
+
+    val c1 = Chunk.make("blob", "Test blob")
+    val of1 = pf.append(c1)
+    printf("0x%x\n", of1)
+
+    val c1b = pf.read(of1)
+    pf.close()
+
+    check(info, Array((of1, c1)))
+  }
+
+  def check(info: RSAInfo, ofs: Array[(Int, Chunk)]) {
+    val pf = new pool.EncryptedPoolFile(new File("testpool.data"), info)
+    for ((offset, chIn) <- ofs) {
+      val chGot = pf.read(offset)
+      if (chGot.hash != chIn.hash)
+        error("Error reading chunk")
+    }
+  }
+
+  def test1() {
     // bench1()
     val pinread = new FixedPinReader("secret")
     // val pinread = new JavaConsolePinReader()
@@ -340,23 +431,57 @@ object Crypto {
     info.saveCert(new File("backup.crt"))
     info.savePrivate(new File("backup.key"), pinread)
     info.verifyMatch()
+    // printf("Cert fp:\n")
+    // Pdump.dump(info.getFingerprint())
 
     val info2 = RSAInfo.loadCert(new File("backup.crt"))
     val priv = RSAInfo.loadPair(new File("backup.crt"), new File("backup.key"), pinread)
     if (priv.priv != info.priv)
       error("Unable to reload key")
     priv.verifyMatch()
+
+    // Make sure we can make a backup secret and recover it using the
+    // info.
+    val key = BackupSecret.generate()
+    val wrapped = key.wrap(info2)
+    val key2 = BackupSecret.unwrap(info, wrapped)
+    if (key != key2)
+      error("Key encoding mismatch")
+
+    // Write a chunk to a debug file, and make sure we can read it
+    // back.
+    val secret = BackupSecret.generate()
+    val chan = new java.io.RandomAccessFile("test.data", "rw").getChannel()
+    val ch2 = Chunk.make("blob", "The quick brown fox jumps over the lazy dogs 1234567890 times." +
+      "There once was a poor little boy named Jack, whose poor old mother wasn't feeling very well.")
+    val ch = Chunk.make("blob", "")
+    ch.writeEncrypted(chan, secret, 42)
+    ch2.writeEncrypted(chan, secret, 42)
+
+    def keyGet(base: Int): crypto.BackupSecret = {
+      assert(base == 42)
+      secret
+    }
+
+    chan.position(0)
+    val chb = Chunk.readEncrypted(chan, keyGet _)
+    assert(chb.hash == ch.hash)
+    val ch2b = Chunk.readEncrypted(chan, keyGet _)
+    assert(ch2b.hash == ch2.hash)
+
+    chan.close()
   }
 
   def bench1() {
     for (i <- 1 to 5) {
       val secret = BackupSecret.generate()
-      Timer.time(Encrypted.encrypt(secret.key, secretBlock), "encrypt 1024k")
-      Timer.time(Encrypted.encrypt(secret.key, smallBlock), "encrypt 16")
-      val bigCipher = Encrypted.encrypt(secret.key, secretBlock)
-      val smallCipher = Encrypted.encrypt(secret.key, smallBlock)
-      Timer.time(bigCipher.decrypt(secret.key), "decrypt 1024k")
-      Timer.time(smallCipher.decrypt(secret.key), "decrypt 16")
+      val offset = "42".getBytes("UTF-8")
+      Timer.time(secret.encrypt(secretBlock, offset), "encrypt 1024k")
+      Timer.time(secret.encrypt(smallBlock, offset), "encrypt 16")
+      val bigCipher = secret.encrypt(secretBlock, offset)
+      val smallCipher = secret.encrypt(smallBlock, offset)
+      Timer.time(secret.decrypt(bigCipher, offset), "decrypt 1024k")
+      Timer.time(secret.decrypt(smallCipher, offset), "decrypt 16")
       printf("---\n")
     }
   }
