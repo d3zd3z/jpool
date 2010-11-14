@@ -24,19 +24,19 @@ object Chunk {
     new DataChunk(kind, data.duplicate)
 
   def readUnchecked(chan: FileChannel): (Chunk, Hash) = {
-    val header = readBytes(chan, 48)
+    val header = FileUtil.readBytes(chan, 48)
     header.order(LITTLE_ENDIAN)
 
-    val version = getBytes(header, 16)
+    val version = FileUtil.getBytes(header, 16)
     if (!java.util.Arrays.equals(version, baseVersion))
       error("Invalid chunk header")
 
     val clen = header.getInt()
     val uclen = header.getInt()
-    val kind = new String(getBytes(header, 4))
-    val hash = getBytes(header, 20)
+    val kind = new String(FileUtil.getBytes(header, 4))
+    val hash = FileUtil.getBytes(header, 20)
 
-    val payload = readBytes(chan, (clen + 15) & ~15)
+    val payload = FileUtil.readBytes(chan, (clen + 15) & ~15)
     payload.limit(clen)
     // println("Clen: " + clen)
     // println("UClen: " + uclen)
@@ -60,9 +60,9 @@ object Chunk {
   def readEncrypted(chan: FileChannel, getKey: Int => crypto.BackupSecret): Chunk = {
     val cryptOffset = chan.position.toString.getBytes("UTF-8")
 
-    val header = readBytes(chan, 16)
+    val header = FileUtil.readBytes(chan, 16)
     header.order(LITTLE_ENDIAN)
-    val version = getBytes(header, 8)
+    val version = FileUtil.getBytes(header, 8)
     if (!java.util.Arrays.equals(version, cryptVersion))
       // TODO: Try reading an encrypted chunk, optionally.
       error("Invalid encrypted chunk header")
@@ -71,13 +71,13 @@ object Chunk {
     val encLen = header.getInt()
     val secret = getKey(keyNum)
 
-    val cipherText = readBytes(chan, encLen)
+    val cipherText = FileUtil.readBytes(chan, encLen)
     val buf = ByteBuffer.wrap(secret.decrypt(cipherText.array, cryptOffset))
     buf.order(LITTLE_ENDIAN)
     val unlen = buf.getInt()
-    val kind = new String(getBytes(buf, 4))
-    val hash = getBytes(buf, 20)
-    val payload = ByteBuffer.wrap(getBytes(buf, buf.remaining))
+    val kind = new String(FileUtil.getBytes(buf, 4))
+    val hash = FileUtil.getBytes(buf, 20)
+    val payload = ByteBuffer.wrap(FileUtil.getBytes(buf, buf.remaining))
 
     val chunk: Chunk = if (unlen == -1)
         new DataChunk(kind, payload)
@@ -85,27 +85,6 @@ object Chunk {
         new CompressedChunk(kind, payload, unlen)
     assert(Hash.raw(hash) == chunk.hash)
     chunk
-  }
-
-  /*
-   * Read 'count' bytes fully into a new ByteBuffer.
-   */
-  private def readBytes(chan: ReadableByteChannel, count: Int): ByteBuffer = {
-    val buf = ByteBuffer.allocate(count)
-    while (buf.remaining > 0) {
-      val tmp = chan.read(buf)
-      if (tmp <= 0)
-        error("Unable to read data from channel")
-    }
-    buf.rewind()
-    buf
-  }
-
-  /* Extract 'count' bytes out of a ByteBuffer. */
-  private def getBytes(buf: ByteBuffer, count: Int): Array[Byte] = {
-    val result = new Array[Byte](count)
-    buf.get(result)
-    result
   }
 
   final val baseVersionText = "adump-pool-v1.1\n"
@@ -158,14 +137,12 @@ abstract class Chunk(val kind: String) {
     header.flip()
 
     val padding = (-payload.remaining & 15)
-    val writes =
-      if (padding == 0)
-        Array(header, payload)
-      else {
-        val tmp = ByteBuffer.allocate(padding)
-        Array(header, payload, tmp)
-      }
-    fullWrite(chan, writes)
+    if (padding == 0)
+      FileUtil.fullWrite(chan, header, payload)
+    else {
+      val tmp = ByteBuffer.allocate(padding)
+      FileUtil.fullWrite(chan, header, payload, tmp)
+    }
   }
 
   // Write an encrypted chunk to the backup stream.  The data is
@@ -201,20 +178,7 @@ abstract class Chunk(val kind: String) {
     // padding.
     assert((enc.length & 15) == 0)
 
-    fullWrite(chan, Array(header, ByteBuffer.wrap(enc)))
-  }
-
-  private def fullWrite(chan: FileChannel, bufs: Array[ByteBuffer]) {
-    var len = 0L
-    for (b <- bufs)
-      len += b.remaining
-
-    while (len > 0) {
-      val count = chan.write(bufs)
-      if (count <= 0)
-        error("Unable to write buffer data")
-      len -= count
-    }
+    FileUtil.fullWrite(chan, header, ByteBuffer.wrap(enc))
   }
 }
 
