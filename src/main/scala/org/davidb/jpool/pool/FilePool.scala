@@ -198,13 +198,17 @@ class FilePool(prefix: File) extends ChunkStore {
         }
         /*log.info*/println("Indexing file %s from %d to %d" format (i, current, size))
         while (current < size) {
-          val ch = pf.read(current)
-          if (!hashIndex.contains(ch.hash))
-            hashIndex += (ch.hash -> (i, current))
-            // printf("Add hash: %s (%d,%d)%n", ch, i, current)
-          if (ch.kind == "back") {
-            /*log.info*/printf("Adding backup: %s%n", ch.hash)
-            db.addBackup(ch.hash)
+          try {
+            val ch = pf.read(current)
+            if (!hashIndex.contains(ch.hash))
+              hashIndex += (ch.hash -> (i, current))
+              // printf("Add hash: %s (%d,%d)%n", ch, i, current)
+            if (ch.kind == "back") {
+              /*log.info*/printf("Adding backup: %s%n", ch.hash)
+              db.addBackup(ch.hash)
+            }
+          } catch {
+            case Chunk.KeySkipped =>
           }
           current = pf.position
         }

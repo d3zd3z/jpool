@@ -57,15 +57,24 @@ object Chunk {
   // Try reading encrypted data.  The getKey function should retrieve
   // the key of the given index.  If it reads from the channel, it
   // should restore the position before returning.
+  // If the header spots an encryption key, it will skip the key, and
+  // raise the KeySkipped exception.
+  object KeySkipped extends Exception
   def readEncrypted(chan: FileChannel, getKey: Int => crypto.BackupSecret): Chunk = {
     val cryptOffset = chan.position.toString.getBytes("UTF-8")
 
     val header = FileUtil.readBytes(chan, 16)
     header.order(LITTLE_ENDIAN)
     val version = FileUtil.getBytes(header, 8)
-    if (!java.util.Arrays.equals(version, cryptVersion))
+    if (!java.util.Arrays.equals(version, cryptVersion)) {
+      if (java.util.Arrays.equals(version, "key-1.1\n".getBytes("UTF-8"))) {
+        val keylen = header.getInt()
+        chan.position(chan.position + keylen + 16)
+        throw KeySkipped
+      }
       // TODO: Try reading an encrypted chunk, optionally.
       error("Invalid encrypted chunk header")
+    }
 
     val keyNum = header.getInt()
     val encLen = header.getInt()
