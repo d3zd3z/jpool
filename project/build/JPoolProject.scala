@@ -77,7 +77,4 @@ class JPoolProject(info: ProjectInfo) extends DefaultProject(info) {
       Some("Make error: " + status)
   } dependsOn(compile)
   override def testCompileAction = super.testCompileAction dependsOn(native)
-
-  // Temporary.
-  override def mainClass = Some("org.davidb.jpool.crypto.Crypto")
 }

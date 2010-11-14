@@ -399,85 +399,9 @@ object Crypto {
     }
   }
 
-  val secretBlock = Array.tabulate(1024 * 1024)(_.toByte)
-  val smallBlock = Array.tabulate(16)(_.toByte)
-
-  def main(args: Array[String]) {
-    val pinread = new FixedPinReader("secret")
-    val info = RSAInfo.generate()
-    info.saveCert(new File("backup.crt"))
-    info.savePrivate(new File("backup.key"), pinread)
-    val pf = new pool.EncryptedPoolFile(new File("testpool.data"), info)
-
-    val c1 = Chunk.make("blob", "Test blob")
-    val of1 = pf.append(c1)
-    printf("0x%x\n", of1)
-
-    val c1b = pf.read(of1)
-    pf.close()
-
-    check(info, Array((of1, c1)))
-  }
-
-  def check(info: RSAInfo, ofs: Array[(Int, Chunk)]) {
-    val pf = new pool.EncryptedPoolFile(new File("testpool.data"), info)
-    for ((offset, chIn) <- ofs) {
-      val chGot = pf.read(offset)
-      if (chGot.hash != chIn.hash)
-        error("Error reading chunk")
-    }
-  }
-
-  def test1() {
-    // bench1()
-    val pinread = new FixedPinReader("secret")
-    // val pinread = new JavaConsolePinReader()
-    val info = RSAInfo.generate()
-    info.saveCert(new File("backup.crt"))
-    info.savePrivate(new File("backup.key"), pinread)
-    info.verifyMatch()
-    // printf("Cert fp:\n")
-    // Pdump.dump(info.getFingerprint())
-
-    val info2 = RSAInfo.loadCert(new File("backup.crt"))
-    val priv = RSAInfo.loadPair(new File("backup.crt"), new File("backup.key"), pinread)
-    if (priv.priv != info.priv)
-      error("Unable to reload key")
-    priv.verifyMatch()
-
-    // Make sure we can make a backup secret and recover it using the
-    // info.
-    val key = BackupSecret.generate()
-    val wrapped = key.wrap(info2)
-    val key2 = BackupSecret.unwrap(info, wrapped)
-    if (key != key2)
-      error("Key encoding mismatch")
-
-    // Write a chunk to a debug file, and make sure we can read it
-    // back.
-    val secret = BackupSecret.generate()
-    val chan = new java.io.RandomAccessFile("test.data", "rw").getChannel()
-    val ch2 = Chunk.make("blob", "The quick brown fox jumps over the lazy dogs 1234567890 times." +
-      "There once was a poor little boy named Jack, whose poor old mother wasn't feeling very well.")
-    val ch = Chunk.make("blob", "")
-    ch.writeEncrypted(chan, secret, 42)
-    ch2.writeEncrypted(chan, secret, 42)
-
-    def keyGet(base: Int): crypto.BackupSecret = {
-      assert(base == 42)
-      secret
-    }
-
-    chan.position(0)
-    val chb = Chunk.readEncrypted(chan, keyGet _)
-    assert(chb.hash == ch.hash)
-    val ch2b = Chunk.readEncrypted(chan, keyGet _)
-    assert(ch2b.hash == ch2.hash)
-
-    chan.close()
-  }
-
   def bench1() {
+    val secretBlock = Array.tabulate(1024 * 1024)(_.toByte)
+    val smallBlock = Array.tabulate(16)(_.toByte)
     for (i <- 1 to 5) {
       val secret = BackupSecret.generate()
       val offset = "42".getBytes("UTF-8")
