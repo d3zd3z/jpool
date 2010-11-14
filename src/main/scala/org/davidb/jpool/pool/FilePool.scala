@@ -34,6 +34,7 @@ class FilePool(prefix: File) extends ChunkStore {
   private val metaPrefix = new File(prefix, "metadata")
   sanityTest
   metaCheck
+  private var keyInfo = findKeyInfo()
   private val db = new PoolDb(metaPrefix)
   private val files = scan
   private val hashIndex = new PoolHashIndex(metaPrefix.getPath, "data-index-")
@@ -97,14 +98,14 @@ class FilePool(prefix: File) extends ChunkStore {
   }
 
   // Scan the pool directory for the pool files.
-  private def scan: mutable.ArrayBuffer[PoolFile] = {
+  private def scan: mutable.ArrayBuffer[PoolFileBase] = {
     val Name = """^pool-data-(\d{4})\.data$""".r
     val names = prefix.list()
     util.Sorting.quickSort(names)
     val nums = for (Name(num) <- names) yield num.toInt
     sequenceCheck(nums)
-    val files = nums map ((n: Int) => new PoolFile(makeName(n)))
-    val buf = new mutable.ArrayBuffer[PoolFile]()
+    val files = nums map ((n: Int) => makePoolFile(n))
+    val buf = new mutable.ArrayBuffer[PoolFileBase]()
     buf ++= files
     buf
   }
@@ -124,18 +125,25 @@ class FilePool(prefix: File) extends ChunkStore {
   private def needRoom(chunk: Chunk) {
     // TODO: Check for growth.
     if (files.size == 0) {
-      files += new PoolFile(makeName(files.size))
+      files += makePoolFile(files.size)
     } else {
       val file = files(files.size - 1)
       if (file.size + chunk.writeSize > limit) {
         file.close
-        files += new PoolFile(makeName(files.size))
+        files += makePoolFile(files.size)
       }
     }
   }
 
   private def makeName(index: Int): File = {
     new File(prefix, "pool-data-%04d.data" format index)
+  }
+
+  private def makePoolFile(index: Int): PoolFileBase = keyInfo match {
+    case None =>
+      new PoolFile(makeName(index))
+    case Some(info) =>
+      new EncryptedPoolFile(makeName(index), info)
   }
 
   // Verify that there aren't any pool files missing, or other
@@ -158,11 +166,12 @@ class FilePool(prefix: File) extends ChunkStore {
       return
     if (names contains "pool-data-0000.data")
       return
-    if (names.size == 1 && names(0) == "metadata" &&
-        new File(prefix, "metadata").isDirectory)
-      return
-    error("Pool directory %s is not a valid pool, but is not empty"
-      format prefix.getPath)
+    val safe = Set.empty ++ Array("metadata", "backup.crt", "backup.key")
+    if (!names.forall(safe contains _) ||
+      ((names contains "metadata") &&
+        !new File(prefix, "metadata").isDirectory))
+      error("Pool directory %s is not a valid pool, but is not empty"
+        format prefix.getPath)
   }
 
   // Ensure there is a metadata directory.
@@ -215,5 +224,38 @@ class FilePool(prefix: File) extends ChunkStore {
           throw e
       }
     }
+  }
+
+  private def findKeyInfo(): Option[crypto.RSAInfo] = {
+    val cert = new File(prefix, "backup.crt")
+    val key = new File(prefix, "backup.key")
+
+    if (cert.isFile()) {
+      if (key.isFile()) {
+        val info = crypto.RSAInfo.loadPair(cert, key, new crypto.JavaConsolePinReader)
+        // Note that we don't verify them, since that would require
+        // the password.
+        Some(info)
+      } else
+        Some(crypto.RSAInfo.loadCert(cert))
+    } else {
+      if (key.isFile())
+        error("backup.key is present, but backup.crt is not.")
+      None
+    }
+  }
+
+  // Generate a key for this pool.  The pool must not have any pool
+  // files written to it yet.
+  def makeKeyPair() {
+    if (files.size != 0)
+      error("Cannot create key once pool contains data.")
+    if (keyInfo != None)
+      error("Pool already has a key.")
+
+    val info = crypto.RSAInfo.generate()
+    info.saveCert(new File(prefix, "backup.crt"))
+    info.savePrivate(new File(prefix, "backup.key"), new crypto.JavaConsolePinReader)
+    keyInfo = Some(info)
   }
 }

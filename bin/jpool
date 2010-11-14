@@ -82,6 +82,9 @@ case "$CMD" in
 	seendb)
 		CMD=org.davidb.jpool.SeenDb
 		;;
+	genkey)
+		CMD=org.davidb.jpool.tools.GenKey
+		;;
 	crypto)
 		CMD=org.davidb.jpool.crypto.Crypto
 		;;

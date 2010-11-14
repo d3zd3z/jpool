@@ -95,8 +95,10 @@ class BackupSecret private (val key: Key, val ivSeed: Array[Byte]) {
 }
 object BackupSecret {
   def generate() = {
+    // Get the random source first to register the provider.
+    val rand = Crypto.rand
     val kgen = KeyGenerator.getInstance("AES", "BC")
-    kgen.init(128, Crypto.rand)
+    kgen.init(128, rand)
     val ivSeed = new Array[Byte](16) // TODO: Get from cipher.
     Crypto.rand.nextBytes(ivSeed)
     new BackupSecret(kgen.generateKey(), ivSeed)
@@ -248,15 +250,18 @@ abstract class RSAInfo {
 }
 object RSAInfo {
 
+  // Force the crypto provider to be registered.
+  val rand = Crypto.rand
+
   // Generate a keypair and certificate.
   def generate(): RSAInfo = {
     val kgen = KeyPairGenerator.getInstance("RSA", "BC")
-    kgen.initialize(2048, Crypto.rand)
+    kgen.initialize(2048, rand)
     val kp = kgen.genKeyPair()
 
     val issuer = new X509Principal("C=US, O=org.davidb.jpool, OU=Jpool Backup Certificate")
     val v1CertGen = new X509V1CertificateGenerator()
-    v1CertGen.setSerialNumber(new BigInteger(128, Crypto.rand))
+    v1CertGen.setSerialNumber(new BigInteger(128, rand))
     v1CertGen.setIssuerDN(issuer)
     v1CertGen.setNotBefore(new Date(System.currentTimeMillis() - 1000L * 60 * 60 * 24 * 30))
     v1CertGen.setNotAfter(new Date(System.currentTimeMillis() + 1000L * 60 * 60 * 24 * 365 * 10))
@@ -264,7 +269,7 @@ object RSAInfo {
     v1CertGen.setPublicKey(kp.getPublic)
     v1CertGen.setSignatureAlgorithm("SHA1WithRSAEncryption")
 
-    val lcert = v1CertGen.generate(kp.getPrivate, "BC", Crypto.rand)
+    val lcert = v1CertGen.generate(kp.getPrivate, "BC", rand)
     lcert.checkValidity(new Date())
     lcert.verify(kp.getPublic)
 
@@ -311,7 +316,7 @@ object RSAInfo {
     val kf = SecretKeyFactory.getInstance("PBEWithSHA1And256BitAES-CBC-BC")
     val key = kf.generateSecret(keyspec)
     val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding", "BC")
-    cipher.init(Cipher.DECRYPT_MODE, key, Crypto.rand)
+    cipher.init(Cipher.DECRYPT_MODE, key, rand)
     val text = cipher.doFinal(ctext)
     pin.wipePin(secret)
 
