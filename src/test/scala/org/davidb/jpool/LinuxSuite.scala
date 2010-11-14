@@ -174,7 +174,16 @@ class LinuxSuite extends Suite {
   private def checkStat(path: String, info: Map[String, String], kind: String) {
     assert(info("*kind*") === kind)
     val fields = Proc.runAndCapture("stat", "--format", "%s %Y %Z %h %u %g %f %i %d %t %T", path) match {
-      case Array(line) => line.split(" ")
+      case Array(line) =>
+        line.split(" ").map { field =>
+          // Eliminate fractional numbers on times.  Newer versions of
+          // GNU stat print these.
+          val index = field.indexOf('.')
+          if (index < 0)
+            field
+          else
+            field.substring(0, index)
+        }
       case _ => error("Invalid response from 'stat' call")
     }
     def hexField(n: Int) = java.lang.Long.parseLong(fields(n), 16)
