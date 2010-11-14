@@ -10,7 +10,7 @@ import java.io.File
 import java.nio.channels.FileChannel
 
 class EncryptedPoolFile(path: File, keyInfo: crypto.RSAInfo)
-  extends PoolFile(path)
+  extends PoolFileBase(path)
 {
   protected var keyMap = collection.immutable.IntMap.empty[crypto.BackupSecret]
 

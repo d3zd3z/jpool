@@ -7,7 +7,7 @@ package pool
 import java.io.{File, RandomAccessFile}
 import java.nio.channels.FileChannel
 
-class PoolFile(val path: File) {
+abstract class PoolFileBase(val path: File) {
   var state: State = new ClosedState
 
   abstract class State {
@@ -54,6 +54,15 @@ class PoolFile(val path: File) {
   def size: Int = state.getReadable().size.toInt
   def position: Int = state.getReadable().position.toInt
 
+  def read(pos: Int): Chunk
+  def readUnchecked(pos: Int): (Chunk, Hash)
+  def append(chunk: Chunk): Int
+
+  def close() = state.close()
+}
+
+class PoolFile(path: File) extends PoolFileBase(path) {
+
   def read(pos: Int): Chunk = {
     val chan = state.getReadable()
     chan.position(pos)
@@ -72,6 +81,4 @@ class PoolFile(val path: File) {
     chunk.write(chan)
     pos
   }
-
-  def close() = state.close()
 }
