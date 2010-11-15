@@ -13,7 +13,7 @@ import org.davidb.jpool.pool.{Back, TarRestore, PoolFactory}
 import org.davidb.logging.Loggable
 import scala.collection.JavaConversions._
 
-object List extends AnyRef with Loggable {
+object ListCommand extends AnyRef with Loggable {
   def main(args: Array[String]) {
     if (args.length < 1) {
       logger.error("Usage: List jpool:file:///path {key=value ...}")

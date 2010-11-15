@@ -53,7 +53,7 @@ case "$CMD" in
 		CMD=org.davidb.jpool.tools.Save
 		;;
 	list)
-		CMD=org.davidb.jpool.tools.List
+		CMD=org.davidb.jpool.tools.ListCommand
 		;;
 	restore)
 		CMD=org.davidb.jpool.tools.Restore
