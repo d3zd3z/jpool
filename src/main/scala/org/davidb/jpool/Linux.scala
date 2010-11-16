@@ -93,6 +93,12 @@ object Linux extends AnyRef with Loggable {
       }
       if (isRoot)
         lchown(path, stat("uid").toLong, stat("gid").toLong)
+      stat.get("mtime") match {
+        case Some(mtime) =>
+          val m = mtime.toLong
+          lutime(path, m, m)
+        case None =>
+      }
     } else if (specialNode(stat.kind)) {
       val isDev = stat.contains("rdev")
       if (isDev && !isRoot) {
@@ -151,6 +157,7 @@ object Linux extends AnyRef with Loggable {
   @native protected def chown(path: String, uid: Long, gid: Long)
   @native protected def lchown(path: String, uid: Long, gid: Long)
   @native protected def utime(path: String, atime: Long, mtime: Long)
+  @native protected def lutime(path: String, atime: Long, mtime: Long)
 
   @native protected def makeSpecial(path: String, kind: String, mode: Long, dev: Long)
 

@@ -527,7 +527,24 @@ JNIEXPORT void JNICALL Java_org_davidb_jpool_Linux_00024_utime
 
 	int result = utimes(cpath, times);
 	if (result != 0) {
-		path_error(env, obj, path, "mkdir");
+		path_error(env, obj, path, "utime");
+		return;
+	}
+}
+
+JNIEXPORT void JNICALL Java_org_davidb_jpool_Linux_00024_lutime
+	(JNIEnv *env, jobject obj, jstring path, jlong atime, jlong mtime)
+{
+	JSTRING_TO_C_STACK(env, cpath, path);
+	struct timeval times[2];
+	times[0].tv_sec = atime;
+	times[0].tv_usec = 0;
+	times[1].tv_sec = mtime;
+	times[1].tv_usec = 0;
+
+	int result = lutimes(cpath, times);
+	if (result != 0) {
+		path_error(env, obj, path, "lutime");
 		return;
 	}
 }
