@@ -5,60 +5,63 @@ package org.davidb.jpool
 package pool
 
 import java.io.File
-import java.io.{InputStream, InputStreamReader, BufferedReader}
-import java.io.{FileOutputStream, OutputStreamWriter, BufferedWriter}
-import java.sql.{Connection, Driver, ResultSet, PreparedStatement}
-import java.security.MessageDigest
+import java.io.{InputStreamReader, BufferedReader}
+import java.io.{FileOutputStream, OutputStream, OutputStreamWriter, BufferedWriter}
+import java.util.Properties
 import java.util.UUID
+import scala.io.Source
 
 // To start with, let's just port the existing code over.  We can
 // extend this later.
 
-object PoolDbSchema extends DbSchema {
-  val schemaVersion = "1:2009-05-30"
-  val schemaText = Array(
-    "create table backups (hash binary(20) not null primary key)")
-  def schemaUpgrade(oldVersion: String, db: Db) = error("TODO: Upgrade")
-}
-
 class PoolDb(metaPrefix: File) {
-  private val db = new Db(new File(metaPrefix, "meta").getAbsolutePath(), PoolDbSchema)
+
+  // Load the backup list from the backup text file (if present).
+  private def loadBackups(): Set[Hash] = {
+    val backupTxt = new File(metaPrefix, "backups.txt")
+    if (backupTxt.isFile) {
+      Set.empty ++ Source.fromFile(backupTxt).getLines().map(Hash.ofString(_))
+    } else
+      Set.empty
+  }
+  protected var backups = loadBackups()
+
+  // Load the properties from the properties file (if present).
+  private def loadProps(): Properties = {
+    val propsTxt = new File(metaPrefix, "props.txt")
+    val props = new Properties
+    if (propsTxt.isFile) {
+      val fd = new java.io.FileReader(propsTxt)
+      props.load(fd)
+      fd.close()
+    }
+    props
+  }
+  protected var props = loadProps()
 
   val uuid = checkUUID
 
   // Passthroughs to the underlying database.
-  def close() = db.close()
-  def getProperty(key: String, default: String) = db.getProperty(key, default)
+  def close() = {}
+  def getProperty(key: String, default: String) = props.getProperty(key, default)
   def setProperty(key: String, value: String) {
-    db.setProperty(key, value)
-    db.commit()
+    props.setProperty(key, value)
     writeProperties()
   }
 
   // Add a record that the specified backup is present.
   def addBackup(hash: Hash) {
-    val b = hash.getBytes()
-    db.updateQuery("delete from backups where hash = ?", b)
-    db.updateQuery("insert into backups values (?)", b)
-    db.commit()
+    backups += hash
     writeBackups()
   }
 
-  def getBackups(): Set[Hash] = {
-    var result = Set[Hash]()
-    def getHash1(rs: ResultSet): Hash = Hash.raw(rs.getBytes(1))
-    for (hash <- db.query(getHash1 _, "select hash from backups")) {
-      result += hash
-    }
-    result
-  }
+  def getBackups(): Set[Hash] = backups
 
   private def checkUUID: UUID = {
-    db.getProperty("uuid", null) match {
+    getProperty("uuid", null) match {
       case null =>
         val uuid = (legacyUUID orElse Some(UUID.randomUUID())).get
-        db.setProperty("uuid", uuid.toString)
-        db.commit()
+        setProperty("uuid", uuid.toString)
         uuid
       case uuidText => UUID.fromString(uuidText)
     }
@@ -102,17 +105,18 @@ class PoolDb(metaPrefix: File) {
     def write() {
       try {
         val fos = new FileOutputStream(tmpName)
-        val out = new BufferedWriter(new OutputStreamWriter(fos))
-        emitItems(line => { out.write(line); out.newLine() })
-        out.flush()
+        emitItems(fos)
         fos.getChannel.force(true)
-        out.close()
+        fos.close()
         tmpName.renameTo(realName)
       } catch {
         case _ =>
       }
     }
-    def emitItems(writeLine: (String => Unit))
+
+    // Emit the items.  The 'out' should not be closed so it can be
+    // forced properly.
+    def emitItems(out: OutputStream)
 
     def checkWrite() {
       if (!realName.exists())
@@ -121,23 +125,23 @@ class PoolDb(metaPrefix: File) {
   }
 
   object PropWriter extends DataWriter("props") {
-    def emitItems(writeLine: (String => Unit)) {
-      for ((key, value) <- db.query(getString2 _, "select key, value from properties")) {
-        writeLine("%s=%s".format(key, value))
-      }
+    def emitItems(out: OutputStream) {
+      props.store(out, "Jpool metadata properties")
     }
   }
   def writeProperties() = PropWriter.write()
   PropWriter.checkWrite()
 
   object BackWriter extends DataWriter("backups") {
-    def emitItems(writeLine: (String => Unit)) {
-      for (back <- getBackups())
-        writeLine(back.toString())
+    def emitItems(out: OutputStream) {
+      val writer = new BufferedWriter(new OutputStreamWriter(out))
+      for (back <- getBackups()) {
+        writer.write(back.toString())
+        writer.newLine()
+      }
+      writer.flush()
     }
   }
   def writeBackups() = BackWriter.write()
   BackWriter.checkWrite()
-
-  def getString2(rs: ResultSet): (String, String) = (rs.getString(1), rs.getString(2))
 }
