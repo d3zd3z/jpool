@@ -51,23 +51,6 @@ class PoolDbSuite extends Suite {
     }
   }
 
-  // Verify that we can properly extract the url from an SQLite3
-  // database.
-  def testURL {
-    val testUUID = UUID.fromString("2e822e51-9a98-4dd6-a21c-5bcd05d62158")
-    TempDir.withTempDir { tdir =>
-      val mdir = new File(tdir, "metadata")
-      assert(mdir.mkdir())
-      val sqldb = new File(tdir, "pool-info.sqlite3").getPath
-      run("sqlite3", sqldb, "create table config(key text, value text)")
-      run("sqlite3", sqldb,
-        "insert into config values('uuid', '%s')".format(testUUID))
-      val db = new PoolDb(mdir)
-      assert(db.uuid === testUUID)
-      db.close()
-    }
-  }
-
   private def run(args: String*) {
     val pb = new ProcessBuilder(args: _*)
     pb.redirectErrorStream(true)

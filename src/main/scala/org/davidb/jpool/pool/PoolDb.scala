@@ -60,40 +60,11 @@ class PoolDb(metaPrefix: File) {
   private def checkUUID: UUID = {
     getProperty("uuid", null) match {
       case null =>
-        val uuid = (legacyUUID orElse Some(UUID.randomUUID())).get
+        val uuid = UUID.randomUUID()
         setProperty("uuid", uuid.toString)
         uuid
       case uuidText => UUID.fromString(uuidText)
     }
-  }
-
-  // Try to extract the UUID from the legacy sqlite database.  Creates
-  // a process to run a query using the sqlite3 interactive query
-  // program.  If anything goes wrong, give up.
-  private def legacyUUID: Option[UUID] = {
-    val sqlite3Db = new File(new File(metaPrefix, ".."), "pool-info.sqlite3")
-    if (sqlite3Db.isFile()) {
-      val proc = new ProcessBuilder("sqlite3", sqlite3Db.getPath,
-        "select value from config where key = 'uuid'")
-        .redirectErrorStream(true)
-        .start()
-      val rd = new BufferedReader(new InputStreamReader(proc.getInputStream))
-      val value = rd.readLine()
-
-      // Skip the rest of the output, if for some reason it generated
-      // a bunch.
-      var tmp = value
-      while (tmp ne null) {
-        tmp = rd.readLine()
-      }
-
-      val status = proc.waitFor()
-      rd.close
-      if (status == 0)
-        Some(UUID.fromString(value))
-      else
-        None
-    } else None
   }
 
   // Write all of the metadata to plain text files as well.  Assume
