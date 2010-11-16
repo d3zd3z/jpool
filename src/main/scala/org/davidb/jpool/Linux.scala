@@ -83,8 +83,7 @@ object Linux extends AnyRef with Loggable {
         chown(path, stat("uid").toLong, stat("gid").toLong)
       }
       chmod(path, stat("mode").toLong)
-      val mtime = stat("mtime").toLong
-      utime(path, mtime, mtime)
+      setTime(path, stat)
     } else if (stat.kind == "LNK") {
       // There is no lchmod on Linux, but the umask is used in the
       // link permissions (they don't actually get used for anything).
@@ -93,12 +92,7 @@ object Linux extends AnyRef with Loggable {
       }
       if (isRoot)
         lchown(path, stat("uid").toLong, stat("gid").toLong)
-      stat.get("mtime") match {
-        case Some(mtime) =>
-          val m = mtime.toLong
-          lutime(path, m, m)
-        case None =>
-      }
+      setTime(path, stat)
     } else if (specialNode(stat.kind)) {
       val isDev = stat.contains("rdev")
       if (isDev && !isRoot) {
@@ -112,10 +106,34 @@ object Linux extends AnyRef with Loggable {
       if (isRoot) {
         chown(path, stat("uid").toLong, stat("gid").toLong)
       }
-      val mtime = stat("mtime").toLong
-      utime(path, mtime, mtime)
+      setTime(path, stat)
     } else {
       logger.warn("TODO: Restore of %s: %s".format(stat.kind, path))
+    }
+  }
+
+  // Set the time on the given file or node.
+  private def setTime(path: String, stat: Attributes) {
+    val (mtime, mtimeNsec) = decodeTime(stat("mtime"))
+    utime(path, mtime, mtimeNsec, mtime, mtimeNsec)
+  }
+
+  // Decode a time string.  Acceptable formats are either a simple
+  // integer, or a fractional time with a single decimal point.
+  // Returns the seconds and nsec values of the time.
+  def decodeTime(time: String): (Long, Long) = {
+    time.split("""\.""", 2) match {
+      case Array(sec) =>
+        (sec.toLong, 0L)
+      case Array(sec, nsec) =>
+        val len = nsec.length
+        if (len < 9) {
+          val padded = nsec + "000000000".substring(len)
+          (sec.toLong, padded.toLong)
+        } else {
+          (sec.toLong, nsec.substring(0, 9).toLong)
+        }
+      case _ => error("Invalid time data: " + time)
     }
   }
 
@@ -156,8 +174,7 @@ object Linux extends AnyRef with Loggable {
   @native protected def chmod(path: String, mode: Long)
   @native protected def chown(path: String, uid: Long, gid: Long)
   @native protected def lchown(path: String, uid: Long, gid: Long)
-  @native protected def utime(path: String, atime: Long, mtime: Long)
-  @native protected def lutime(path: String, atime: Long, mtime: Long)
+  @native protected def utime(path: String, atime: Long, atimeNsec: Long, mtime: Long, mtimeNsec: Long)
 
   @native protected def makeSpecial(path: String, kind: String, mode: Long, dev: Long)
 

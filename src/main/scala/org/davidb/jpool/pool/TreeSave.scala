@@ -99,7 +99,9 @@ class TreeSave(pool: ChunkStore, rootPath: String, meter: BackupProgressMeter) e
     for ((name, childStat) <- items) {
       val fullName = path + "/" + name
       val childIno = childStat("ino").toLong
-      val childCtime = childStat("ctime").toLong
+      // TODO: The seen database only stores the integer portion of
+      // the timestamp.
+      val (childCtime, _) = Linux.decodeTime(childStat("ctime"))
 
       // See if this has already been seen.
       previous.get(childIno) match {

@@ -171,26 +171,26 @@ class LinuxSuite extends Suite {
     result.toList
   }
 
+  // Eliminate any fractional part of a number.
+  // TODO: Actually test the fractional part of the timestamp.
+  private def nofrac(text: String): String = {
+    val index = text.indexOf('.')
+    if (index < 0) text
+    else text.substring(0, index)
+  }
+
   private def checkStat(path: String, info: Map[String, String], kind: String) {
     assert(info("*kind*") === kind)
     val fields = Proc.runAndCapture("stat", "--format", "%s %Y %Z %h %u %g %f %i %d %t %T", path) match {
       case Array(line) =>
-        line.split(" ").map { field =>
-          // Eliminate fractional numbers on times.  Newer versions of
-          // GNU stat print these.
-          val index = field.indexOf('.')
-          if (index < 0)
-            field
-          else
-            field.substring(0, index)
-        }
+        line.split(" ").map(nofrac(_))
       case _ => error("Invalid response from 'stat' call")
     }
     def hexField(n: Int) = java.lang.Long.parseLong(fields(n), 16)
     // printf("fields: %s", fields.toList)
     assert(fields(0) === info("size"))
-    assert(fields(1) === info("mtime"))
-    assert(fields(2) === info("ctime"))
+    assert(fields(1) === nofrac(info("mtime")))
+    assert(fields(2) === nofrac(info("ctime")))
     assert(fields(3) === info("nlink"))
     assert(fields(4) === info("uid"))
     assert(fields(5) === info("gid"))

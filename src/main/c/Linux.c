@@ -291,12 +291,12 @@ static jobject lstat_convert(JNIEnv *env, jobject obj, jstring path, struct stat
 		return;
 
 	// TODO: Store fractional time.
-	sprintf(tmp, "%lld", (long long)sbuf->st_mtime);
+	sprintf(tmp, "%lld.%09lld", (long long)sbuf->st_mtime, (long long)sbuf->st_mtim.tv_nsec);
 	map = setProp(env, obj, map, "mtime", tmp);
 	if (map == NULL)
 		return;
 
-	sprintf(tmp, "%lld", (long long)sbuf->st_ctime);
+	sprintf(tmp, "%lld.%09lld", (long long)sbuf->st_ctime, (long long)sbuf->st_ctim.tv_nsec);
 	map = setProp(env, obj, map, "ctime", tmp);
 	if (map == NULL)
 		return;
@@ -515,36 +515,20 @@ JNIEXPORT jint JNICALL Java_org_davidb_jpool_Linux_00024_umask
 	return umask(mask);
 }
 
+/* Single time call, never follows symlinks. */
 JNIEXPORT void JNICALL Java_org_davidb_jpool_Linux_00024_utime
-	(JNIEnv *env, jobject obj, jstring path, jlong atime, jlong mtime)
+	(JNIEnv *env, jobject obj, jstring path, jlong atime, jlong atime_nsec, jlong mtime, jlong mtime_nsec)
 {
 	JSTRING_TO_C_STACK(env, cpath, path);
-	struct timeval times[2];
+	struct timespec times[2];
 	times[0].tv_sec = atime;
-	times[0].tv_usec = 0;
+	times[0].tv_nsec = atime_nsec;
 	times[1].tv_sec = mtime;
-	times[1].tv_usec = 0;
+	times[1].tv_nsec = mtime_nsec;
 
-	int result = utimes(cpath, times);
+	int result = utimensat(AT_FDCWD, cpath, times, AT_SYMLINK_NOFOLLOW);
 	if (result != 0) {
 		path_error(env, obj, path, "utime");
-		return;
-	}
-}
-
-JNIEXPORT void JNICALL Java_org_davidb_jpool_Linux_00024_lutime
-	(JNIEnv *env, jobject obj, jstring path, jlong atime, jlong mtime)
-{
-	JSTRING_TO_C_STACK(env, cpath, path);
-	struct timeval times[2];
-	times[0].tv_sec = atime;
-	times[0].tv_usec = 0;
-	times[1].tv_sec = mtime;
-	times[1].tv_usec = 0;
-
-	int result = lutimes(cpath, times);
-	if (result != 0) {
-		path_error(env, obj, path, "lutime");
 		return;
 	}
 }
