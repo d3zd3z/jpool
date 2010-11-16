@@ -517,12 +517,12 @@ JNIEXPORT jint JNICALL Java_org_davidb_jpool_Linux_00024_umask
 
 /* Single time call, never follows symlinks. */
 JNIEXPORT void JNICALL Java_org_davidb_jpool_Linux_00024_utime
-	(JNIEnv *env, jobject obj, jstring path, jlong atime, jlong atime_nsec, jlong mtime, jlong mtime_nsec)
+	(JNIEnv *env, jobject obj, jstring path, jlong mtime, jlong mtime_nsec)
 {
 	JSTRING_TO_C_STACK(env, cpath, path);
 	struct timespec times[2];
-	times[0].tv_sec = atime;
-	times[0].tv_nsec = atime_nsec;
+	times[0].tv_sec = 0;
+	times[0].tv_nsec = UTIME_NOW;
 	times[1].tv_sec = mtime;
 	times[1].tv_nsec = mtime_nsec;
 

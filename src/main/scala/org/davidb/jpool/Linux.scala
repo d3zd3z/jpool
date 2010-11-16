@@ -115,7 +115,7 @@ object Linux extends AnyRef with Loggable {
   // Set the time on the given file or node.
   private def setTime(path: String, stat: Attributes) {
     val (mtime, mtimeNsec) = decodeTime(stat("mtime"))
-    utime(path, mtime, mtimeNsec, mtime, mtimeNsec)
+    utime(path, mtime, mtimeNsec)
   }
 
   // Decode a time string.  Acceptable formats are either a simple
@@ -174,7 +174,7 @@ object Linux extends AnyRef with Loggable {
   @native protected def chmod(path: String, mode: Long)
   @native protected def chown(path: String, uid: Long, gid: Long)
   @native protected def lchown(path: String, uid: Long, gid: Long)
-  @native protected def utime(path: String, atime: Long, atimeNsec: Long, mtime: Long, mtimeNsec: Long)
+  @native protected def utime(path: String, mtime: Long, mtimeNsec: Long)
 
   @native protected def makeSpecial(path: String, kind: String, mode: Long, dev: Long)
 
