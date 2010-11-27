@@ -4,7 +4,7 @@ package org.davidb.jpool
 package pool
 
 import scala.collection.mutable
-import java.io.File
+import java.io.{File, RandomAccessFile}
 import java.nio.ByteBuffer
 
 class PoolHashIndex(val basePath: String, val prefix: String) extends {
@@ -33,6 +33,7 @@ class FilePool(prefix: File) extends ChunkStore {
 
   private val metaPrefix = new File(prefix, "metadata")
   sanityTest
+  private val lock = lockPool()
   metaCheck
   private var keyInfo = findKeyInfo()
   private val db = new PoolDb(metaPrefix)
@@ -110,11 +111,22 @@ class FilePool(prefix: File) extends ChunkStore {
     buf
   }
 
-  def close() {
-    flush()
-    // TODO: Better invalidate our own state.
-    db.close()
+  private def lockPool() = {
+    val lockFile = new File(prefix, "lock")
+    new RandomAccessFile(lockFile, "rw").getChannel.lock()
   }
+
+  private var closed = false
+  override protected def finalize() = synchronized {
+    if (!closed) {
+      lock.release()
+      flush()
+      db.close()
+      closed = true
+    }
+  }
+
+  def close() = finalize()
 
   def flush() {
     hashIndex.flush()
@@ -166,7 +178,7 @@ class FilePool(prefix: File) extends ChunkStore {
       return
     if (names contains "pool-data-0000.data")
       return
-    val safe = Set.empty ++ Array("metadata", "backup.crt", "backup.key")
+    val safe = Set.empty ++ Array("metadata", "backup.crt", "backup.key", "lock")
     if (!names.forall(safe contains _) ||
       ((names contains "metadata") &&
         !new File(prefix, "metadata").isDirectory))
