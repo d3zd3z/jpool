@@ -1,4 +1,4 @@
-//////////////////////////////////////////////////////////////////////
+/**********************************************************************/
 // Pool metadata database.
 
 package org.davidb.jpool
@@ -8,7 +8,7 @@ import java.io.File
 import java.io.{InputStream, InputStreamReader, BufferedReader}
 import java.util.UUID
 
-//////////////////////////////////////////////////////////////////////
+/**********************************************************************/
 // Unit test.
 
 import org.scalatest.{Suite, BeforeAndAfter}

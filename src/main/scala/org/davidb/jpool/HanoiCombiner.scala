@@ -1,4 +1,4 @@
-//////////////////////////////////////////////////////////////////////
+/**********************************************************************/
 // Hanoi-style index combiner.
 //
 // To create a balance between reducing the number of files, and the

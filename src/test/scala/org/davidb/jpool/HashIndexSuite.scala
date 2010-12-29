@@ -1,4 +1,4 @@
-//////////////////////////////////////////////////////////////////////
+/**********************************************************************/
 //
 // The storage pool stores blobs in a series of files (the pool).  The
 // HashIndex keeps track of where in this pool each hash is located.
@@ -25,9 +25,9 @@ package org.davidb.jpool
 import collection.{mutable, immutable}
 import java.nio.ByteBuffer
 
-//////////////////////////////////////////////////////////////////////
+/**********************************************************************/
 // Unit test.
-//////////////////////////////////////////////////////////////////////
+/**********************************************************************/
 
 import org.scalatest.{Suite, BeforeAndAfter}
 
