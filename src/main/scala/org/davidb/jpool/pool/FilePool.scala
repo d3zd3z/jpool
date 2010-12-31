@@ -46,6 +46,10 @@ class FilePool(prefix: File) extends ChunkStore {
   private final val defaultLimit = 640*1024*1024
   private var _limit = db.getProperty("limit", defaultLimit.toString).toInt
 
+  // A property called 'newfile=true' will force the first write to
+  // create a new file.
+  private var forceNew = db.getProperty("newfile", "false").toBoolean
+
   def limit: Int = _limit
   def limit_=(value: Int) {
     require(value > 0)
@@ -140,11 +144,12 @@ class FilePool(prefix: File) extends ChunkStore {
       files += makePoolFile(files.size)
     } else {
       val file = files(files.size - 1)
-      if (file.size + chunk.writeSize > limit) {
+      if (file.size + chunk.writeSize > limit || forceNew) {
         file.close
         files += makePoolFile(files.size)
       }
     }
+    forceNew = false
   }
 
   private def makeName(index: Int): File = {
