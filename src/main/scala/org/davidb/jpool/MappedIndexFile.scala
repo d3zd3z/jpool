@@ -111,7 +111,7 @@ trait MappedIndexFile[E] extends HashMap[E] {
     val dos = new DataOutputStream(bos)
 
     storeProperties(dos)
-    for ((h, e) <- items.elements) {
+    for ((h, e) <- items) {
       dos.write(h.getBytes)
       val buf = new Array[Byte](encoder.EBytes)
       encoder.encode(e, ByteBuffer.wrap(buf))
