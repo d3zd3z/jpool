@@ -23,7 +23,11 @@ object Chunk {
   def make(kind: String, data: ByteBuffer): Chunk =
     new DataChunk(kind, data.duplicate)
 
-  def readUnchecked(chan: FileChannel): (Chunk, Hash) = {
+  class Header(val clen: Int, val uclen: Int, val kind: String, val hash: Hash)
+
+  // Read the header of the next chunk.  Leaves the file position at
+  // the beginning of the payload.
+  private def readHeader(chan: FileChannel): Header = {
     val header = FileUtil.readBytes(chan, 48)
     header.order(LITTLE_ENDIAN)
 
@@ -36,22 +40,40 @@ object Chunk {
     val kind = new String(FileUtil.getBytes(header, 4))
     val hash = FileUtil.getBytes(header, 20)
 
+    new Header(clen, uclen, kind, Hash.raw(hash))
+  }
+
+  def readUnchecked(chan: FileChannel): (Chunk, Hash) = {
+    val header = readHeader(chan)
+
+    val clen = header.clen
+    val uclen = header.uclen
     val payload = FileUtil.readBytes(chan, (clen + 15) & ~15)
     payload.limit(clen)
     // println("Clen: " + clen)
     // println("UClen: " + uclen)
     val chunk: Chunk = if (uclen == -1)
-        new DataChunk(kind, payload)
+        new DataChunk(header.kind, payload)
       else
-        new CompressedChunk(kind, payload, uclen)
+        new CompressedChunk(header.kind, payload, uclen)
 
-    (chunk, Hash.raw(hash))
+    (chunk, header.hash)
   }
 
   def read(chan: FileChannel): Chunk = {
     val (chunk, hash) = readUnchecked(chan)
     assert(hash == chunk.hash)
     chunk
+  }
+
+  // Read the information about a chunk.  Positions the file at the
+  // beginning of the next chunk.  Returns the hash and the kind of
+  // the chunk.
+  def readInfo(chan: FileChannel): (Hash, String) = {
+    val header = readHeader(chan)
+
+    chan.position(chan.position + (header.clen + 15) & ~15)
+    (header.hash, header.kind)
   }
 
   // Try reading encrypted data.  The getKey function should retrieve

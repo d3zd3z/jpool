@@ -83,5 +83,11 @@ class EncryptedPoolFile(path: File, keyInfo: crypto.RSAInfo)
     Chunk.readEncrypted(chan, readSecret(chan, _))
   }
 
+  // Currently, encrypted reads end up reading the entire chunk.
+  def readInfo(pos: Int): (Hash, String) = {
+    val chunk = read(pos)
+    (chunk.hash, chunk.kind)
+  }
+
   protected final val keyVersion = "key-1.1\n".getBytes("UTF-8")
 }
