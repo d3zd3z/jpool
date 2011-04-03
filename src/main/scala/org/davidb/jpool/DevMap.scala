@@ -36,7 +36,7 @@ class DevMap extends scala.collection.Map[Long, String] with Loggable {
 
   object BlkIDParse extends RegexParsers {
     override val whiteSpace = "".r
-    val dev: Parser[String] = """/dev/[/0-9a-zA-Z\.-]+""".r <~ """:\s+""".r
+    val dev: Parser[String] = """/dev/[/_0-9a-zA-Z\.-]+""".r <~ """:\s+""".r
     val key: Parser[String] = """[A-Z]+""".r
     val value: Parser[String] = "=\"" ~> """[^"]*""".r <~ """"\s*""".r
     val pair: Parser[(String, String)] = (key ~ value) ^^ (_ match {
