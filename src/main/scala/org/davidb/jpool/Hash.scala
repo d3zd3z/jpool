@@ -80,6 +80,16 @@ class Hash private (val rawBytes: Array[Byte]) extends Ordered[Hash]
     cmp(0)
   }
 
+  // Return an individual byte from the hash, properly masked as a byte.
+  def byte(index: Int): Int = {
+    rawBytes(index).toInt & 0xFF
+  }
+
+  // Put this hash into the destination buffer.
+  def putTo(dest: ByteBuffer) {
+    dest.put(rawBytes)
+  }
+
   override def equals(that: Any) = that match {
     case h2: Hash => (this compare h2) == 0
     case _ => false

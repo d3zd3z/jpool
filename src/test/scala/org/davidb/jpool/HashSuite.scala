@@ -67,14 +67,20 @@ class HashSuite extends Suite {
       }
 
       // Modify the hash and make sure this one isn't present.
-      val bytes = h1.getBytes
-      bytes(bytes.length - 1) = (bytes(bytes.length - 1) ^ 1).toByte
-      val h2 = Hash.raw(bytes)
+      val h2 = HashSuite.mutate(h1)
       assert(!map.contains(h2))
     }
   }
 
   private def hashOfNum(num: Int): Hash = {
     Hash("blob", String.format("payload %d", int2Integer(num)))
+  }
+}
+
+object HashSuite {
+  def mutate(h: Hash): Hash = {
+    val bytes = h.getBytes
+    bytes(bytes.length - 1) = (bytes(bytes.length - 1) ^ 1).toByte
+    Hash.raw(bytes)
   }
 }
