@@ -29,8 +29,14 @@ class FileIndexSuite extends Suite with TempDirTest {
 
     FileIndexFile.writeIndex(indexFile, 12345, items)
 
-    // TODO: Test index length being incorrect.
-    // val index = new FileIndexFile(indexFile, 12343)
+    // Make sure that we get an exception if the size mismatches.
+    intercept[FileIndexFile.PoolSizeMismatch] {
+      new FileIndexFile(indexFile, 12344)
+    }
+    intercept[FileIndexFile.PoolSizeMismatch] {
+      new FileIndexFile(indexFile, 12346)
+    }
+
     val index = new FileIndexFile(indexFile, 12345)
     for ((h, (pos, kind)) <- items) {
       index.get(h) match {

@@ -92,7 +92,7 @@ class FileIndexFile(path: File, poolSize: Int) extends immutable.Map[Hash, (Int,
 
     val psize = buf.getInt()
     if (psize != poolSize) {
-      error("TODO: Index is too short")
+      throw new FileIndexFile.PoolSizeMismatch("Index for %d bytes, pool is %d bytes".format(psize, poolSize))
     }
 
     val top = new Array[Int](256)
@@ -100,7 +100,6 @@ class FileIndexFile(path: File, poolSize: Int) extends immutable.Map[Hash, (Int,
       top(i) = buf.getInt()
     }
     val size = top(255)
-    printf("size = %d\n", size)
 
     // Read the hashes.
     val hashes = new Array[Hash](size)
@@ -134,6 +133,9 @@ class FileIndexFile(path: File, poolSize: Int) extends immutable.Map[Hash, (Int,
 }
 
 object FileIndexFile {
+
+  class PoolSizeMismatch(message: String) extends Exception(message)
+
   case class Node(hash: Hash, offset: Int, kind: String)
 
   def writeIndex(path: File, poolSize: Int, items: Iterable[(Hash, (Int, String))]) {
@@ -207,6 +209,7 @@ object FileIndexFile {
 }
 
 object FileIndex {
+
   def main(args: Array[String]) {
     // val base = "/mnt/grime/pro/pool/npool"
     // val pfile = new PoolFile(new File(base + "/pool-data-0000.data"))
