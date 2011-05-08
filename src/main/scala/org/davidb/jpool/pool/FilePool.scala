@@ -140,6 +140,12 @@ class FilePool(prefix: File) extends ChunkStore {
       val file = files(files.size - 1)
       if (file.pool.size + chunk.writeSize > limit || forceNew) {
         file.pool.close
+
+        // Flush and reload the index to allow the
+        // smaller-memory-footprint version.
+        file.index.flush()
+        files(files.size - 1) = new FileAndIndex(file.pool, new FileIndex(file.pool))
+
         files += makePoolFile(files.size)
       }
     }
