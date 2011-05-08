@@ -137,7 +137,7 @@ class FileIndexFile(path: File, poolSize: Int) extends immutable.Map[Hash, (Int,
     val fis = new FileInputStream(path)
     val chan = fis.getChannel()
     val buf = chan.map(FileChannel.MapMode.READ_ONLY, 0, chan.size)
-    // buf.load()
+    buf.load()
     buf.order(ByteOrder.LITTLE_ENDIAN)
     fis.close()
 
