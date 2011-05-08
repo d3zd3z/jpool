@@ -7,21 +7,6 @@ import scala.collection.mutable
 import java.io.{File, RandomAccessFile}
 import java.nio.ByteBuffer
 
-class PoolHashIndex(val basePath: String, val prefix: String) extends {
-  protected val encoder = new FixedEncodable[(Int,Int)] {
-    def EBytes = 8
-    def encode(obj: (Int,Int), buf: ByteBuffer) {
-      buf.putInt(obj._1)
-      buf.putInt(obj._2)
-    }
-    def decode(buf: ByteBuffer): (Int,Int) = {
-      val file = buf.getInt()
-      val offset = buf.getInt()
-      (file, offset)
-    }
-  }
-} with HashIndex[(Int,Int)]
-
 class FilePool(prefix: File) extends ChunkStore {
   if (!prefix.isDirectory())
     error("Pool name '" + prefix + "' must be a directory")
@@ -38,8 +23,6 @@ class FilePool(prefix: File) extends ChunkStore {
   private var keyInfo = findKeyInfo()
   private val db = new PoolDb(metaPrefix)
   private val files = scan
-  private val hashIndex = new PoolHashIndex(metaPrefix.getPath, "data-index-")
-  recover
 
   val seenPrefix = new File(prefix, "seen").getAbsolutePath
 
@@ -60,16 +43,25 @@ class FilePool(prefix: File) extends ChunkStore {
   def getBackups: Set[Hash] = db.getBackups
 
   def get(hash: Hash): Option[Chunk] = {
-    hashIndex.get(hash) match {
-      case None => None
-      case Some((file, offset)) => Some(files(file).read(offset))
+    hashLookup(hash).map(res => res._1.pool.read(res._2))
+  }
+
+  private def hashLookup(hash: Hash): Option[(FileAndIndex, Int)] = {
+    var num = 0
+    while (num < files.length) {
+      val fi = files(num)
+      val result = fi.index.get(hash)
+      if (result.isDefined)
+        return Some((fi, result.get._1))
+      num += 1
     }
+    None
   }
 
   // No need to read the data for just a containment check.
   // TODO: Remember the last Hash lookup for get/contains and reuse
   // it.
-  override def contains(hash: Hash): Boolean = hashIndex.contains(hash)
+  override def contains(hash: Hash): Boolean = hashLookup(hash).isDefined
 
   def iterator: Iterator[(Hash, Chunk)] = error("TODO")
 
@@ -84,15 +76,13 @@ class FilePool(prefix: File) extends ChunkStore {
   def += (kv: (Hash, Chunk)): this.type = {
     val (key, value) = kv
     require(key == value.hash)
-    if (!hashIndex.contains(key)) {
+    if (!contains(key)) {
       progressMeter.addData(value.dataLength)
       needRoom(value)
       val fileNum = files.size - 1
       val file = files(fileNum)
-      val pos = file.append(value)
-      hashIndex += (key -> (fileNum, pos))
-
-      hashIndex.setProperty("pool.fileSeen." + fileNum, file.size.toString)
+      val pos = file.pool.append(value)
+      file.index += (key -> (pos, value.kind))
 
       if (value.kind == "back")
         db.addBackup(key)
@@ -102,15 +92,17 @@ class FilePool(prefix: File) extends ChunkStore {
     this
   }
 
+  class FileAndIndex(val pool: PoolFileBase, val index: FileIndex)
+
   // Scan the pool directory for the pool files.
-  private def scan: mutable.ArrayBuffer[PoolFileBase] = {
+  private def scan: mutable.ArrayBuffer[FileAndIndex] = {
     val Name = """^pool-data-(\d{4})\.data$""".r
     val names = prefix.list()
     util.Sorting.quickSort(names)
     val nums = for (Name(num) <- names) yield num.toInt
     sequenceCheck(nums)
     val files = nums map ((n: Int) => makePoolFile(n))
-    val buf = new mutable.ArrayBuffer[PoolFileBase]()
+    val buf = new mutable.ArrayBuffer[FileAndIndex]()
     buf ++= files
     buf
   }
@@ -133,7 +125,9 @@ class FilePool(prefix: File) extends ChunkStore {
   def close() = finalize()
 
   def flush() {
-    hashIndex.flush()
+    for (fi <- files) {
+      fi.index.flush()
+    }
   }
 
   // Ensure that we can write to the last file.  Make sure it exists,
@@ -144,8 +138,8 @@ class FilePool(prefix: File) extends ChunkStore {
       files += makePoolFile(files.size)
     } else {
       val file = files(files.size - 1)
-      if (file.size + chunk.writeSize > limit || forceNew) {
-        file.close
+      if (file.pool.size + chunk.writeSize > limit || forceNew) {
+        file.pool.close
         files += makePoolFile(files.size)
       }
     }
@@ -156,11 +150,14 @@ class FilePool(prefix: File) extends ChunkStore {
     new File(prefix, "pool-data-%04d.data" format index)
   }
 
-  private def makePoolFile(index: Int): PoolFileBase = keyInfo match {
-    case None =>
-      new PoolFile(makeName(index))
-    case Some(info) =>
-      new EncryptedPoolFile(makeName(index), info)
+  private def makePoolFile(index: Int): FileAndIndex = {
+    val pool = keyInfo match {
+      case None =>
+        new PoolFile(makeName(index))
+      case Some(info) =>
+        new EncryptedPoolFile(makeName(index), info)
+    }
+    new FileAndIndex(pool, new FileIndex(pool))
   }
 
   // Verify that there aren't any pool files missing, or other
@@ -200,52 +197,6 @@ class FilePool(prefix: File) extends ChunkStore {
   }
 
   protected def recoveryNotify {}
-
-  // Walk through the pool files, recovering the index if necessary.
-  private def recover {
-    var dirty = false
-    for (i <- 0 until files.size) {
-      val pf = files(i)
-      val size = pf.size
-      var current = hashIndex.getProperty("pool.fileSeen." + i, "0").toInt
-      if (current < size) {
-        if (!dirty) {
-          /*log.info*/println("Performing index recovery on pool %s" format prefix)
-          dirty = true
-        }
-        /*log.info*/println("Indexing file %s from %d to %d" format (i, current, size))
-        while (current < size) {
-          try {
-            val ch = pf.read(current)
-            if (!hashIndex.contains(ch.hash))
-              hashIndex += (ch.hash -> (i, current))
-              // printf("Add hash: %s (%d,%d)%n", ch, i, current)
-            if (ch.kind == "back") {
-              /*log.info*/printf("Adding backup: %s%n", ch.hash)
-              db.addBackup(ch.hash)
-            }
-          } catch {
-            case Chunk.KeySkipped =>
-          }
-          current = pf.position
-        }
-
-        hashIndex.setProperty("pool.fileSeen." + i, size.toString)
-      }
-      pf.close()
-    }
-
-    if (dirty) {
-      hashIndex.flush()
-      try {
-        recoveryNotify
-      } catch {
-        case e: Throwable =>
-          db.close()
-          throw e
-      }
-    }
-  }
 
   private def findKeyInfo(): Option[crypto.RSAInfo] = {
     val cert = new File(prefix, "backup.crt")

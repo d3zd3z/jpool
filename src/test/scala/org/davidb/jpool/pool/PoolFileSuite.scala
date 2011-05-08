@@ -14,11 +14,12 @@ class PoolFileSuite extends Suite with TempDirTest {
     makeFile
   }
 
-  // Read of an empty file should return error when trying to get size
-  // or position.
+  // Read of an empty file should return error when trying to get
+  // position.  As a special case, the size returns 0 when the file is
+  // not present.
   def testReadError {
     val pf = makeFile
-    intercept[FileNotFoundException] {
+    expect(0) {
       pf.size
     }
     intercept[FileNotFoundException] {

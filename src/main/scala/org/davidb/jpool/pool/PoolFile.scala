@@ -51,7 +51,16 @@ abstract class PoolFileBase(val path: File) {
     }
   }
 
-  def size: Int = state.getReadable().size.toInt
+  def size: Int = {
+    try {
+      state.getReadable().size.toInt
+    } catch {
+      // Non-existent files are considered to have no content.  Needed
+      // because creation will attempt to index the file before
+      // writing to it.
+      case _: java.io.FileNotFoundException => 0
+    }
+  }
   def position: Int = state.getReadable().position.toInt
 
   def read(pos: Int): Chunk
