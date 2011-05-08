@@ -39,6 +39,12 @@ object Hash {
     new Hash(buf)
   }
 
+  // Extract a raw hash from a bytebuffer.
+  def raw(rawbuf: ByteBuffer): Hash = {
+    val buf = FileUtil.getBytes(rawbuf, HashLength)
+    new Hash(buf)
+  }
+
   def ofString(text: String): Hash = {
     require(text.length == HashLength * 2)
     val hash = new Array[Byte](HashLength)

@@ -90,7 +90,7 @@ class FileIndex(pfile: PoolFileBase) extends mutable.Map[Hash, (Int, String)] wi
 
 // This helper class is for reading/writing the FileIndex.
 class FileIndexFile(path: File, poolSize: Int) extends immutable.Map[Hash, (Int, String)] {
-  private val (top, hashes, offsets, kinds) = readIndex()
+  private val (top, hashPos, offsetPos, kindPos, buffer) = readIndex()
   override def size = top(255)
 
   // Lookup this hash.
@@ -113,7 +113,26 @@ class FileIndexFile(path: File, poolSize: Int) extends immutable.Map[Hash, (Int,
     return None
   }
 
-  private def readIndex(): (Array[Int], Array[Hash], Array[Int], Array[String]) = {
+  private def hashes(pos: Int): Hash = {
+    val buf = buffer.duplicate()
+    buf.position(hashPos + Hash.HashLength * pos)
+    Hash.raw(buf)
+  }
+
+  private def offsets(pos: Int): Int = {
+    val buf = buffer.duplicate()
+    buf.position(offsetPos + 4 * pos)
+    buf.order(ByteOrder.LITTLE_ENDIAN)
+    buf.getInt()
+  }
+
+  private def kinds(pos: Int): String = {
+    val buf = buffer.duplicate()
+    buf.position(kindPos + 4 * pos)
+    new String(FileUtil.getBytes(buf, 4), "UTF-8").intern()
+  }
+
+  private def readIndex(): (Array[Int], Int, Int, Int, ByteBuffer) = {
     // Map the file into memory.
     val fis = new FileInputStream(path)
     val chan = fis.getChannel()
@@ -141,27 +160,11 @@ class FileIndexFile(path: File, poolSize: Int) extends immutable.Map[Hash, (Int,
     }
     val size = top(255)
 
-    // Read the hashes.
-    val hashes = new Array[Hash](size)
-    for (i <- 0 until size) {
-      val tmp = FileUtil.getBytes(buf, Hash.HashLength)
-      hashes(i) = Hash.raw(tmp)
-    }
+    val hashPos = buf.position
+    val offsetPos = hashPos + Hash.HashLength * size
+    val kindPos = offsetPos + 4 * size
 
-    // Read the offset table.
-    val offsets = new Array[Int](size)
-    for (i <- 0 until size) {
-      offsets(i) = buf.getInt()
-    }
-
-    // Read the kind table.
-    val kinds = new Array[String](size)
-    for (i <- 0 until size) {
-      val tmp = FileUtil.getBytes(buf, 4)
-      kinds(i) = new String(tmp, "UTF-8").intern()
-    }
-
-    (top, hashes, offsets, kinds)
+    (top, hashPos, offsetPos, kindPos, buf)
   }
 
   // The index cannot be updated, so these are just failures.
@@ -169,7 +172,7 @@ class FileIndexFile(path: File, poolSize: Int) extends immutable.Map[Hash, (Int,
   def - (key: Hash) = error("Not mutable")
 
   def iterator: Iterator[(Hash, (Int, String))] = {
-    (0 until hashes.length).iterator.map { i: Int =>
+    (0 until size).iterator.map { i: Int =>
       (hashes(i), (offsets(i), kinds(i)))
     }
   }
