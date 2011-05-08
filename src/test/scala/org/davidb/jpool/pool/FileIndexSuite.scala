@@ -4,6 +4,7 @@ package org.davidb.jpool
 package pool
 
 import org.scalatest.Suite
+import scala.collection.mutable
 
 class FileIndexSuite extends Suite with TempDirTest {
 
@@ -50,6 +51,68 @@ class FileIndexSuite extends Suite with TempDirTest {
     }
   }
 
+  // Test creation, testing, update of index.
+  def testUpdate {
+    val fakePool = new FakePoolFile(new java.io.File(tmpDir.path, "dataUpdate"))
+    val ind1 = new FileIndex(fakePool)
+    addItems(ind1, fakePool, 100)
+    checkIndex(ind1, fakePool)
+    addItems(ind1, fakePool, 100)
+    checkIndex(ind1, fakePool)
+
+    val ind2 = new FileIndex(fakePool)
+    checkIndex(ind2, fakePool)
+    addItems(ind2, fakePool, 100)
+    checkIndex(ind2, fakePool)
+    addItems(ind2, fakePool, 100)
+    checkIndex(ind2, fakePool)
+  }
+
+  // Test that the given index matches the data in it's pool.
+  def checkIndex(index: FileIndex, pf: FakePoolFile) {
+    for (i <- 0 until pf.size) {
+      val (hash, kind) = pf.readInfo(i)
+      expect(Some((i, kind))) {
+        index.get(hash)
+      }
+    }
+  }
+
+  def addItems(index: FileIndex, pf: FakePoolFile, count: Int) {
+    for (i <- 0 until count) {
+      val pos = pf.size
+      val chunk = makeChunk(pos)
+      assert(pf.append(chunk) === pos)
+      index += ((chunk.hash, (pos, chunk.kind)))
+    }
+    index.flush()
+  }
+
+  // A fake storage pool that stores the information needed to test
+  // indexing (but only in RAM).
+  class FakePoolFile(path: java.io.File) extends PoolFileBase(path) {
+    def read(pos: Int) = error("Should not be called")
+    def readUnchecked(pos: Int) = error("Should not be called")
+
+    private var buf = new mutable.ArrayBuffer[(Hash, String)]()
+
+    def readInfo(pos: Int): (Hash, String) = {
+      curPos = pos + 1
+      buf(pos)
+    }
+
+    def append(chunk: Chunk): Int = {
+      val pos = buf.length
+      buf += ((chunk.hash, chunk.kind))
+      pos
+    }
+
+    var curPos = 0
+
+    override def size: Int = buf.length
+    override def position: Int = curPos
+  }
+
   // Simple generation of some variation of kinds.
   def makeKind(count: Int): String = {
     val kinds = kindList
@@ -60,5 +123,9 @@ class FileIndexSuite extends Suite with TempDirTest {
   }
 
   private val kindList = List("BLOB", "DIR ", "DIR0", "DIR1", "IND0", "IND1", "IND2", "BACK")
+
+  def makeChunk(pos: Int): Chunk = {
+    Chunk.make(makeKind(pos), StringMaker.generate(pos, 64))
+  }
 
 }

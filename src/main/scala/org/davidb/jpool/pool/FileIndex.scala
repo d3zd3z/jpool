@@ -19,10 +19,49 @@ import java.nio.channels.FileChannel
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
-class FileIndex(pfile: PoolFileBase) extends AnyRef with Loggable {
-  val indexPath = getIndexName
+class FileIndex(pfile: PoolFileBase) extends mutable.Map[Hash, (Int, String)] with Loggable {
+  protected val indexPath = getIndexName
+  protected val index = {
+    try {
+      new FileIndexFile(indexPath, pfile.size)
+    } catch {
+      case _: FileIndexFile.PoolSizeMismatch |
+           _: java.io.FileNotFoundException =>
+        reIndexFile()
+        new FileIndexFile(indexPath, pfile.size)
+    }
+  }
 
-  // Regenerate the index of the entire file.
+  // Updates go into the RAM index.
+  protected var ramIndex = Map[Hash, (Int, String)]()
+
+  // Index operations.
+  def get(key: Hash): Option[(Int, String)] = {
+    index.get(key).orElse(ramIndex.get(key))
+  }
+  def -= (key: Hash): this.type = error("Cannot remove from index")
+  def += (kv: (Hash, (Int, String))): this.type = {
+    ramIndex += kv
+    this
+  }
+  def iterator: Iterator[(Hash, (Int, String))] = {
+    index.iterator ++ ramIndex.iterator
+  }
+
+  // Write any updates to the index.  Safely does nothing if there is
+  // nothing to do.
+  def flush() {
+    if (ramIndex.size == 0)
+      return
+
+    FileIndexFile.writeIndex(indexPath, pfile.size, this)
+
+    // TODO: Perhaps we should be able to update ourself with the new
+    // data, but that clashes with this being mutable.
+  }
+
+  // Regenerate the index of the entire file, if it is out of date or
+  // stale.
   private def reIndexFile() {
     logger.info("Reindexing '%s'".format(pfile.path.getPath()))
 
@@ -34,6 +73,7 @@ class FileIndex(pfile: PoolFileBase) extends AnyRef with Loggable {
       items += (hash -> (pos, kind))
       pos = pfile.position
     }
+    FileIndexFile.writeIndex(indexPath, pfile.size, items)
     logger.info("Done")
   }
 
@@ -78,7 +118,7 @@ class FileIndexFile(path: File, poolSize: Int) extends immutable.Map[Hash, (Int,
     val fis = new FileInputStream(path)
     val chan = fis.getChannel()
     val buf = chan.map(FileChannel.MapMode.READ_ONLY, 0, chan.size)
-    buf.load()
+    // buf.load()
     buf.order(ByteOrder.LITTLE_ENDIAN)
     fis.close()
 
@@ -128,8 +168,11 @@ class FileIndexFile(path: File, poolSize: Int) extends immutable.Map[Hash, (Int,
   def + [B1 >: (Int, String)](kv: (Hash, B1)) = error("Not mutable")
   def - (key: Hash) = error("Not mutable")
 
-  // Will need this.
-  def iterator: Iterator[(Hash, (Int, String))] = error("TODO")
+  def iterator: Iterator[(Hash, (Int, String))] = {
+    (0 until hashes.length).iterator.map { i: Int =>
+      (hashes(i), (offsets(i), kinds(i)))
+    }
+  }
 }
 
 object FileIndexFile {
