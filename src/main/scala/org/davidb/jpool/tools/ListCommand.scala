@@ -43,7 +43,13 @@ object ListCommand extends AnyRef with Loggable {
     val allKeys = (Set.empty[String] ++ props.stringPropertyNames - "_date" - "hash").toArray
     val result = new StringBuilder
 
-    val rawDate = props.getProperty("_date").toLong
+    val rawDate = {
+      val dateStr = props.getProperty("_date")
+      if (dateStr eq null)
+        0
+      else
+        dateStr.toLong
+    }
     val date = new Date(rawDate)
     val fmt = new SimpleDateFormat("yyyy-MM-dd_hh:mm")
     // val fmt = new SimpleDateFormat("yyyy-MM-dd")
@@ -59,6 +65,8 @@ object ListCommand extends AnyRef with Loggable {
 
     (date, result.toString)
   }
+
+  val dateGen = new SimpleDateFormat("yyyy-MM-dd_hh:mm")
 
   // Convert the properties specified in the command line to a
   // matching function that will return true if a set of properties
