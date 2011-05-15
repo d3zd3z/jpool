@@ -24,7 +24,7 @@ object Logger {
   // Setting a wrapper.  The wrap function will be called with a
   // thunk, which must be called at some point.
   def pushWrapper(tag: Object, wrapper: (=> Unit) => Unit) {
-    if (wrapStack.findIndexOf(_.tag eq tag) != -1)
+    if (wrapStack.indexWhere(_.tag eq tag) != -1)
       sys.error("Attempt to push duplicate wrapper tag.")
     val next = wrapStack.head
     def chain(thunk: => Unit) {
