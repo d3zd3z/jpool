@@ -133,7 +133,7 @@ object Linux extends AnyRef with Loggable {
         } else {
           (sec.toLong, nsec.substring(0, 9).toLong)
         }
-      case _ => error("Invalid time data: " + time)
+      case _ => sys.error("Invalid time data: " + time)
     }
   }
 

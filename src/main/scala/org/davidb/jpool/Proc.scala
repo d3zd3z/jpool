@@ -35,7 +35,7 @@ object Proc extends AnyRef with Loggable {
     runAndCapture(args: _*) match {
       case Array() =>
       case unexpected =>
-        error("Unexpected output from %s: %s" format (args, unexpected))
+        sys.error("Unexpected output from %s: %s" format (args, unexpected))
     }
   }
 

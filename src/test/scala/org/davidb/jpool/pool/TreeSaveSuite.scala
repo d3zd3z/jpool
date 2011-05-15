@@ -122,9 +122,9 @@ class TreeSaveSuite extends Suite with ProgressPoolTest with Loggable {
     }
 
     if (firstWalk.hasNext)
-      error("Extra node in first backup")
+      sys.error("Extra node in first backup")
     if (secondWalk.hasNext)
-      error("Extra node in second backup")
+      sys.error("Extra node in second backup")
   }
 
   // Iterate from a given hash, making sure that the tree is

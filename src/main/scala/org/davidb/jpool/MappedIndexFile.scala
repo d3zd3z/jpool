@@ -122,7 +122,7 @@ trait MappedIndexFile[E] extends HashMap[E] {
     fos.getChannel.force(true)
     dos.close
     if (!tmpName.renameTo(path))
-      error("Unable to rename pool index file")
+      sys.error("Unable to rename pool index file")
     mmap()
   }
 
@@ -160,7 +160,7 @@ trait MappedIndexFile[E] extends HashMap[E] {
   private def loadProperties(dis: DataInputStream) {
     val len = dis.readInt()
     if (len <= 0 || len > 32768) // 32k is arbitrary, but hopefully large enough.
-      error("Property index seems corrupt")
+      sys.error("Property index seems corrupt")
     val data = new Array[Byte](len)
     dis.readFully(data)
 
@@ -180,8 +180,8 @@ trait MappedIndexFile[E] extends HashMap[E] {
   var _size: Int = 0
 
   // These can't be updated.
-  def + [B >: E](kv: (Hash, B)): HashMap[B] = error("Cannot update")
-  def - (key: Hash): HashMap[E] = error("Cannot remove from hashmap")
+  def + [B >: E](kv: (Hash, B)): HashMap[B] = sys.error("Cannot update")
+  def - (key: Hash): HashMap[E] = sys.error("Cannot remove from hashmap")
 
   // Get is a simple binary search.
   def get(key: Hash): Option[E] = {

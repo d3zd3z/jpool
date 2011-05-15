@@ -21,7 +21,7 @@ object SeenDbSchema extends DbSchema with Loggable {
   def schemaUpgrade(oldVersion: String, db: Db) = oldVersion match {
     case "2:2009-05-30" => upgradeFrom2(db)
     case "3:2009-06-12" => upgradeFrom3(db)
-    case _ => error("Cannot upgrade schema")
+    case _ => sys.error("Cannot upgrade schema")
   }
 
   private def upgradeFrom2(db: Db) {
@@ -125,7 +125,7 @@ object SeenDb {
   // writable).
   def main(args: Array[String]) {
     if (args.length != 2)
-      error("Usage: SeenDb prefix id")
+      sys.error("Usage: SeenDb prefix id")
 
     val sdb = new SeenDb(args(0), args(1))
     val expCount = sdb.db.query(sdb.db.getLong1 _, "select count(*) from seen where expire < 0")
@@ -160,7 +160,7 @@ class SeenDb(prefix: String, id: String) {
     {
       case List(node) => SeenDb.decodeNodes(node)
       case Nil => new Array[SeenNode](0)
-      case _ => error("Duplicate database entries for seen nodes")
+      case _ => sys.error("Duplicate database entries for seen nodes")
     }
   }
 

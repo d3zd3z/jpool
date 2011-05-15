@@ -59,7 +59,7 @@ class TreeRestore(pool: ChunkSource, meter: BackupProgressMeter)
   private def checkRoot(path: String) {
     val atts = Attributes.ofLinuxStat(Linux.lstat(path))
     if (atts.kind != "DIR") {
-      error("Root of restore is not a directory")
+      sys.error("Root of restore is not a directory")
     }
 
     Linux.readDir(path) match {
@@ -67,10 +67,10 @@ class TreeRestore(pool: ChunkSource, meter: BackupProgressMeter)
       case List(("lost+found", _)) =>
         val lfatts = Attributes.ofLinuxStat(Linux.lstat(path + "/lost+found"))
         if (lfatts.kind != "DIR") {
-          error("Root of restore has lost+found that isn't a directory")
+          sys.error("Root of restore has lost+found that isn't a directory")
         }
       case _ =>
-        error("Root of restore is a non-empty directory")
+        sys.error("Root of restore is a non-empty directory")
     }
   }
 }

@@ -13,7 +13,7 @@ object Compact extends AnyRef with Loggable {
   def main(args: Array[String]) {
     if (args.length != 2) {
       printf("Usage: compact prefix h2-seen-db-name%n")
-      exit(1)
+      sys.exit(1)
     }
 
     // Just open the seen database perform an expire, and close it.

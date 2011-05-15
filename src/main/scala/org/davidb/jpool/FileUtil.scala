@@ -12,7 +12,7 @@ object FileUtil {
     while (len > 0) {
       val count = chan.write(bufs)
       if (count <= 0)
-        error("Unable to write buffer data")
+        sys.error("Unable to write buffer data")
       len -= count
     }
   }
@@ -23,7 +23,7 @@ object FileUtil {
     while (buf.remaining > 0) {
       val tmp = chan.read(buf)
       if (tmp <= 0)
-        error("Unable to read data from channel")
+        sys.error("Unable to read data from channel")
     }
     buf.rewind()
     buf

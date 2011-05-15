@@ -39,7 +39,7 @@ class FileIndex(pfile: PoolFileBase) extends mutable.Map[Hash, (Int, String)] wi
   def get(key: Hash): Option[(Int, String)] = {
     index.get(key).orElse(ramIndex.get(key))
   }
-  def -= (key: Hash): this.type = error("Cannot remove from index")
+  def -= (key: Hash): this.type = sys.error("Cannot remove from index")
   def += (kv: (Hash, (Int, String))): this.type = {
     ramIndex += kv
     this
@@ -143,11 +143,11 @@ class FileIndexFile(path: File, poolSize: Int) extends immutable.Map[Hash, (Int,
 
     val magic = FileUtil.getBytes(buf, 8)
     if (!java.util.Arrays.equals(magic, FileIndex.magic))
-      error("Invalid index magic header")
+      sys.error("Invalid index magic header")
 
     val version = buf.getInt()
     if (version != 3)
-      error("Unsupported index version")
+      sys.error("Unsupported index version")
 
     val psize = buf.getInt()
     if (psize != poolSize) {
@@ -168,8 +168,8 @@ class FileIndexFile(path: File, poolSize: Int) extends immutable.Map[Hash, (Int,
   }
 
   // The index cannot be updated, so these are just failures.
-  def + [B1 >: (Int, String)](kv: (Hash, B1)) = error("Not mutable")
-  def - (key: Hash) = error("Not mutable")
+  def + [B1 >: (Int, String)](kv: (Hash, B1)) = sys.error("Not mutable")
+  def - (key: Hash) = sys.error("Not mutable")
 
   def iterator: Iterator[(Hash, (Int, String))] = {
     (0 until size).iterator.map { i: Int =>
@@ -279,7 +279,7 @@ object FileIndex {
     for (i <- 1 to limit) {
       val hash = Hash("blob", i.toString)
       index.get(hash) match {
-	case None => error("Key not found")
+	case None => sys.error("Key not found")
 	case Some((pos, kind)) =>
 	  assert(pos == i)
 	  assert(kind == "blob")

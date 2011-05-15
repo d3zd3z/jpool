@@ -37,7 +37,7 @@ object Clone extends AnyRef with Loggable {
         update()
       }
       def addDup(count: Long) {
-        error("Dup on read is strange")
+        sys.error("Dup on read is strange")
       }
     }
 
@@ -49,7 +49,7 @@ object Clone extends AnyRef with Loggable {
       def addDup(count: Long) {
         // This really shouldn't be possible, since it would require a
         // block to be able to contain it's own hash.
-        error("Dup on write suggests corruption")
+        sys.error("Dup on write suggests corruption")
       }
     }
   }
@@ -57,7 +57,7 @@ object Clone extends AnyRef with Loggable {
   def main(args: Array[String]) {
     if (args.length < 3) {
       logger.error("Usage: Check jpool:file:///path1 jpool:file:///path2 hash hash...")
-      exit(1)
+      sys.exit(1)
     }
 
     val meter = new CloneMeter

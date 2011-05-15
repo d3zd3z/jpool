@@ -20,7 +20,7 @@ object TarParser {
       data.position(124)
       val octSize = getBytes(data, 12)
       if (octSize(11) != 0)
-        error("Not null terminated")
+        sys.error("Not null terminated")
       val size = java.lang.Long.parseLong(new String(octSize, 0, 11), 8)
       Some(new TarHeader(rawData, size))
     } else {
@@ -29,7 +29,7 @@ object TarParser {
       var pos = 0
       while (pos < 512) {
         if (data.get != 0)
-          error("Invalid tar block seen")
+          sys.error("Invalid tar block seen")
         pos += 1
       }
       None

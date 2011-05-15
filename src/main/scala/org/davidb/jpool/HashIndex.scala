@@ -84,12 +84,12 @@ trait HashIndex[E] extends mutable.Map[Hash, E] {
       tip.mmap()
       val combineText = properties.getProperty("index.lastCombine")
       if (combineText == null)
-        error("Pool file: " + mkpath(lastIndex) +
+        sys.error("Pool file: " + mkpath(lastIndex) +
           " doesn't contain proper index.lastCombine property")
       val lastCombine = Integer.parseInt(combineText) - 1
 
       if (lastCombine < lastIndex - 1 || lastCombine > lastIndex)
-        error("Pool file: " + mkpath(lastIndex) +
+        sys.error("Pool file: " + mkpath(lastIndex) +
           " has out of bounds index.lastCombine property")
 
       // If there is an index file past the last combination, then the
@@ -153,9 +153,9 @@ trait HashIndex[E] extends mutable.Map[Hash, E] {
 
     while (f.hasNext && e.hasNext) {
       if (f.head < e.head)
-        error("TODO: Found extra file: " + mkpath(f.head))
+        sys.error("TODO: Found extra file: " + mkpath(f.head))
       else if (e.head < f.head)
-        error("TODO: File missing: " + mkpath(e.head))
+        sys.error("TODO: File missing: " + mkpath(e.head))
       else {
         f.next
         e.next
@@ -164,11 +164,11 @@ trait HashIndex[E] extends mutable.Map[Hash, E] {
 
     if (f.hasNext) {
       f.next
-      error("TODO: Found extra file: " + mkpath(f.head))
+      sys.error("TODO: Found extra file: " + mkpath(f.head))
     }
     if (e.hasNext) {
       e.next
-      error("TODO: File missing: " + mkpath(e.head))
+      sys.error("TODO: File missing: " + mkpath(e.head))
     }
   }
 
@@ -236,7 +236,7 @@ trait HashIndex[E] extends mutable.Map[Hash, E] {
     for (i <- 0 until cc) {
       val node = fileMap.pop() match {
         case Some(tip) => tip
-        case None => error("Internal error")
+        case None => sys.error("Internal error")
       }
       removals += node
       iter.addIterator(node)
@@ -296,5 +296,5 @@ trait HashIndex[E] extends mutable.Map[Hash, E] {
     }
   }
 
-  def iterator: Iterator[(Hash, E)] = error("TODO")
+  def iterator: Iterator[(Hash, E)] = sys.error("TODO")
 }

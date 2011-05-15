@@ -52,11 +52,11 @@ class EncryptedPoolFile(path: File, keyInfo: crypto.RSAInfo)
       header.order(LITTLE_ENDIAN)
       val version = FileUtil.getBytes(header, 8)
       if (!java.util.Arrays.equals(version, keyVersion))
-        error("Invalid key header")
+        sys.error("Invalid key header")
       val wlen = header.getInt()
       val fp = FileUtil.getBytes(header, 20)
       if (!java.util.Arrays.equals(fp, keyInfo.getFingerprint))
-        error("Backup encrypted with unknown key")
+        sys.error("Backup encrypted with unknown key")
       val wrapped = FileUtil.readBytes(chan, wlen)
       val sec = crypto.BackupSecret.unwrap(keyInfo, wrapped.array)
       keyMap += (pos -> sec)
@@ -75,7 +75,7 @@ class EncryptedPoolFile(path: File, keyInfo: crypto.RSAInfo)
     pos
   }
 
-  override def readUnchecked(pos: Int): (Chunk, Hash) = error("TODO")
+  override def readUnchecked(pos: Int): (Chunk, Hash) = sys.error("TODO")
 
   override def read(pos: Int): Chunk = {
     val chan = state.getReadable()

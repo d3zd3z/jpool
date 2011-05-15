@@ -33,7 +33,7 @@ object Chunk {
 
     val version = FileUtil.getBytes(header, 16)
     if (!java.util.Arrays.equals(version, baseVersion))
-      error("Invalid chunk header")
+      sys.error("Invalid chunk header")
 
     val clen = header.getInt()
     val uclen = header.getInt()
@@ -95,7 +95,7 @@ object Chunk {
         throw KeySkipped
       }
       // TODO: Try reading an encrypted chunk, optionally.
-      error("Invalid encrypted chunk header")
+      sys.error("Invalid encrypted chunk header")
     }
 
     val keyNum = header.getInt()

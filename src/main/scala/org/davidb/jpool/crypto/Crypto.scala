@@ -141,7 +141,7 @@ class PEMReader(file: File) {
   def readHeader(kind: String) {
     val line = reader.readLine()
     if (line != "-----BEGIN %s-----".format(kind))
-      error("%s invalid file, expecting BEGIN %s".format(this.getClass, kind))
+      sys.error("%s invalid file, expecting BEGIN %s".format(this.getClass, kind))
   }
   def readChunk(): Array[Byte] = {
     val buf = new StringBuilder
@@ -160,13 +160,13 @@ class PrivateKeyReader(file: File) extends PEMReader(file) {
   def readProc() {
     val line = reader.readLine()
     if (line != "Proc-Type: 4,ENCRYPTED")
-      error("Expecting Proc-Type")
+      sys.error("Expecting Proc-Type")
   }
   def readSalt(): Array[Byte] = {
     val line = reader.readLine()
     val prefix = "DEK-INFO: AES-CBC-BC,"
     if (!line.startsWith(prefix))
-      error("Expecting " + prefix)
+      sys.error("Expecting " + prefix)
     Hex.decodeHex(line.substring(prefix.length).toCharArray)
   }
 }
@@ -196,7 +196,7 @@ abstract class RSAInfo {
   def savePrivate(file: File, pin: PinReader) {
     val secret = pin.getInitial()
     if (secret.length == 0)
-      error("Need a pin to be able to save")
+      sys.error("Need a pin to be able to save")
     val salt = new Array[Byte](8)
     Crypto.rand.nextBytes(salt)
     val keyspec = new PBEKeySpec(secret, salt, 100)
@@ -233,7 +233,7 @@ abstract class RSAInfo {
     val ctext = encrypt(text)
     val text2 = decrypt(ctext)
     if (!java.util.Arrays.equals(text, text2))
-      error("Private key and certificate do not match")
+      sys.error("Private key and certificate do not match")
   }
   def encrypt(data: Array[Byte]): Array[Byte] = {
     val cipher = Cipher.getInstance("RSA/NONE/OAEPWithSHA1AndMGF1Padding", "BC")
@@ -293,7 +293,7 @@ object RSAInfo {
     val lcert = readCert(file)
     new RSAInfo {
       val public = lcert.getPublicKey
-      def priv = error("No private key available")
+      def priv = sys.error("No private key available")
       val cert = lcert
     }
   }
@@ -309,7 +309,7 @@ object RSAInfo {
 
     val secret = pin.getPin("Enter key password: ")
     if (secret.length == 0)
-      error("Need password to read key")
+      sys.error("Need password to read key")
     val keyspec = new PBEKeySpec(secret, salt, 100)
     val kf = SecretKeyFactory.getInstance("PBEWithSHA1And256BitAES-CBC-BC")
     val key = kf.generateSecret(keyspec)

@@ -57,8 +57,8 @@ class Attributes(var kind: String,
   override def size: Int = contents.size
   def get(key: String): Option[String] = contents.get(key)
   def iterator = contents.iterator
-  def - (key: String): Attributes = error("Cannot delete from Attributes")
-  def + [B >: String](kv: (String, B)): Attributes = error("Cannot add to Attributes")
+  def - (key: String): Attributes = sys.error("Cannot delete from Attributes")
+  def + [B >: String](kv: (String, B)): Attributes = sys.error("Cannot add to Attributes")
 
   // Store these attributes into a storage pool.
   def store(pool: ChunkStore): Hash = {
@@ -80,7 +80,7 @@ class Attributes(var kind: String,
   // a string might easily be eaten.
   private def entryEncode(key: String, value: String): xml.Elem = {
     if (value exists (ch => ch.toInt > 255))
-      error("Encoding error, non 8-bit character")
+      sys.error("Encoding error, non 8-bit character")
     if (value forall (ch => ch >= '!' && ch <= '~')) {
       <entry key={key}>{value}</entry>
     } else {

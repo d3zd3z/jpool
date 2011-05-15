@@ -55,7 +55,7 @@ class Db(val path: String, schema: DbSchema) extends AnyRef with Loggable {
     query(getString1 _, "select value from properties where key = ?", key).toList match {
       case List(item) => item
       case Nil => default
-      case _ => error("Multiple property entries for %s in properties table" format key)
+      case _ => sys.error("Multiple property entries for %s in properties table" format key)
     }
   }
 
@@ -83,7 +83,7 @@ class Db(val path: String, schema: DbSchema) extends AnyRef with Loggable {
     if (tablePresent("PROPERTIES")) {
       getProperty("schema-version", null) match {
         case oldVersion if oldVersion == goodVersion =>
-        case null => error("TODO: Handle corrupt database (missing version)")
+        case null => sys.error("TODO: Handle corrupt database (missing version)")
         case oldVersion =>
           // Invoke the upgrade, using the old version.  If it
           // completes without raising an exception, assume the
@@ -129,7 +129,7 @@ class Db(val path: String, schema: DbSchema) extends AnyRef with Loggable {
       def hasNext: Boolean = item != None
       def next: A = {
         item match {
-          case None => error("next on empty iterator")
+          case None => sys.error("next on empty iterator")
           case Some(r) =>
             val result = r
             advance
@@ -148,7 +148,7 @@ class Db(val path: String, schema: DbSchema) extends AnyRef with Loggable {
         case s: String => stmt.setString(pos + 1, s)
         case i: Int => stmt.setInt(pos + 1, i)
         case l: Long => stmt.setLong(pos + 1, l)
-        case _ => error("Unsupported type for SQL statement")
+        case _ => sys.error("Unsupported type for SQL statement")
       }
       pos += 1
     }

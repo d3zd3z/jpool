@@ -17,7 +17,7 @@ class LoggerSuite extends Suite with Loggable {
   // Make sure that we can still cause error.
   def testError {
     intercept[RuntimeException] {
-      error("Message")
+      sys.error("Message")
       println("Should not be reached")
     }
   }

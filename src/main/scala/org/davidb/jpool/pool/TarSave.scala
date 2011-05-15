@@ -35,7 +35,7 @@ class TarSave(pool: ChunkStore, chan: ReadableByteChannel) {
           case None => // Real EOF
           case Some(head) =>
             Pdump.dump(head.raw)
-            error("Improper EOF seen on tarfile")
+            sys.error("Improper EOF seen on tarfile")
         }
         */
       case Some(head) =>

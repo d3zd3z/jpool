@@ -29,18 +29,18 @@ trait ProgressMeter {
   // which can be registered.
   protected def update() {
     if (fn.isEmpty)
-      error("Progress meter not registered")
+      sys.error("Progress meter not registered")
     (fn.get)()
   }
   private var fn: Option[() => Unit] = None
   private[jpool] def setUpdater(theFn: () => Unit) {
     if (fn.isDefined)
-      error("ProgressState is already defined")
+      sys.error("ProgressState is already defined")
     fn = Some(theFn)
   }
   private[jpool] def clearUpdater() {
     if (fn.isEmpty)
-      error("Attempt to clearUpdater when already cleared")
+      sys.error("Attempt to clearUpdater when already cleared")
     fn = None
   }
 }

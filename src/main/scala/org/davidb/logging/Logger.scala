@@ -25,7 +25,7 @@ object Logger {
   // thunk, which must be called at some point.
   def pushWrapper(tag: Object, wrapper: (=> Unit) => Unit) {
     if (wrapStack.findIndexOf(_.tag eq tag) != -1)
-      error("Attempt to push duplicate wrapper tag.")
+      sys.error("Attempt to push duplicate wrapper tag.")
     val next = wrapStack.head
     def chain(thunk: => Unit) {
       wrapper(next.wrapper(thunk))
@@ -34,7 +34,7 @@ object Logger {
   }
   def popWrapper(tag: Object) {
     if (wrapStack.head.tag ne tag)
-      error("PopWrapper of incorrect tag")
+      sys.error("PopWrapper of incorrect tag")
     wrapStack = wrapStack.tail
   }
 

@@ -99,7 +99,7 @@ class LinuxSuite extends Suite {
   def fileHash(path: String): Hash = {
     val fields = Proc.runAndCapture("sha1sum", path) match {
       case Array(line) => line.split("\\s+")
-      case _ => error("Unknown output from 'sha1sum'")
+      case _ => sys.error("Unknown output from 'sha1sum'")
     }
     Hash.ofString(fields(0))
   }
@@ -184,7 +184,7 @@ class LinuxSuite extends Suite {
     val fields = Proc.runAndCapture("stat", "--format", "%s %Y %Z %h %u %g %f %i %d %t %T", path) match {
       case Array(line) =>
         line.split(" ").map(nofrac(_))
-      case _ => error("Invalid response from 'stat' call")
+      case _ => sys.error("Invalid response from 'stat' call")
     }
     def hexField(n: Int) = java.lang.Long.parseLong(fields(n), 16)
     // printf("fields: %s", fields.toList)

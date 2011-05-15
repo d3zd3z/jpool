@@ -37,7 +37,7 @@ class TreeSave(pool: ChunkStore, rootPath: String, meter: BackupProgressMeter) e
     val hash = handlers.get(stat("*kind*")) match {
       case None =>
         logger.error("Unknown filesystem entry kind: %s (%s)" format (stat("*kind*"), path))
-        error("Cannot dump entry")
+        sys.error("Cannot dump entry")
       case Some(handler) => handler(path, stat)
     }
     meter.addNode()
@@ -49,7 +49,7 @@ class TreeSave(pool: ChunkStore, rootPath: String, meter: BackupProgressMeter) e
   private val rootStat = Linux.lstat(rootPath)
   if (rootStat("*kind*") != "DIR") {
     logger.error("Root of backup must be a directory: %s" format rootPath)
-    error("Cannot save")
+    sys.error("Cannot save")
   }
 
   val devUuid =
@@ -62,7 +62,7 @@ class TreeSave(pool: ChunkStore, rootPath: String, meter: BackupProgressMeter) e
     }
   val seenPrefix = pool match {
     case fp: FilePool => fp.seenPrefix
-    case _ => error("TODO: Unable to save to a non-local file pool")
+    case _ => sys.error("TODO: Unable to save to a non-local file pool")
   }
   val seenDb = new SeenDb(seenPrefix, devUuid)
   seenDb.purge()

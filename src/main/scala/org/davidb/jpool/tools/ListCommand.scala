@@ -76,7 +76,7 @@ object ListCommand extends AnyRef with Loggable {
       case Array(key, value) => (props => props.getProperty(key) == value)
       case _ =>
         logger.error("Illegal key=value argument '%s'%n" format arg)
-        exit(1)
+        sys.exit(1)
     }
     val pairs = args.map(split _)
     (props => pairs forall (_(props)))

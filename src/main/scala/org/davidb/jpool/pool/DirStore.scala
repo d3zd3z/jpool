@@ -61,7 +61,7 @@ class DirStore (pool: ChunkStore, limit: Int) {
 
   def append(name: String, hash: Hash) {
     if (name exists (ch => ch.toInt > 255))
-      error("Encoding error, encountered name with non 8-bit encoded value")
+      sys.error("Encoding error, encountered name with non 8-bit encoded value")
     val encoded = name.getBytes("iso8859-1")
     val elength = encoded.length
     require (elength > 0 && elength <= java.lang.Short.MAX_VALUE)
@@ -69,7 +69,7 @@ class DirStore (pool: ChunkStore, limit: Int) {
     if (buffer.remaining < totalLength)
       ship
     if (buffer.remaining < totalLength)
-      error("DirStore buffer size is insufficient for filename length")
+      sys.error("DirStore buffer size is insufficient for filename length")
     buffer.putShort(elength.toShort)
     buffer.put(encoded)
     buffer.put(hash.getBytes)

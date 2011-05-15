@@ -116,7 +116,7 @@ class TreeBuilder private (prefix: String, pool: ChunkStore, limit: Int) {
         pool += (chunk.hash -> chunk)
         return chunk.hash
       } else
-        error("Internal error: Empty hash buffer at non-zero level")
+        sys.error("Internal error: Empty hash buffer at non-zero level")
     }
 
     if (buffer.remaining == Hash.HashLength) {

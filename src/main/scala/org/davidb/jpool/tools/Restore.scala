@@ -18,7 +18,7 @@ object Restore extends AnyRef with Loggable {
     if (args.length != 3) {
       logger.error("Usage: Restore jpool:file:///path hash --tar > tarball")
       logger.error("               jpool:file:///path hash path")
-      exit(1)
+      sys.exit(1)
     }
 
     val meter = new BackupProgressMeter
@@ -32,7 +32,7 @@ object Restore extends AnyRef with Loggable {
       // 'tar' if it does have one.
       if (back.props.getProperty("kind", "tar") != "tar") {
         logger.error("Specified --tar, but indicate backup hash is not a tar snapshot")
-        exit(1)
+        sys.exit(1)
       }
       val stdout = Channels.newChannel(System.out)
       val restorer = new TarRestore(pool, stdout, meter)
@@ -42,7 +42,7 @@ object Restore extends AnyRef with Loggable {
       // Otherwise, this should be a 'snapshot' backup.
       if (back.props.getProperty("kind") != "snapshot") {
         logger.error("Specified backup is not a snapshot backup")
-        exit(1)
+        sys.exit(1)
       }
 
       val restorer = new TreeRestore(pool, meter)

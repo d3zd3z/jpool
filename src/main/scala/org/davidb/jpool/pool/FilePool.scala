@@ -9,7 +9,7 @@ import java.nio.ByteBuffer
 
 class FilePool(prefix: File) extends ChunkStore {
   if (!prefix.isDirectory())
-    error("Pool name '" + prefix + "' must be a directory")
+    sys.error("Pool name '" + prefix + "' must be a directory")
 
   // Default initial limit for pool datafiles.  Any write that would
   // exceed this value will cause a new file to be written.  Changing
@@ -63,7 +63,7 @@ class FilePool(prefix: File) extends ChunkStore {
   // it.
   override def contains(hash: Hash): Boolean = hashLookup(hash).isDefined
 
-  def iterator: Iterator[(Hash, Chunk)] = error("TODO")
+  def iterator: Iterator[(Hash, Chunk)] = sys.error("TODO")
 
   def -= (key: Hash) =
     throw new UnsupportedOperationException("Pools only support adding, not removal")
@@ -172,7 +172,7 @@ class FilePool(prefix: File) extends ChunkStore {
     var pos = 0
     for (n <- nums) {
       if (n != pos)
-        error("Out of sequence pool file: " + makeName(n))
+        sys.error("Out of sequence pool file: " + makeName(n))
       pos += 1
     }
   }
@@ -190,7 +190,7 @@ class FilePool(prefix: File) extends ChunkStore {
     if (!names.forall(safe contains _) ||
       ((names contains "metadata") &&
         !new File(prefix, "metadata").isDirectory))
-      error("Pool directory %s is not a valid pool, but is not empty"
+      sys.error("Pool directory %s is not a valid pool, but is not empty"
         format prefix.getPath)
   }
 
@@ -198,7 +198,7 @@ class FilePool(prefix: File) extends ChunkStore {
   private def metaCheck {
     if (!metaPrefix.isDirectory) {
       if (!metaPrefix.mkdir())
-        error("Unable to create metadata dir: %s" format metaPrefix)
+        sys.error("Unable to create metadata dir: %s" format metaPrefix)
     }
   }
 
@@ -218,7 +218,7 @@ class FilePool(prefix: File) extends ChunkStore {
         Some(crypto.RSAInfo.loadCert(cert))
     } else {
       if (key.isFile())
-        error("backup.key is present, but backup.crt is not.")
+        sys.error("backup.key is present, but backup.crt is not.")
       None
     }
   }
@@ -227,9 +227,9 @@ class FilePool(prefix: File) extends ChunkStore {
   // files written to it yet.
   def makeKeyPair() {
     if (files.size != 0)
-      error("Cannot create key once pool contains data.")
+      sys.error("Cannot create key once pool contains data.")
     if (keyInfo != None)
-      error("Pool already has a key.")
+      sys.error("Pool already has a key.")
 
     val info = crypto.RSAInfo.generate()
     info.saveCert(new File(prefix, "backup.crt"))

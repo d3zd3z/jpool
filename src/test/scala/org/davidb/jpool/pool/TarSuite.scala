@@ -64,7 +64,7 @@ class TarSuite extends Suite with ProgressPoolTest {
           while (buffer.remaining > 0) {
             val tmp = sink.write(buffer)
             if (tmp <= 0)
-              error("Unable to write to pipe")
+              sys.error("Unable to write to pipe")
           }
           run()
         } else if (count == -1) {
@@ -72,7 +72,7 @@ class TarSuite extends Suite with ProgressPoolTest {
           result.put(Hash.raw(md.digest()))
         } else {
           printf("Child tar returned %d bytes%n", count)
-          error("Invalid read from child tar.")
+          sys.error("Invalid read from child tar.")
         }
       }
 
@@ -81,11 +81,11 @@ class TarSuite extends Suite with ProgressPoolTest {
           val count = chan.read(buffer)
           if (count == -1) {
             if (buffer.position != 0)
-              error("Invalid read from child tar.")
+              sys.error("Invalid read from child tar.")
             return -1
           }
           if (count == 0)
-            error("Zero read from tar pipe")
+            sys.error("Zero read from tar pipe")
         }
         buffer.position
       }

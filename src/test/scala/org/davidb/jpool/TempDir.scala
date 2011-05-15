@@ -52,7 +52,7 @@ class TempDir {
   /* Construct a tempdir, returning it's name. */
   private def make(limit: Int): File = {
     if (limit == 0)
-      error("Unable to create temporary directory")
+      sys.error("Unable to create temporary directory")
     val base = System.getProperty("java.io.tmpdir", "/tmp")
     val path = base + prefix + UUID.randomUUID.toString.substring(0, 8)
     val tdir = new File(path)

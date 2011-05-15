@@ -107,10 +107,10 @@ class TreeWalk(pool: ChunkSource) extends AnyRef with Loggable {
           } else {
             // Otherwise, this node has no extra data, so we're done
             // with it.
-            // error("TODO: Kind '%s'" format atts.kind)
+            // sys.error("TODO: Kind '%s'" format atts.kind)
           }
 
-        case x => error("Unknown backup node '%s'" format x)
+        case x => sys.error("Unknown backup node '%s'" format x)
       }
     }
   }

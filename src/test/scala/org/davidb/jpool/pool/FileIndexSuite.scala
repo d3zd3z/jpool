@@ -91,8 +91,8 @@ class FileIndexSuite extends Suite with TempDirTest {
   // A fake storage pool that stores the information needed to test
   // indexing (but only in RAM).
   class FakePoolFile(path: java.io.File) extends PoolFileBase(path) {
-    def read(pos: Int) = error("Should not be called")
-    def readUnchecked(pos: Int) = error("Should not be called")
+    def read(pos: Int) = sys.error("Should not be called")
+    def readUnchecked(pos: Int) = sys.error("Should not be called")
 
     private var buf = new mutable.ArrayBuffer[(Hash, String)]()
 

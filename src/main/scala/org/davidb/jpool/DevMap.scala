@@ -31,8 +31,8 @@ class DevMap extends scala.collection.Map[Long, String] with Loggable {
   override def size: Int = theMap.size
   def get(key: Long): Option[String] = theMap.get(key)
   def iterator: Iterator[(Long, String)] = theMap.iterator
-  def - (key: Long) = error("Cannot delete from devmap")
-  def + [B >: String] (kv: (Long, B)) = error("Cannot add to devmap")
+  def - (key: Long) = sys.error("Cannot delete from devmap")
+  def + [B >: String] (kv: (Long, B)) = sys.error("Cannot add to devmap")
 
   object BlkIDParse extends RegexParsers {
     override val whiteSpace = "".r
@@ -55,7 +55,7 @@ class DevMap extends scala.collection.Map[Long, String] with Loggable {
       val reader = new CharSequenceReader(text, 0)
       val result = line(reader)
       if (!result.successful)
-        error("Parse error on blkid output '%s'" format text)
+        sys.error("Parse error on blkid output '%s'" format text)
       result.get
     }
   }
@@ -74,7 +74,7 @@ class DevMap extends scala.collection.Map[Long, String] with Loggable {
             logger.error("blkid output contains conflicting values")
             logger.error("device %d maps to %s" format (rdev, result(rdev)))
             logger.error("and to %s" format uuid)
-            error("Fix blkid")
+            sys.error("Fix blkid")
           }
           result += (rdev -> mp("UUID"))
         }

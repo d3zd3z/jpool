@@ -20,7 +20,7 @@ class TarRestore(pool: ChunkSource, dest: WritableByteChannel, meter: BackupProg
       head.kind match {
         case "tard" => decodeDirect(head.data)
         case "tari" => decodeIndirect(head.data)
-        case unknown => error("Unknown tar header block type '%s'" format unknown)
+        case unknown => sys.error("Unknown tar header block type '%s'" format unknown)
       }
     }
   }

@@ -52,11 +52,11 @@ trait PinReader {
 class PinEntryReader extends PinReader {
 
   def message(text: String) {
-    error("message")
+    sys.error("message")
   }
 
   def getPin(prompt: String): Array[Char] = {
-    error("getPin")
+    sys.error("getPin")
   }
 }
 object PinEntryReader {
