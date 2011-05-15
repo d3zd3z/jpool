@@ -28,9 +28,20 @@ object TreeBuilder {
         def hasNext: Boolean = buffer.remaining > 0
         def next: Iterator[Chunk] = walk(prefix, pool, getHash(buffer))
       }
-      iter.flatten
+      // Iterator.flatten is broken in Scala 2.9.0.
+      // TODO: Try restoring to 'iter.flatten' after 2.9.0
+      // https://lampsvn.epfl.ch/trac/scala/ticket/4582
+      // iter.flatten
+      flatten(iter)
     } else
       Iterator.single(chunk)
+  }
+
+  // Derived from https://lampsvn.epfl.ch/trac/scala/changeset/24962
+  def flatten[A](its: Iterator[Iterator[A]]): Iterator[A] = new Iterator[A] {
+    private var it: Iterator[A] = Iterator.empty
+    def hasNext: Boolean = it.hasNext || its.hasNext && { it = its.next; hasNext }
+    def next(): A = if (hasNext) it.next() else Iterator.empty.next()
   }
 
   // Perform a GC walk of the given tree.  Will call 'mark' for each
