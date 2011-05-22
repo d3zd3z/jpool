@@ -12,6 +12,12 @@ object PoolFactory {
   // matching or instance tests can be used to determine if other
   // traits apply.
   def getInstance(uri: URI): ChunkSource = {
+    // As a special case, accept a raw filepath (absolute or
+    // relative), and treat it as a local file reference.
+    if (uri.getScheme eq null) {
+      return new FilePool(new File(uri.getPath).getCanonicalFile)
+    }
+
     if (uri.getScheme != "jpool")
       throw new IllegalArgumentException("Pool URI must start with 'jpool:'")
     val u2 = new URI(uri.getRawSchemeSpecificPart)
