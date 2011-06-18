@@ -7,6 +7,12 @@ import java.io.File
 import java.net.URI
 import org.scalatest.{Suite, BeforeAndAfterEach}
 
+// The pool tests aren't concurrent, so lock the tests that can't run
+// concurrently.
+object PoolTest {
+  val lock = new scala.concurrent.Lock
+}
+
 trait PoolTest extends Suite with BeforeAndAfterEach with TempDirTest {
 
   class PerformedRecovery extends AssertionError("Recovery performed")
@@ -17,10 +23,12 @@ trait PoolTest extends Suite with BeforeAndAfterEach with TempDirTest {
   var pool: ChunkStore = null
   override def beforeEach() {
     super.beforeEach()
+    PoolTest.lock.acquire()
     pool = PoolFactory.getStoreInstance(new URI("jpool:file://%s" format tmpDir.path.getPath))
   }
   override def afterEach() {
     pool.close()
+    PoolTest.lock.release()
     super.afterEach()
   }
   protected def reopen {

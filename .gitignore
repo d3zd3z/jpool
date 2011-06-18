@@ -1,6 +1,8 @@
 /lib/
 /lib_managed/
 /project/boot/
-/project/build/target/
+/project/target/
+/project/plugins/target/
+/project/plugins/project/target/
 /target/
 .*.swp
