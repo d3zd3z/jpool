@@ -21,11 +21,11 @@ BASEDIR=`dirname $PRG`
 BASEDIR=`(cd "$BASEDIR"/.. && pwd)`
 
 # For now, assume only one.
-JAR=`echo $BASEDIR/target/scala_*/jpool_*-*.jar`
+JAR=`echo $BASEDIR/target/scala-*/jpool_*-*.jar`
 WORK_CLASSES=`echo $BASEDIR/target/scala_*/classes`
 
 # Unfortunately, this has to be hard coded.
-SCALA_LIB=`echo $BASEDIR/project/boot/scala-2.[89].*/lib/scala-library.jar`
+SCALA_LIB=`echo $BASEDIR/project/boot/scala-2.9.*/lib/scala-library.jar`
 
 LIBS=`find $BASEDIR/lib_managed -name '*.jar' -printf "%p:"`
 
