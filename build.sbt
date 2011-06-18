@@ -6,6 +6,10 @@ organization := "org.davidb"
 
 scalaVersion := "2.9.0"
 
+// Although I think I've locked sufficiently, sometimes I get test
+// failures without this.
+parallelExecution in Test := false
+
 libraryDependencies += "org.scalatest" %% "scalatest" % "1.6.1" % "test"
 
 libraryDependencies += "commons-codec" % "commons-codec" % "1.4"
