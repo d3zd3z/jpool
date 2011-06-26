@@ -26,6 +26,7 @@ $(C_SO): $(C_OBJ) $(SODIR)
 $(C_OBJ): $(C_SRC) $(HEADERS) $(OBJDIR)
 	gcc -c -O -o $@ $(INCLUDE) -fpic $(C_SRC)
 $(HEADERS): $(HDIR) $(CLASSFILES)
+	@rm -f $@
 	javah -classpath $(CLASSPATH) -d $(HDIR) $(MAIN_CLASS)
 
 $(HDIR):

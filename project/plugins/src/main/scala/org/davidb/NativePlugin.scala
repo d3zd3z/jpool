@@ -27,9 +27,12 @@ object NativePlugin extends Plugin
   val newSettings = Seq(
     blort := "blort",
 
+    // This generator needs the compilation to have finished (but
+    // doesn't use the results), this could be done with depends on as
+    // well.
     resourceGenerators in Compile <+= (resourceManaged in Compile, sourceDirectory, classDirectory in Compile,
-      managedClasspath in Compile) map
-    { (dir, src, classDir, runPath) =>
+      managedClasspath in Compile, compile in Compile) map
+    { (dir, src, classDir, runPath, _) =>
       runCleanup
       val home = System.getProperty("java.home")
       val basePath = runPath.map(_.data.toString).reduceLeft(_ + ":" + _)
