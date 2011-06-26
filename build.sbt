@@ -4,13 +4,14 @@ version := "1.0.1-SNAPSHOT"
 
 organization := "org.davidb"
 
-scalaVersion := "2.9.0"
+scalaVersion := "2.9.0-1"
 
 // Although I think I've locked sufficiently, sometimes I get test
 // failures without this.
 parallelExecution in Test := false
 
-libraryDependencies += "org.scalatest" %% "scalatest" % "1.6.1" % "test"
+// Scalatest was not rebuilt for 2.9.0-1, so use the 2.9.0 version.
+libraryDependencies += "org.scalatest" % "scalatest_2.9.0" % "1.6.1" % "test"
 
 libraryDependencies += "commons-codec" % "commons-codec" % "1.4"
 
