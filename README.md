@@ -6,10 +6,9 @@ duplication.
 
 ## Dependencies
 
-Jpool is built with the [Simple Build Tool][sbt].  The SBT launcher
-and a JVM is all you will need to build.  Simply do:
+Jpool is built with the [Simple Build Tool][sbt], version 0.10.1.  The
+SBT launcher and a JVM is all you will need to build.  Simply do:
 
-    sbt update
     sbt test
     sbt package
 
