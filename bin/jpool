@@ -20,18 +20,11 @@ done
 BASEDIR=`dirname $PRG`
 BASEDIR=`(cd "$BASEDIR"/.. && pwd)`
 
-# For now, assume only one.
-JAR=`echo $BASEDIR/target/scala-*/jpool_*-*.jar`
-WORK_CLASSES=`echo $BASEDIR/target/scala_*/classes`
-
-# Unfortunately, this has to be hard coded.
-SCALA_LIB=`echo $BASEDIR/project/boot/scala-2.9.*/lib/scala-library.jar`
-
-LIBS=`find $BASEDIR/lib_managed -name '*.jar' -printf "%p:"`
-
-if [ ! -f $JAR ]; then
-	echo "Unable to locate program jarfile"
-	exit 1
+if [ -f $BASEDIR/target/classpath.sh ]; then
+  . $BASEDIR/target/classpath.sh
+else
+  echo "Classpath not configured.  Please run 'sbt mkrun'"
+  exit 1
 fi
 
 SO_PATH="${BASEDIR}/target/so"
@@ -94,6 +87,6 @@ case "$CMD" in
 		;;
 esac
 
-CLASSPATH="$WORK_CLASSES":"$LIBS":"$JAR":"$SCALA_LIB" \
+CLASSPATH="$classpath" \
 LD_LIBRARY_PATH="${LD_LIBRARY_PATH}" \
 	exec java "$CMD" "$@"
