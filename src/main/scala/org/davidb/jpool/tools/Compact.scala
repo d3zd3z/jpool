@@ -32,3 +32,22 @@ object Compact extends AnyRef with Loggable {
     new File(file).delete()
   }
 }
+
+// Another seendb utility.  Dump a seen-database in a textual format.
+object SeenToText extends AnyRef with Loggable {
+  def main(args: Array[String]) {
+    if (args.length != 2) {
+      printf("Usage: seentotext prefix h2-seen-db-name%n")
+      sys.exit(1)
+    }
+
+    val db = new SeenDb(args(0), args(1))
+    for (pino <- db.getParentInos()) {
+      printf("%d%n", pino)
+      for (node <- db.getFiles(pino)) {
+        printf("\t%d\t%d\t%s\t%d%n", node.inode, node.ctime,
+          node.hash, node.expire)
+      }
+    }
+  }
+}

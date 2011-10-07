@@ -81,6 +81,9 @@ case "$CMD" in
 	crypto)
 		CMD=org.davidb.jpool.crypto.Crypto
 		;;
+	seentotext)
+		CMD=org.davidb.jpool.tools.SeenToText
+		;;
 	*)
 		echo "Unknown command: $CMD"
 		exit 1

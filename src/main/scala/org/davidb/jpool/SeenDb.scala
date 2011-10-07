@@ -164,6 +164,11 @@ class SeenDb(prefix: String, id: String) {
     }
   }
 
+  // An iterator over all parentIno values in the database.
+  def getParentInos(): Iterator[Long] = {
+    db.query(db.getLong1 _, "select pino from seen order by pino")
+  }
+
   // Run an expiration.  This can take quite some time, but is needed
   // to purge entries from directories that are no longer present.
   // Files in directories that are present will be purged already.
