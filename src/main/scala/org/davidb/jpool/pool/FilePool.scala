@@ -52,7 +52,7 @@ class FilePool(prefix: File) extends ChunkStore {
       val fi = files(num)
       val result = fi.index.get(hash)
       if (result.isDefined)
-        return Some((fi, result.get._1))
+        return Some((fi, result.get.offset))
       num += 1
     }
     None
@@ -82,7 +82,7 @@ class FilePool(prefix: File) extends ChunkStore {
       val fileNum = files.size - 1
       val file = files(fileNum)
       val pos = file.pool.append(value)
-      file.index += (key -> (pos, value.kind))
+      file.index += (key -> FileIndex.Elt(pos, value.kind))
 
       if (value.kind == "back")
         db.addBackup(key)

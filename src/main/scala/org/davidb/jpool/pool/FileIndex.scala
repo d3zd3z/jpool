@@ -19,7 +19,7 @@ import java.nio.channels.FileChannel
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
-class FileIndex(pfile: PoolFileBase) extends mutable.Map[Hash, (Int, String)] with Loggable {
+class FileIndex(pfile: PoolFileBase) extends mutable.Map[Hash, FileIndex.Elt] with Loggable {
   protected val indexPath = getIndexName
   protected val index = {
     try {
@@ -33,18 +33,18 @@ class FileIndex(pfile: PoolFileBase) extends mutable.Map[Hash, (Int, String)] wi
   }
 
   // Updates go into the RAM index.
-  protected var ramIndex = Map[Hash, (Int, String)]()
+  protected var ramIndex = Map[Hash, FileIndex.Elt]()
 
   // Index operations.
-  def get(key: Hash): Option[(Int, String)] = {
+  def get(key: Hash): Option[FileIndex.Elt] = {
     index.get(key).orElse(ramIndex.get(key))
   }
   def -= (key: Hash): this.type = sys.error("Cannot remove from index")
-  def += (kv: (Hash, (Int, String))): this.type = {
+  def += (kv: (Hash, FileIndex.Elt)): this.type = {
     ramIndex += kv
     this
   }
-  def iterator: Iterator[(Hash, (Int, String))] = {
+  def iterator: Iterator[(Hash, FileIndex.Elt)] = {
     index.iterator ++ ramIndex.iterator
   }
 
@@ -65,12 +65,12 @@ class FileIndex(pfile: PoolFileBase) extends mutable.Map[Hash, (Int, String)] wi
   private def reIndexFile() {
     logger.info("Reindexing '%s'".format(pfile.path.getPath()))
 
-    var items = immutable.TreeMap[Hash, (Int, String)]()
+    var items = immutable.TreeMap[Hash, FileIndex.Elt]()
     var pos = 0
     val len = pfile.size
     while (pos < len) {
       val (hash, kind, size) = pfile.readInfo(pos)
-      items += (hash -> (pos, kind))
+      items += (hash -> FileIndex.Elt(pos, kind))
       pos = pfile.position
     }
     FileIndexFile.writeIndex(indexPath, pfile.size, items)
@@ -89,12 +89,12 @@ class FileIndex(pfile: PoolFileBase) extends mutable.Map[Hash, (Int, String)] wi
 }
 
 // This helper class is for reading/writing the FileIndex.
-class FileIndexFile(path: File, poolSize: Int) extends immutable.Map[Hash, (Int, String)] {
+class FileIndexFile(path: File, poolSize: Int) extends immutable.Map[Hash, FileIndex.Elt] {
   private val (top, hashPos, offsetPos, kindPos, buffer) = readIndex()
   override def size = top(255)
 
   // Lookup this hash.
-  def get(key: Hash): Option[(Int, String)] = {
+  def get(key: Hash): Option[FileIndex.Elt] = {
     val topByte = key.byte(0)
     var low = if (topByte > 0) top(topByte-1) else 0
     var high = top(topByte) - 1
@@ -107,7 +107,7 @@ class FileIndexFile(path: File, poolSize: Int) extends immutable.Map[Hash, (Int,
       else if (comp < 0)
 	low = mid + 1
       else {
-	return Some(offsets(mid), kinds(mid))
+	return Some(FileIndex.Elt(offsets(mid), kinds(mid)))
       }
     }
     return None
@@ -168,12 +168,12 @@ class FileIndexFile(path: File, poolSize: Int) extends immutable.Map[Hash, (Int,
   }
 
   // The index cannot be updated, so these are just failures.
-  def + [B1 >: (Int, String)](kv: (Hash, B1)) = sys.error("Not mutable")
+  def + [B1 >: FileIndex.Elt](kv: (Hash, B1)) = sys.error("Not mutable")
   def - (key: Hash) = sys.error("Not mutable")
 
-  def iterator: Iterator[(Hash, (Int, String))] = {
+  def iterator: Iterator[(Hash, FileIndex.Elt)] = {
     (0 until size).iterator.map { i: Int =>
-      (hashes(i), (offsets(i), kinds(i)))
+      (hashes(i), FileIndex.Elt(offsets(i), kinds(i)))
     }
   }
 }
@@ -184,11 +184,11 @@ object FileIndexFile {
 
   case class Node(hash: Hash, offset: Int, kind: String)
 
-  def writeIndex(path: File, poolSize: Int, items: Iterable[(Hash, (Int, String))]) {
+  def writeIndex(path: File, poolSize: Int, items: Iterable[(Hash, FileIndex.Elt)]) {
 
     val size = items.size
     val allBuf = new mutable.ArrayBuffer[Node](size)
-    for ((hash, (pos, kind)) <- items) {
+    for ((hash, FileIndex.Elt(pos, kind)) <- items) {
       allBuf += Node(hash, pos, kind.intern())
     }
     val all = util.Sorting.stableSort(allBuf.result(), (x: Node) => x.hash)
@@ -256,6 +256,8 @@ object FileIndexFile {
 
 object FileIndex {
 
+  case class Elt(offset: Int, kind: String)
+
   def main(args: Array[String]) {
     // val base = "/mnt/grime/pro/pool/npool"
     // val pfile = new PoolFile(new File(base + "/pool-data-0000.data"))
@@ -265,11 +267,11 @@ object FileIndex {
   }
 
   def testWrite() {
-    var items = immutable.TreeMap[Hash, (Int, String)]()
+    var items = immutable.TreeMap[Hash, FileIndex.Elt]()
     val limit = 1000
     for (i <- 1 to limit) {
       val hash = Hash("blob", i.toString)
-      items += (hash -> (i, "blob"))
+      items += (hash -> FileIndex.Elt(i, "blob"))
     }
 
     FileIndexFile.writeIndex(new File("index.idx"), 0x12345678, items)
@@ -280,7 +282,7 @@ object FileIndex {
       val hash = Hash("blob", i.toString)
       index.get(hash) match {
 	case None => sys.error("Key not found")
-	case Some((pos, kind)) =>
+	case Some(FileIndex.Elt(pos, kind)) =>
 	  assert(pos == i)
 	  assert(kind == "blob")
       }

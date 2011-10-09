@@ -15,15 +15,15 @@ class FileIndexSuite extends Suite with TempDirTest {
   // Test just writing a bunch of nodes to the index.
   def testPlain {
     val indexFile = new java.io.File(tmpDir.path, "indexplain")
-    val items = new Iterable[(Hash, (Int, String))] {
-      def iterator = new Iterator[(Hash, (Int, String))] {
+    val items = new Iterable[(Hash, FileIndex.Elt)] {
+      def iterator = new Iterator[(Hash, FileIndex.Elt)] {
         private var count = 0
         def hasNext = count < 10000
         def next() = {
           count += 1
           val kind = makeKind(count)
           val h = Hash(kind, count.toString)
-          (h, (count, kind))
+          (h, FileIndex.Elt(count, kind))
         }
       }
     }
@@ -39,10 +39,10 @@ class FileIndexSuite extends Suite with TempDirTest {
     }
 
     val index = new FileIndexFile(indexFile, 12345)
-    for ((h, (pos, kind)) <- items) {
+    for ((h, FileIndex.Elt(pos, kind)) <- items) {
       index.get(h) match {
         case None => fail()
-        case Some((p, k)) =>
+        case Some(FileIndex.Elt(p, k)) =>
           assert(p === pos)
           assert(k === kind)
       }
@@ -72,7 +72,7 @@ class FileIndexSuite extends Suite with TempDirTest {
   def checkIndex(index: FileIndex, pf: FakePoolFile) {
     for (i <- 0 until pf.size) {
       val (hash, kind, size) = pf.readInfo(i)
-      expect(Some((i, kind))) {
+      expect(Some(FileIndex.Elt(i, kind))) {
         index.get(hash)
       }
     }
@@ -83,7 +83,7 @@ class FileIndexSuite extends Suite with TempDirTest {
       val pos = pf.size
       val chunk = makeChunk(pos)
       assert(pf.append(chunk) === pos)
-      index += ((chunk.hash, (pos, chunk.kind)))
+      index += ((chunk.hash, FileIndex.Elt(pos, chunk.kind)))
     }
     index.flush()
   }
