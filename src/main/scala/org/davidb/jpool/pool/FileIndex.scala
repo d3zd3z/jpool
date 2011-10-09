@@ -26,6 +26,7 @@ class FileIndex(pfile: PoolFileBase) extends mutable.Map[Hash, FileIndex.Elt] wi
       new FileIndexFile(indexPath, pfile.size)
     } catch {
       case _: FileIndexFile.PoolSizeMismatch |
+           _: FileIndexFile.IndexVersionMismatch |
            _: java.io.FileNotFoundException =>
         reIndexFile()
         new FileIndexFile(indexPath, pfile.size)
@@ -90,7 +91,7 @@ class FileIndex(pfile: PoolFileBase) extends mutable.Map[Hash, FileIndex.Elt] wi
 
 // This helper class is for reading/writing the FileIndex.
 class FileIndexFile(path: File, poolSize: Int) extends immutable.Map[Hash, FileIndex.Elt] {
-  private val (top, hashPos, offsetPos, kindPos, buffer) = readIndex()
+  private val (top, hashPos, offsetPos, allKinds, kindPos, buffer) = readIndex()
   override def size = top(255)
 
   // Lookup this hash.
@@ -127,12 +128,11 @@ class FileIndexFile(path: File, poolSize: Int) extends immutable.Map[Hash, FileI
   }
 
   private def kinds(pos: Int): String = {
-    val buf = buffer.duplicate()
-    buf.position(kindPos + 4 * pos)
-    new String(FileUtil.getBytes(buf, 4), "UTF-8").intern()
+    val index = buffer.get(kindPos + pos)
+    allKinds(index)
   }
 
-  private def readIndex(): (Array[Int], Int, Int, Int, ByteBuffer) = {
+  private def readIndex(): (Array[Int], Int, Int, Array[String], Int, ByteBuffer) = {
     // Map the file into memory.
     val fis = new FileInputStream(path)
     val chan = fis.getChannel()
@@ -146,8 +146,8 @@ class FileIndexFile(path: File, poolSize: Int) extends immutable.Map[Hash, FileI
       sys.error("Invalid index magic header")
 
     val version = buf.getInt()
-    if (version != 3)
-      sys.error("Unsupported index version")
+    if (version != 4)
+      throw new FileIndexFile.IndexVersionMismatch("Index version %d, expecting 4".format(version))
 
     val psize = buf.getInt()
     if (psize != poolSize) {
@@ -162,9 +162,15 @@ class FileIndexFile(path: File, poolSize: Int) extends immutable.Map[Hash, FileI
 
     val hashPos = buf.position
     val offsetPos = hashPos + Hash.HashLength * size
-    val kindPos = offsetPos + 4 * size
 
-    (top, hashPos, offsetPos, kindPos, buf)
+    buf.position(offsetPos + 4 * size)
+    val kindCount = buf.getInt()
+    val kinds = Array.fill(kindCount) {
+      new String(FileUtil.getBytes(buf, 4)).intern
+    }
+    val kindPos = buf.position
+
+    (top, hashPos, offsetPos, kinds, kindPos, buf)
   }
 
   // The index cannot be updated, so these are just failures.
@@ -181,6 +187,7 @@ class FileIndexFile(path: File, poolSize: Int) extends immutable.Map[Hash, FileI
 object FileIndexFile {
 
   class PoolSizeMismatch(message: String) extends Exception(message)
+  class IndexVersionMismatch(message: String) extends Exception(message)
 
   case class Node(hash: Hash, offset: Int, kind: String)
 
@@ -202,7 +209,7 @@ object FileIndexFile {
     val header = ByteBuffer.allocate(16)
     header.order(ByteOrder.LITTLE_ENDIAN)
     header.put(FileIndex.magic)
-    header.putInt(3)
+    header.putInt(4)
     header.putInt(poolSize)
     header.flip()
     FileUtil.fullWrite(chan, header)
@@ -237,13 +244,20 @@ object FileIndexFile {
     offsetBuf.flip()
     FileUtil.fullWrite(chan, offsetBuf)
 
-    // Followed by the expanded kind table.
-    // TODO: Future version could compress this kind table a lot, by
-    // just storing references to interned strings.
-    val kindBuf = ByteBuffer.allocate(size * 4)
+    // The kinds are written as a number of kinds, then each of the
+    // unique kinds, followed by a single byte for each kind.
+    var allKinds = Set.empty[String]
     for (node <- all) {
-      kindBuf.put(node.kind.getBytes("UTF-8"))
+      allKinds += node.kind
     }
+    val kindBuf = ByteBuffer.allocate(4 + 4 * allKinds.size + all.size)
+    kindBuf.order(ByteOrder.LITTLE_ENDIAN)
+    kindBuf.putInt(allKinds.size)
+    for (k <- allKinds)
+      kindBuf.put(k.getBytes("UTF-8"))
+    val kmap = Map.empty ++ (allKinds zip (0 until allKinds.size))
+    for (n <- all)
+      kindBuf.put(kmap(n.kind).toByte)
     kindBuf.flip()
     FileUtil.fullWrite(chan, kindBuf)
 
