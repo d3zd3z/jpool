@@ -71,7 +71,7 @@ class FileIndexSuite extends Suite with TempDirTest {
   // Test that the given index matches the data in it's pool.
   def checkIndex(index: FileIndex, pf: FakePoolFile) {
     for (i <- 0 until pf.size) {
-      val (hash, kind) = pf.readInfo(i)
+      val (hash, kind, size) = pf.readInfo(i)
       expect(Some((i, kind))) {
         index.get(hash)
       }
@@ -94,16 +94,16 @@ class FileIndexSuite extends Suite with TempDirTest {
     def read(pos: Int) = sys.error("Should not be called")
     def readUnchecked(pos: Int) = sys.error("Should not be called")
 
-    private var buf = new mutable.ArrayBuffer[(Hash, String)]()
+    private var buf = new mutable.ArrayBuffer[(Hash, String, Int)]()
 
-    def readInfo(pos: Int): (Hash, String) = {
+    def readInfo(pos: Int): (Hash, String, Int) = {
       curPos = pos + 1
       buf(pos)
     }
 
     def append(chunk: Chunk): Int = {
       val pos = buf.length
-      buf += ((chunk.hash, chunk.kind))
+      buf += ((chunk.hash, chunk.kind, chunk.dataLength))
       pos
     }
 

@@ -69,11 +69,13 @@ object Chunk {
   // Read the information about a chunk.  Positions the file at the
   // beginning of the next chunk.  Returns the hash and the kind of
   // the chunk.
-  def readInfo(chan: FileChannel): (Hash, String) = {
+  def readInfo(chan: FileChannel): (Hash, String, Int) = {
     val header = readHeader(chan)
+    val uclen = header.uclen
+    val size = if (uclen == -1) header.clen else uclen
 
     chan.position(chan.position + (header.clen + 15) & ~15)
-    (header.hash, header.kind)
+    (header.hash, header.kind, size)
   }
 
   // Try reading encrypted data.  The getKey function should retrieve

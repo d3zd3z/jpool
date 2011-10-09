@@ -65,7 +65,7 @@ abstract class PoolFileBase(val path: File) {
 
   def read(pos: Int): Chunk
   def readUnchecked(pos: Int): (Chunk, Hash)
-  def readInfo(pos: Int): (Hash, String)
+  def readInfo(pos: Int): (Hash, String, Int)
   def append(chunk: Chunk): Int
 
   def close() = state.close()
@@ -84,7 +84,7 @@ class PoolFile(path: File) extends PoolFileBase(path) {
     Chunk.readUnchecked(chan)
   }
 
-  def readInfo(pos: Int): (Hash, String) = {
+  def readInfo(pos: Int): (Hash, String, Int) = {
     val chan = state.getReadable()
     chan.position(pos)
     Chunk.readInfo(chan)

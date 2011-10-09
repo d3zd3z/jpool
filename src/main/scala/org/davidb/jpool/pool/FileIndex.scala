@@ -69,7 +69,7 @@ class FileIndex(pfile: PoolFileBase) extends mutable.Map[Hash, (Int, String)] wi
     var pos = 0
     val len = pfile.size
     while (pos < len) {
-      val (hash, kind) = pfile.readInfo(pos)
+      val (hash, kind, size) = pfile.readInfo(pos)
       items += (hash -> (pos, kind))
       pos = pfile.position
     }
