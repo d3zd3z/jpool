@@ -4,7 +4,7 @@ version := "1.0.1-SNAPSHOT"
 
 organization := "org.davidb"
 
-scalaVersion := "2.9.0-1"
+scalaVersion := "2.9.1"
 
 // Although I think I've locked sufficiently, sometimes I get test
 // failures without this.
