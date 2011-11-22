@@ -63,7 +63,7 @@ class DevMap extends scala.collection.Map[Long, String] with Loggable {
   def parseIDs: Map[Long, String] = {
     var warns = 0
     var result = Map[Long, String]()
-    for (line <- Proc.runAndCapture("blkid")) {
+    for (line <- Proc.runAndCapture("/sbin/blkid")) {
       val (dev, mp) = BlkIDParse.parseLine(line)
       try {
         if (mp contains "UUID") {
