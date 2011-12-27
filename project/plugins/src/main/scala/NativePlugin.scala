@@ -46,7 +46,7 @@ object NativePlugin extends Plugin
         ) !)
 
       if (result != 0)
-        error("Error compiling native library")
+        sys.error("Error compiling native library")
 
       // Make a temporary copy of the .so
       val tmpSrc = file("target/so/liblinux.so")
