@@ -78,52 +78,8 @@ object Chunk {
     (header.hash, header.kind, size)
   }
 
-  // Try reading encrypted data.  The getKey function should retrieve
-  // the key of the given index.  If it reads from the channel, it
-  // should restore the position before returning.
-  // If the header spots an encryption key, it will skip the key, and
-  // raise the KeySkipped exception.
-  object KeySkipped extends Exception
-  def readEncrypted(chan: FileChannel, getKey: Int => crypto.BackupSecret): Chunk = {
-    val cryptOffset = chan.position.toString.getBytes("UTF-8")
-
-    val header = FileUtil.readBytes(chan, 16)
-    header.order(LITTLE_ENDIAN)
-    val version = FileUtil.getBytes(header, 8)
-    if (!java.util.Arrays.equals(version, cryptVersion)) {
-      if (java.util.Arrays.equals(version, "key-1.1\n".getBytes("UTF-8"))) {
-        val keylen = header.getInt()
-        chan.position(chan.position + keylen + 16)
-        throw KeySkipped
-      }
-      // TODO: Try reading an encrypted chunk, optionally.
-      sys.error("Invalid encrypted chunk header")
-    }
-
-    val keyNum = header.getInt()
-    val encLen = header.getInt()
-    val secret = getKey(keyNum)
-
-    val cipherText = FileUtil.readBytes(chan, encLen)
-    val buf = ByteBuffer.wrap(secret.decrypt(cipherText.array, cryptOffset))
-    buf.order(LITTLE_ENDIAN)
-    val unlen = buf.getInt()
-    val kind = new String(FileUtil.getBytes(buf, 4))
-    val hash = FileUtil.getBytes(buf, 20)
-    val payload = ByteBuffer.wrap(FileUtil.getBytes(buf, buf.remaining))
-
-    val chunk: Chunk = if (unlen == -1)
-        new DataChunk(kind, payload)
-      else
-        new CompressedChunk(kind, payload, unlen)
-    assert(Hash.raw(hash) == chunk.hash)
-    chunk
-  }
-
   final val baseVersionText = "adump-pool-v1.1\n"
   final val baseVersion = baseVersionText.getBytes("UTF-8")
-
-  final val cryptVersion = "AES-128\n".getBytes("UTF-8")
 }
 
 abstract class Chunk(val kind: String) {
@@ -176,42 +132,6 @@ abstract class Chunk(val kind: String) {
       val tmp = ByteBuffer.allocate(padding)
       FileUtil.fullWrite(chan, header, payload, tmp)
     }
-  }
-
-  // Write an encrypted chunk to the backup stream.  The data is
-  // written with a special header indicating the algorithm, an
-  // integer index for the private key (beyond the scope of this
-  // code), and then the ciphertext.
-  def writeEncrypted(chan: FileChannel, secret: crypto.BackupSecret, keyNum: Int) {
-    var payload = zdata
-
-    // Format is a bit difference, since the length will be recovered.
-    var unlen = dataLength
-    if (payload eq null) {
-      payload = data
-      unlen = -1
-    }
-    val buf = ByteBuffer.allocate(4 + 4 + 20 + payload.remaining)
-    buf.order(LITTLE_ENDIAN)
-    buf.putInt(unlen)
-    buf.put(kind.getBytes)
-    buf.put(hash.getBytes)
-    buf.put(payload)
-    buf.flip()
-    val enc = secret.encrypt(buf.array, chan.position.toString.getBytes("UTF-8"))
-
-    val header = ByteBuffer.allocate(16)
-    header.order(LITTLE_ENDIAN)
-    header.put(Chunk.cryptVersion)
-    header.putInt(keyNum)
-    header.putInt(enc.length)
-    header.flip()
-
-    // The cipher should always be a multiple of a block size, so no
-    // padding.
-    assert((enc.length & 15) == 0)
-
-    FileUtil.fullWrite(chan, header, ByteBuffer.wrap(enc))
   }
 }
 

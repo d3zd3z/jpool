@@ -20,7 +20,6 @@ class FilePool(prefix: File) extends ChunkStore {
   sanityTest
   private val lock = lockPool()
   metaCheck
-  private var keyInfo = findKeyInfo()
   private val db = new PoolDb(metaPrefix)
   private val files = scan
 
@@ -157,12 +156,7 @@ class FilePool(prefix: File) extends ChunkStore {
   }
 
   private def makePoolFile(index: Int): FileAndIndex = {
-    val pool = keyInfo match {
-      case None =>
-        new PoolFile(makeName(index))
-      case Some(info) =>
-        new EncryptedPoolFile(makeName(index), info)
-    }
+    val pool = new PoolFile(makeName(index))
     new FileAndIndex(pool, new FileIndex(pool))
   }
 
@@ -203,37 +197,4 @@ class FilePool(prefix: File) extends ChunkStore {
   }
 
   protected def recoveryNotify {}
-
-  private def findKeyInfo(): Option[crypto.RSAInfo] = {
-    val cert = new File(prefix, "backup.crt")
-    val key = new File(prefix, "backup.key")
-
-    if (cert.isFile()) {
-      if (key.isFile()) {
-        val info = crypto.RSAInfo.loadPair(cert, key, new crypto.JavaConsolePinReader)
-        // Note that we don't verify them, since that would require
-        // the password.
-        Some(info)
-      } else
-        Some(crypto.RSAInfo.loadCert(cert))
-    } else {
-      if (key.isFile())
-        sys.error("backup.key is present, but backup.crt is not.")
-      None
-    }
-  }
-
-  // Generate a key for this pool.  The pool must not have any pool
-  // files written to it yet.
-  def makeKeyPair() {
-    if (files.size != 0)
-      sys.error("Cannot create key once pool contains data.")
-    if (keyInfo != None)
-      sys.error("Pool already has a key.")
-
-    val info = crypto.RSAInfo.generate()
-    info.saveCert(new File(prefix, "backup.crt"))
-    info.savePrivate(new File(prefix, "backup.key"), new crypto.JavaConsolePinReader)
-    keyInfo = Some(info)
-  }
 }

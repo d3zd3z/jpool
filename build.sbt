@@ -17,8 +17,6 @@ libraryDependencies += "commons-codec" % "commons-codec" % "1.4"
 
 libraryDependencies += "com.h2database" % "h2" % "1.2.147"
 
-libraryDependencies += "org.bouncycastle" % "bcprov-jdk16" % "1.45"
-
 libraryDependencies += "log4j" % "log4j" % "1.2.16"
 
 scalacOptions += "-deprecation"
