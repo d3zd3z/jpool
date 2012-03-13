@@ -10,6 +10,23 @@
 // but the conversion will be reversable, and allows the malformed
 // filenames allowed under Linux.
 
+// NEW FORMAT
+
+// Instead of using XML, the attributes are stored using a binary
+// encoding.  This allows them to be packed and unpacked more
+// efficiently.  The format is described by the code below but is
+// basically.
+//
+//   byte - kind length
+//    kind
+//   byte - key length
+//    key
+//   be16 - value length
+//    value
+//
+// where the key/value groups repeat to fill out the buffer.  The data
+// is never stored as a string, so there are no encoding issues.
+
 package org.davidb.jpool
 package pool
 
@@ -17,6 +34,7 @@ import org.apache.commons.codec.binary.Base64
 import scala.collection.mutable.ListBuffer
 import scala.xml
 import java.nio.ByteBuffer
+import java.nio.ByteOrder
 
 object Attributes {
   def decode(bytes: Array[Byte]): Attributes = decode(ByteBuffer.wrap(bytes))
@@ -25,6 +43,31 @@ object Attributes {
   def decode(chunk: Chunk): Attributes = decode(chunk.data)
 
   def decode(data: ByteBuffer): Attributes = {
+    if (data.array()(data.arrayOffset) == '<')
+      decodeXml(data)
+    else
+      decodeRaw(data.duplicate())
+  }
+
+  def decodeRaw(data: ByteBuffer): Attributes = {
+    data.order(ByteOrder.BIG_ENDIAN)
+    def getString(len: Int): String = {
+      val buf = new Array[Byte](len)
+      data.get(buf, 0, len)
+      new String(buf, "iso8859-1")
+    }
+    val kind = getString(data.get())
+    var contents = Map.empty[String, String]
+    while (data.remaining > 0) {
+      val key = getString(data.get())
+      val value = getString(data.getShort())
+      contents += (key -> value)
+    }
+    new Attributes(kind, contents)
+  }
+
+  // Decode the attributes when in XML format.
+  def decodeXml(data: ByteBuffer): Attributes = {
     val text = new String(data.array, data.arrayOffset + data.position,
       data.remaining, "UTF-8")
     val nodes = xml.XML.loadString(text)
@@ -62,13 +105,13 @@ class Attributes(var kind: String,
 
   // Store these attributes into a storage pool.
   def store(pool: ChunkStore, chunkKind: String): Hash = {
-    val chunk = Chunk.make(chunkKind, ByteBuffer.wrap(toByteArray()))
+    val chunk = Chunk.make(chunkKind, toByteBuffer)
     pool += (chunk.hash -> chunk)
     chunk.hash
   }
 
   // Convert this node into XML.
-  def toXML: xml.Elem = {
+  private def toXML: xml.Elem = {
     val items = for (key <- contents.keysIterator.toList.sortWith(_<_))
       yield entryEncode(key, contents(key))
     <node kind={kind}>{items}</node>
@@ -89,15 +132,40 @@ class Attributes(var kind: String,
     }
   }
 
+  def toByteBuffer(): ByteBuffer = {
+    // Compute the size of the result.
+    var size = 1 + kind.length
+    for ((key, value) <- contents) {
+      size += 3 + key.length + value.length
+    }
+    val buffer = ByteBuffer.allocate(size)
+    buffer.order(ByteOrder.BIG_ENDIAN)
+    def put(text: String) = buffer.put(text.getBytes("iso8859-1"))
+    buffer.put(kind.length.toByte)
+    put(kind)
+    for ((key, value) <- contents) {
+      val klen = key.length
+      if (klen > 60)
+	sys.error("Encoding error, key too long")
+      buffer.put(klen.toByte)
+      put(key)
+      buffer.putShort(value.length.toShort)
+      put(value)
+    }
+    buffer.flip()
+    buffer
+  }
+
   // Convert this node into a Binary representation of the XML.
-  def toByteArray(): Array[Byte] = {
+  def toByteBufferXML(): ByteBuffer = {
     val buf = new StringBuilder
     buf.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
     buf.append(xml.Utility.toXML(toXML))
-    buf.toString.getBytes("UTF-8")
+    ByteBuffer.wrap(buf.toString.getBytes("UTF-8"))
   }
 
-  override def toString(): String = xml.Utility.toXML(toXML).toString
+  // override def toString(): String = xml.Utility.toXML(toXML).toString
+  override def toString(): String = sys.error("Don't use toString() on Attributes")
 
   override def equals(that: Any): Boolean = that match {
     case other: Attributes =>

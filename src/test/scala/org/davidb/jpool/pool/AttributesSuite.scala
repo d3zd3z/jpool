@@ -13,7 +13,7 @@ class AttributesSuite extends Suite with ProgressPoolTest {
     map += ("bbb" -> "456")
     map += ("ugly" -> "This\370is\201ugly")
     val att = new Attributes("SILLY", map)
-    val bin = att.toByteArray()
+    val bin = att.toByteBuffer()
     // Pdump.dump(bin)
 
     val attb = Attributes.decode(bin)
@@ -27,7 +27,7 @@ class AttributesSuite extends Suite with ProgressPoolTest {
       map += (key.toString -> new String(Array(key.toChar)))
     }
     val att = new Attributes("Kind", map)
-    val bin = att.toByteArray()
+    val bin = att.toByteBuffer()
     // Pdump.dump(bin)
     val attb = Attributes.decode(bin)
 
