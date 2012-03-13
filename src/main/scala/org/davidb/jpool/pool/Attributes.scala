@@ -61,8 +61,8 @@ class Attributes(var kind: String,
   def + [B >: String](kv: (String, B)): Attributes = sys.error("Cannot add to Attributes")
 
   // Store these attributes into a storage pool.
-  def store(pool: ChunkStore): Hash = {
-    val chunk = Chunk.make("node", ByteBuffer.wrap(toByteArray()))
+  def store(pool: ChunkStore, chunkKind: String): Hash = {
+    val chunk = Chunk.make(chunkKind, ByteBuffer.wrap(toByteArray()))
     pool += (chunk.hash -> chunk)
     chunk.hash
   }

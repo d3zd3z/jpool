@@ -131,24 +131,24 @@ class TreeSave(pool: ChunkStore, rootPath: String, meter: BackupProgressMeter) e
     // fullStat += ("path" -> path)
     fullStat += ("children" -> children.toString())
 
-    Attributes.ofLinuxStat(fullStat).store(pool)
+    Attributes.ofLinuxStat(fullStat).store(pool, "node")
   }
   handlers += ("DIR" -> handleDir _)
 
   private def handleLnk(path: String, stat: Linux.StatInfo): Hash = {
     var target = Linux.readlink(path)
-    Attributes.ofLinuxStat(stat + ("target" -> target)).store(pool)
+    Attributes.ofLinuxStat(stat + ("target" -> target)).store(pool, "node")
   }
   handlers += ("LNK" -> handleLnk _)
 
   private def handleReg(path: String, stat: Linux.StatInfo): Hash = {
     var dataHash = FileData.store(pool, path)
-    Attributes.ofLinuxStat(stat + ("data" -> dataHash.toString)).store(pool)
+    Attributes.ofLinuxStat(stat + ("data" -> dataHash.toString)).store(pool, "node")
   }
   handlers += ("REG" -> handleReg _)
 
   private def handleSimple(path: String, stat: Linux.StatInfo): Hash =
-    Attributes.ofLinuxStat(stat).store(pool)
+    Attributes.ofLinuxStat(stat).store(pool, "node")
   handlers += ("CHR" -> handleSimple)
   handlers += ("BLK" -> handleSimple)
   handlers += ("FIFO" -> handleSimple)
