@@ -2,6 +2,7 @@
 /lib_managed/
 /project/boot/
 /project/target/
+/project/project/
 /project/plugins/target/
 /project/plugins/project/target/
 /target/
