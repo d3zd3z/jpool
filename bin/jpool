@@ -63,6 +63,9 @@ case "$CMD" in
 	h2)
 		CMD=org.h2.tools.Shell
 		;;
+	h2console)
+		CMD=org.h2.tools.Console
+		;;
 	mkindex)
 		CMD=org.davidb.jpool.tools.MkIndex
 		;;
