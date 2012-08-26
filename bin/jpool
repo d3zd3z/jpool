@@ -34,58 +34,7 @@ else
 	LD_LIBRARY_PATH="${SO_PATH}:${LD_LIBRARY_PATH}"
 fi
 
-if [ "$#" -lt 1 ]; then
-	echo "Usage: jpool command args"
-	exit 1
-fi
-CMD="$1"
-shift
-
-case "$CMD" in
-	save)
-		CMD=org.davidb.jpool.tools.Save
-		;;
-	list)
-		CMD=org.davidb.jpool.tools.ListCommand
-		;;
-	restore)
-		CMD=org.davidb.jpool.tools.Restore
-		;;
-	dump)
-		CMD=org.davidb.jpool.tools.Dump
-		;;
-	show)
-		CMD=org.davidb.jpool.tools.Show
-		;;
-	compact)
-		CMD=org.davidb.jpool.tools.Compact
-		;;
-	h2)
-		CMD=org.h2.tools.Shell
-		;;
-	h2console)
-		CMD=org.h2.tools.Console
-		;;
-	mkindex)
-		CMD=org.davidb.jpool.tools.MkIndex
-		;;
-	check)
-		CMD=org.davidb.jpool.tools.Check
-		;;
-	clone)
-		CMD=org.davidb.jpool.tools.Clone
-		;;
-	seendb)
-		CMD=org.davidb.jpool.SeenDb
-		;;
-	seentotext)
-		CMD=org.davidb.jpool.tools.SeenToText
-		;;
-	*)
-		echo "Unknown command: $CMD"
-		exit 1
-		;;
-esac
+CMD=org.davidb.jpool.tools.Jpool
 
 CLASSPATH="$classpath" \
 LD_LIBRARY_PATH="${LD_LIBRARY_PATH}" \

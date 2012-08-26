@@ -14,14 +14,11 @@ import org.davidb.logging.Loggable
 import scala.collection.JavaConversions._
 
 object ListCommand extends AnyRef with Loggable {
-  def main(args: Array[String]) {
-    if (args.length < 1) {
-      logger.error("Usage: List jpool:file:///path {key=value ...}")
-      System.exit(1)
-    }
 
-    val pool = PoolFactory.getInstance(new URI(args(0)))
-    val matcher = buildMatcher(args drop 1)
+  def entry(args: List[String]) {
+    // TODO: Handle help, and explain usage.
+    val pool = Jpool.getPool()
+    val matcher = buildMatcher(args)
 
     val sanity = for {
       hash <- pool.getBackups
@@ -34,6 +31,8 @@ object ListCommand extends AnyRef with Loggable {
       printf("%s %s%n", hash, sane)
     }
   }
+
+  def main(args: Array[String]) = entry(args.toList)
 
   private final def datelt(a: Date, b: Date): Boolean = {
     (a compareTo b) < 0
