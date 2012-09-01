@@ -41,8 +41,7 @@ object Restore extends AnyRef with Loggable {
     } else {
       // Otherwise, this should be a 'snapshot' backup.
       if (back.props.getProperty("kind") != "snapshot") {
-        logger.error("Specified backup is not a snapshot backup")
-        sys.exit(1)
+        logger.warn("Specified backup is not a snapshot backup")
       }
 
       val restorer = new TreeRestore(pool, meter)
