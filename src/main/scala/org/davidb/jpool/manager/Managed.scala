@@ -52,14 +52,7 @@ object Managed {
     }
   }
 
-  def run(args: String*) {
-    printf("run: %s\n", args.reduceLeft {_ + " " + _})
-    args! match {
-      case 0 => ()
-      case n =>
-        throw new ExecutionError("Error running command: %d (%s)".format(n, args))
-    }
-  }
+  def run(args: String*): Unit = run(args, None)
 
   def run(args: Seq[String], cwd: Option[File]) {
     printf("run: %s (%s)\n", args.reduceLeft {_ + " " + _},
