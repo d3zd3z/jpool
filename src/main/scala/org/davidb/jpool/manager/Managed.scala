@@ -40,19 +40,21 @@ object Managed {
 
     var undos = List[(Manager, Steps.Value)]()
 
-    for (step <- Steps.values) {
-      printf("*** setup %s ***\n", step)
-      for (info <- sysInfos) {
-        info.setup(step)
-        undos = (info, step) :: undos
+    try {
+      for (step <- Steps.values) {
+        printf("*** setup %s ***\n", step)
+        for (info <- sysInfos) {
+          info.setup(step)
+          undos = (info, step) :: undos
+        }
       }
-    }
-
-    printf("*** Teardown ***\n")
-    while (!undos.isEmpty) {
-      val (info, step) = undos.head
-      undos = undos.tail
-      info.teardown(step)
+    } finally {
+      printf("*** Teardown ***\n")
+      while (!undos.isEmpty) {
+        val (info, step) = undos.head
+        undos = undos.tail
+        info.teardown(step)
+      }
     }
   }
 
