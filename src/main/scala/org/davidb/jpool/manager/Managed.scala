@@ -71,8 +71,8 @@ object Managed {
   def run(args: String*): Unit = run(args, None)
 
   def run(args: Seq[String], cwd: Option[File]) {
-    printf("   : %s (%s)\n", args.reduceLeft {_ + " " + _},
-      cwd.map{_.getPath}.getOrElse("??"))
+    printf("   : %s%s\n", args.reduceLeft {_ + " " + _},
+      cwd.map{" (" + _.getPath + ')'}.getOrElse(""))
     Process(args, cwd)! match {
       case 0 => ()
       case n =>
