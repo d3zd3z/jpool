@@ -91,7 +91,6 @@ class LvmManager(fs: BackupConfig#System#Fs) extends Manager {
   val lvremove = bc.getCommand("lvremove")
   val mount = bc.getCommand("mount")
   val umount = bc.getCommand("umount")
-  val clean = bc.getCommand("clean.sh")
   val gosure = bc.getCommand("gosure")
 
   // Verify that the Mirrors is sane.
@@ -123,7 +122,7 @@ class LvmManager(fs: BackupConfig#System#Fs) extends Manager {
   }
 
   addSetup(Steps.RunClean) {
-    Managed.run(clean.getPath)
+    Managed.run(fs.clean.getPath, snapDest.getPath)
   }
 
   addSetup(Steps.SureUpdate) {
