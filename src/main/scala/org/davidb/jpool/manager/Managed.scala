@@ -13,7 +13,7 @@ class ExecutionError(message: String) extends Exception(message)
 
 object Steps extends Enumeration {
   val CheckPaths, StartSnapshot, MountSnapshot, RunClean, SureUpdate,
-    SureWrite, Rsync = Value
+    SureWrite, Rsync, Dump = Value
 }
 
 object Managed {
@@ -122,6 +122,8 @@ class LvmManager(fs: BackupConfig#System#Fs) extends Manager {
   val cp = bc.getCommand("cp")
   val rsync = bc.getCommand("rsync")
 
+  val pool = new File(bc.pool)
+
   // Verify that the Mirrors is sane.
   addSetup(Steps.CheckPaths) {
     if (!regDest.isDirectory)
@@ -132,6 +134,9 @@ class LvmManager(fs: BackupConfig#System#Fs) extends Manager {
 
     if (!snapDest.isDirectory)
       sys.error("Snapshot destination doesn't exist '%s'".format(snapDest.getPath))
+
+    if (!pool.isDirectory)
+      sys.error("Pool dir doesn't exist '%s'".format(pool.getPath))
   }
 
   // Create the snapshot.
@@ -185,6 +190,11 @@ class LvmManager(fs: BackupConfig#System#Fs) extends Manager {
     } finally {
       log.close()
     }
+  }
+
+  addSetup(Steps.Dump) {
+    tools.Dump.main(Array(pool.getPath, snapDest.getPath, "fs=" + fs.fsName,
+      "host=" + fs.outer.host))
   }
 
   def banner(log: ProcessLogger, task: String) {

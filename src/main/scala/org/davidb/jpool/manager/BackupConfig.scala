@@ -22,6 +22,7 @@ class BackupConfig(path: File) { confThis =>
 
   val surelog = conf.getString("surelog")
   val rsynclog = conf.getString("rsynclog")
+  val pool = conf.getString("pool")
 
   // Lookup a command.
   def getCommand(name: String, config: Config = conf, prefix: String = "commands."): File = {
