@@ -57,6 +57,7 @@ class BackupConfig(path: File) { confThis =>
       val volume = fsConfig.getString("volume")
       val base = fsConfig.getString("base")
       val clean = getCommand("clean", fsConfig, "")
+      val style = fsConfig.getString("style")
     }
     def getFs(fsName: String) = new Fs(fsName)
   }

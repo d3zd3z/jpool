@@ -34,7 +34,7 @@ object Managed {
     val sys = new conf.System("simple")
 
     val sysNames = sys.fsNames
-    val sysInfos = sysNames map { name: String => new LvmManager(sys.getFs(name)) }
+    val sysInfos = sysNames map { name: String => getManager(sys, name) }
 
     logRotate(conf)
 
@@ -89,6 +89,15 @@ object Managed {
         throw new ExecutionError("Error running command: %d (%s)".format(n, args))
     }
   }
+
+  def getManager(sys: BackupConfig#System, name: String): Manager = {
+    val fs = sys.getFs(name)
+    fs.style match {
+      case "xfs-lvm" => new LvmManager(fs)
+      case "plain" => new PlainManager(fs)
+      case _ => scala.sys.error("Unknown fs style: '%s'".format(fs.style))
+    }
+  }
 }
 
 trait Manager {
@@ -102,41 +111,56 @@ trait Manager {
   def addTeardown(step: Steps.Value)(action: => Unit) = teardowns += (step -> (() => action))
 }
 
-// TODO: Handle direct filesystem (such as /boot).
-
-class LvmManager(fs: BackupConfig#System#Fs) extends Manager {
-
-  val mirror = new File(fs.outer.mirror, fs.volume)
-  val snapDest = new File("/mnt/snap/" + fs.fsName)
-  val regDest = new File(fs.base)
-  val regVol = new File("/dev/" + fs.outer.vol + '/' + fs.volume)
-  val snapVol = new File("/dev/" + fs.outer.vol + '/' + fs.volume + ".snap")
-
+// Traits for managers associated with filesystems.
+trait FsManager {
+  val fs: BackupConfig#System#Fs
   val bc = fs.outer.outer
 
-  val lvcreate = bc.getCommand("lvcreate")
-  val lvremove = bc.getCommand("lvremove")
-  val mount = bc.getCommand("mount")
-  val umount = bc.getCommand("umount")
+  val mirror = new File(fs.outer.mirror, fs.volume)
+  val regDest = new File(fs.base)
+
   val gosure = bc.getCommand("gosure")
   val cp = bc.getCommand("cp")
   val rsync = bc.getCommand("rsync")
 
   val pool = new File(bc.pool)
 
-  // Verify that the Mirrors is sane.
-  addSetup(Steps.CheckPaths) {
+  def checkFs() {
     if (!regDest.isDirectory)
       sys.error("Backup base directory doesn't exist '%s'".format(regDest.getPath))
 
     if (!mirror.isDirectory)
       sys.error("Mirror dir doesn't exist '%s'".format(mirror.getPath))
 
-    if (!snapDest.isDirectory)
-      sys.error("Snapshot destination doesn't exist '%s'".format(snapDest.getPath))
-
     if (!pool.isDirectory)
       sys.error("Pool dir doesn't exist '%s'".format(pool.getPath))
+  }
+
+  def banner(log: ProcessLogger, task: String, dest: File) {
+    val fmt = new SimpleDateFormat("yyyy-MM-dd_hh:mm")
+    val line = "--- %s of %s (%s) on %s ---".format(task, fs.fsName, dest.getPath, fmt.format(new Date))
+    val banner = "-" * line.length
+    log.out(banner)
+    log.out(line)
+    log.out(banner)
+  }
+}
+
+class LvmManager(val fs: BackupConfig#System#Fs) extends Manager with FsManager {
+
+  val snapDest = new File("/mnt/snap/" + fs.fsName)
+  val regVol = new File("/dev/" + fs.outer.vol + '/' + fs.volume)
+  val snapVol = new File("/dev/" + fs.outer.vol + '/' + fs.volume + ".snap")
+
+  val lvcreate = bc.getCommand("lvcreate")
+  val lvremove = bc.getCommand("lvremove")
+  val mount = bc.getCommand("mount")
+  val umount = bc.getCommand("umount")
+
+  // Verify that the Mirrors is sane.
+  addSetup(Steps.CheckPaths) {
+    if (!snapDest.isDirectory)
+      sys.error("Snapshot destination doesn't exist '%s'".format(snapDest.getPath))
   }
 
   // Create the snapshot.
@@ -169,7 +193,7 @@ class LvmManager(fs: BackupConfig#System#Fs) extends Manager {
   addSetup(Steps.SureWrite) {
     val logfile = new File(bc.surelog)
     val log = ProcessLogger(logfile)
-    banner(log, "sure")
+    banner(log, "sure", snapDest)
     try {
       Managed.runLogged(List(gosure.getPath, "signoff"), Some(snapDest), log)
     } finally {
@@ -183,7 +207,7 @@ class LvmManager(fs: BackupConfig#System#Fs) extends Manager {
   addSetup(Steps.Rsync) {
     val logfile = new File(bc.rsynclog)
     val log = ProcessLogger(logfile)
-    banner(log, "rsync")
+    banner(log, "rsync", snapDest)
     try {
       Managed.runLogged(List(rsync.getPath, "-aiH", "--delete",
         snapDest.getPath + '/', mirror.getPath), None, log)
@@ -197,13 +221,46 @@ class LvmManager(fs: BackupConfig#System#Fs) extends Manager {
       "host=" + fs.outer.host))
   }
 
-  def banner(log: ProcessLogger, task: String) {
-    val fmt = new SimpleDateFormat("yyyy-MM-dd_hh:mm")
-    val line = "--- %s of %s (%s) on %s ---".format(task, fs.fsName, snapDest, fmt.format(new Date))
-    val banner = "-" * line.length
-    log.out(banner)
-    log.out(line)
-    log.out(banner)
+}
+
+class PlainManager(val fs: BackupConfig#System#Fs) extends Manager with FsManager {
+
+  addSetup(Steps.CheckPaths) {
+    checkFs()
   }
 
+  // TODO: These are almost entirely shared, except for the missing
+  // copy at the end, and the directory involved.
+  addSetup(Steps.SureUpdate) {
+    Managed.run(List(gosure.getPath, "update"), Some(regDest))
+  }
+
+  addSetup(Steps.SureWrite) {
+    val logfile = new File(bc.surelog)
+    val log = ProcessLogger(logfile)
+    banner(log, "sure", regDest)
+    try {
+      Managed.runLogged(List(gosure.getPath, "signoff"), Some(regDest), log)
+    } finally {
+      log.close()
+    }
+  }
+
+  // TODO: Sharing, and this might want to have exclusions.
+  addSetup(Steps.Rsync) {
+    val logfile = new File(bc.rsynclog)
+    val log = ProcessLogger(logfile)
+    banner(log, "rsync", regDest)
+    try {
+      Managed.runLogged(List(rsync.getPath, "-aiH", "--delete",
+        regDest.getPath + '/', mirror.getPath), None, log)
+    } finally {
+      log.close()
+    }
+  }
+
+  addSetup(Steps.Dump) {
+    tools.Dump.main(Array(pool.getPath, regDest.getPath, "fs=" + fs.fsName,
+      "host=" + fs.outer.host))
+  }
 }
