@@ -20,7 +20,8 @@ class BackupConfig(path: File) { confThis =>
 
   private val conf = load(path)
 
-  val logbase = conf.getString("logbase")
+  val surelog = conf.getString("surelog")
+  val rsynclog = conf.getString("rsynclog")
 
   // Lookup a command.
   def getCommand(name: String, config: Config = conf, prefix: String = "commands."): File = {

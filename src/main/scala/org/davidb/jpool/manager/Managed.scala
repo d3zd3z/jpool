@@ -4,6 +4,8 @@ package org.davidb.jpool
 package manager
 
 import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Date
 
 import scala.sys.process._
 
@@ -34,6 +36,8 @@ object Managed {
     val sysNames = sys.fsNames
     val sysInfos = sysNames map { name: String => new LvmManager(sys.getFs(name)) }
 
+    logRotate(conf)
+
     var undos = List[(Manager, Steps.Value)]()
 
     for (step <- Steps.values) {
@@ -49,6 +53,18 @@ object Managed {
       val (info, step) = undos.head
       undos = undos.tail
       info.teardown(step)
+    }
+  }
+
+  def logRotate(conf: BackupConfig) {
+    rotate(conf.surelog)
+    rotate(conf.rsynclog)
+  }
+
+  def rotate(path: String) {
+    val f = new File(path)
+    if (f.exists) {
+      f.renameTo(new File(path + ".bak"))
     }
   }
 
@@ -146,8 +162,9 @@ class LvmManager(fs: BackupConfig#System#Fs) extends Manager {
   }
 
   addSetup(Steps.SureWrite) {
-    val logfile = new File(bc.logbase, "sure-" + fs.fsName + ".log")
+    val logfile = new File(bc.surelog)
     val log = ProcessLogger(logfile)
+    banner(log, "sure")
     try {
       Managed.runLogged(List(gosure.getPath, "signoff"), Some(snapDest), log)
     } finally {
@@ -159,14 +176,24 @@ class LvmManager(fs: BackupConfig#System#Fs) extends Manager {
   }
 
   addSetup(Steps.Rsync) {
-    val logfile = new File(bc.logbase, "sure-" + fs.fsName + ".log")
+    val logfile = new File(bc.rsynclog)
     val log = ProcessLogger(logfile)
+    banner(log, "rsync")
     try {
       Managed.runLogged(List(rsync.getPath, "-aiH", "--delete",
         snapDest.getPath + '/', mirror.getPath), None, log)
     } finally {
       log.close()
     }
+  }
+
+  def banner(log: ProcessLogger, task: String) {
+    val fmt = new SimpleDateFormat("yyyy-MM-dd_hh:mm")
+    val line = "--- %s of %s (%s) on %s ---".format(task, fs.fsName, snapDest, fmt.format(new Date))
+    val banner = "-" * line.length
+    log.out(banner)
+    log.out(line)
+    log.out(banner)
   }
 
 }
