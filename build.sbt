@@ -18,6 +18,8 @@ libraryDependencies += "com.h2database" % "h2" % "1.3.168"
 
 libraryDependencies += "log4j" % "log4j" % "1.2.17"
 
+libraryDependencies += "com.typesafe.config" % "config" % "0.2.1"
+
 scalacOptions += "-deprecation"
 
 // TODO: Set the desired library, instead of hardcoding it into the

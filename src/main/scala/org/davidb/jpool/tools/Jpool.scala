@@ -156,6 +156,7 @@ object Jpool {
   opts.oldMain("clone", "Clone a backup")(Clone.main _)
   opts.oldMain("seendb", "Manage the seen database")(SeenDb.main _)
   opts.oldMain("seentotext", "Convert seendb to text")(SeenToText.main _)
+  opts.oldMain("manage", "Run a managed backup")(manager.Managed.main _)
 
   var commands = Map.empty[String, List[String] => Unit]
 
