@@ -11,7 +11,7 @@ class ExecutionError(message: String) extends Exception(message)
 
 object Steps extends Enumeration {
   val CheckPaths, StartSnapshot, MountSnapshot, RunClean, SureUpdate,
-    SureWrite = Value
+    SureWrite, Rsync = Value
 }
 
 object Managed {
@@ -55,9 +55,19 @@ object Managed {
   def run(args: String*): Unit = run(args, None)
 
   def run(args: Seq[String], cwd: Option[File]) {
-    printf("run: %s (%s)\n", args.reduceLeft {_ + " " + _},
+    printf("   : %s (%s)\n", args.reduceLeft {_ + " " + _},
       cwd.map{_.getPath}.getOrElse("??"))
     Process(args, cwd)! match {
+      case 0 => ()
+      case n =>
+        throw new ExecutionError("Error running command: %d (%s)".format(n, args))
+    }
+  }
+
+  def runLogged(args: Seq[String], cwd: Option[File], log: ProcessLogger) {
+    printf("   : %s (%s)\n", args.reduceLeft {_ + " " + _},
+      cwd.map{_.getPath}.getOrElse("??"))
+    Process(args, cwd)!(log) match {
       case 0 => ()
       case n =>
         throw new ExecutionError("Error running command: %d (%s)".format(n, args))
@@ -82,6 +92,7 @@ class LvmManager(fs: BackupConfig#System#Fs) extends Manager {
 
   val mirror = new File(fs.outer.mirror, fs.volume)
   val snapDest = new File("/mnt/snap/" + fs.fsName)
+  val regDest = new File(fs.base)
   val regVol = new File("/dev/" + fs.outer.vol + '/' + fs.volume)
   val snapVol = new File("/dev/" + fs.outer.vol + '/' + fs.volume + ".snap")
 
@@ -92,9 +103,14 @@ class LvmManager(fs: BackupConfig#System#Fs) extends Manager {
   val mount = bc.getCommand("mount")
   val umount = bc.getCommand("umount")
   val gosure = bc.getCommand("gosure")
+  val cp = bc.getCommand("cp")
+  val rsync = bc.getCommand("rsync")
 
   // Verify that the Mirrors is sane.
   addSetup(Steps.CheckPaths) {
+    if (!regDest.isDirectory)
+      sys.error("Backup base directory doesn't exist '%s'".format(regDest.getPath))
+
     if (!mirror.isDirectory)
       sys.error("Mirror dir doesn't exist '%s'".format(mirror.getPath))
 
@@ -114,7 +130,7 @@ class LvmManager(fs: BackupConfig#System#Fs) extends Manager {
 
   addSetup(Steps.MountSnapshot) {
     Managed.run(mount.getPath, "-o", "nouuid",
-      regVol.getPath, snapDest.getPath)
+      snapVol.getPath, snapDest.getPath)
   }
 
   addTeardown(Steps.MountSnapshot) {
@@ -126,8 +142,31 @@ class LvmManager(fs: BackupConfig#System#Fs) extends Manager {
   }
 
   addSetup(Steps.SureUpdate) {
-    // TODO: Stick results in log file.
     Managed.run(List(gosure.getPath, "update"), Some(snapDest))
+  }
+
+  addSetup(Steps.SureWrite) {
+    val logfile = new File(bc.logbase, "sure-" + fs.fsName + ".log")
+    val log = ProcessLogger(logfile)
+    try {
+      Managed.runLogged(List(gosure.getPath, "signoff"), Some(snapDest), log)
+    } finally {
+      log.close()
+    }
+
+    Managed.run(cp.getPath, "-p", snapDest.getPath + "/2sure.dat.gz",
+      regDest + "/2sure.dat.gz")
+  }
+
+  addSetup(Steps.Rsync) {
+    val logfile = new File(bc.logbase, "sure-" + fs.fsName + ".log")
+    val log = ProcessLogger(logfile)
+    try {
+      Managed.runLogged(List(rsync.getPath, "-aiH", "--delete",
+        snapDest.getPath + '/', mirror.getPath), None, log)
+    } finally {
+      log.close()
+    }
   }
 
 }

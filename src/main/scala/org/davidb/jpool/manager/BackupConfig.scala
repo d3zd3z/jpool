@@ -20,6 +20,8 @@ class BackupConfig(path: File) { confThis =>
 
   private val conf = load(path)
 
+  val logbase = conf.getString("logbase")
+
   // Lookup a command.
   def getCommand(name: String, config: Config = conf, prefix: String = "commands."): File = {
     // Try using the config first.
@@ -51,6 +53,7 @@ class BackupConfig(path: File) { confThis =>
       def outer = sysThis
       val fsConfig = fs.getConfig(fsName)
       val volume = fsConfig.getString("volume")
+      val base = fsConfig.getString("base")
       val clean = getCommand("clean", fsConfig, "")
     }
     def getFs(fsName: String) = new Fs(fsName)
