@@ -25,13 +25,13 @@ object Managed {
   }
 
   def main(args: Array[String]) {
-    // val confName = args match {
-    //   case Array(file) => file
-    //   case _ => scala.sys.error("Usage: jpool managed file.conf")
-    // }
+    val (confName, host) = args match {
+      case Array(file, host) => (file, host)
+      case _ => scala.sys.error("Usage: jpool managed file.conf host")
+    }
 
-    val conf = new BackupConfig(new File("simple.conf"))
-    val sys = new conf.System("simple")
+    val conf = new BackupConfig(new File(confName))
+    val sys = new conf.System(host)
 
     val sysNames = sys.fsNames
     val sysInfos = sysNames map { name: String => getManager(sys, name) }
