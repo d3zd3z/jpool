@@ -118,7 +118,7 @@ trait FsManager {
   val fs: BackupConfig#System#Fs
   val bc = fs.outer.outer
 
-  val mirror = new File(fs.outer.mirror, fs.volume)
+  val mirror = fs.outer.mirror map {new File(_, fs.volume)}
   val regDest = new File(fs.base)
 
   val gosure = bc.getCommand("gosure")
@@ -131,8 +131,10 @@ trait FsManager {
     if (!regDest.isDirectory)
       sys.error("Backup base directory doesn't exist '%s'".format(regDest.getPath))
 
-    if (!mirror.isDirectory)
-      sys.error("Mirror dir doesn't exist '%s'".format(mirror.getPath))
+    for (m <- mirror) {
+      if (!m.isDirectory)
+        sys.error("Mirror dir doesn't exist '%s'".format(m.getPath))
+    }
 
     if (!pool.isDirectory)
       sys.error("Pool dir doesn't exist '%s'".format(pool.getPath))
@@ -206,15 +208,17 @@ class LvmManager(val fs: BackupConfig#System#Fs) extends Manager with FsManager 
       regDest + "/2sure.dat.gz")
   }
 
-  addSetup(Steps.Rsync) {
-    val logfile = new File(bc.rsynclog)
-    val log = ProcessLogger(logfile)
-    banner(log, "rsync", snapDest)
-    try {
-      Managed.runLogged(List(rsync.getPath, "-aiH", "--delete",
-        snapDest.getPath + '/', mirror.getPath), None, log)
-    } finally {
-      log.close()
+  for (m <- mirror) {
+    addSetup(Steps.Rsync) {
+      val logfile = new File(bc.rsynclog)
+      val log = ProcessLogger(logfile)
+      banner(log, "rsync", snapDest)
+      try {
+        Managed.runLogged(List(rsync.getPath, "-aiH", "--delete",
+          snapDest.getPath + '/', m.getPath), None, log)
+      } finally {
+        log.close()
+      }
     }
   }
 
@@ -249,15 +253,17 @@ class PlainManager(val fs: BackupConfig#System#Fs) extends Manager with FsManage
   }
 
   // TODO: Sharing, and this might want to have exclusions.
-  addSetup(Steps.Rsync) {
-    val logfile = new File(bc.rsynclog)
-    val log = ProcessLogger(logfile)
-    banner(log, "rsync", regDest)
-    try {
-      Managed.runLogged(List(rsync.getPath, "-aiH", "--delete",
-        regDest.getPath + '/', mirror.getPath), None, log)
-    } finally {
-      log.close()
+  for (m <- mirror) {
+    addSetup(Steps.Rsync) {
+      val logfile = new File(bc.rsynclog)
+      val log = ProcessLogger(logfile)
+      banner(log, "rsync", regDest)
+      try {
+        Managed.runLogged(List(rsync.getPath, "-aiH", "--delete",
+          regDest.getPath + '/', m.getPath), None, log)
+      } finally {
+        log.close()
+      }
     }
   }
 

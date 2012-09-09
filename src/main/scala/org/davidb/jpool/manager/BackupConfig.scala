@@ -47,7 +47,7 @@ class BackupConfig(path: File) { confThis =>
     val config = conf.getConfig(name)
     val vol = config.getString("vol")
     val host = config.getString("host")
-    val mirror = config.getString("mirror")
+    val mirror = BackupConfig.safeGetString(config, "mirror")
     val fsNames = config.getStringList("fsNames").toList
     val fs = config.getConfig("fs")
 
@@ -69,5 +69,14 @@ object BackupConfig {
     val conf = new BackupConfig(new File("test.conf"))
     val sys: BackupConfig#System = new conf.System("a64")
     printf("%s\n", sys.fsNames)
+  }
+
+  def safeGetString(config: Config, key: String): Option[String] = {
+    try {
+      Some(config.getString(key))
+    } catch {
+      case _ : ConfigException.Missing =>
+        None
+    }
   }
 }
