@@ -223,6 +223,7 @@ class LvmManager(val fs: BackupConfig#System#Fs) extends Manager with FsManager 
   }
 
   addSetup(Steps.Dump) {
+    printf("   - dumping %s (%s)\n", fs.fsName, regDest.getPath)
     tools.Dump.main(Array(pool.getPath, snapDest.getPath, "fs=" + fs.fsName,
       "host=" + fs.outer.host))
   }
@@ -268,6 +269,7 @@ class PlainManager(val fs: BackupConfig#System#Fs) extends Manager with FsManage
   }
 
   addSetup(Steps.Dump) {
+    printf("   - dumping %s (%s)\n", fs.fsName, regDest.getPath)
     tools.Dump.main(Array(pool.getPath, regDest.getPath, "fs=" + fs.fsName,
       "host=" + fs.outer.host))
   }
