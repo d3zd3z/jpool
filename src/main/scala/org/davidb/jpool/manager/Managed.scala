@@ -95,7 +95,8 @@ object Managed {
   def getManager(sys: BackupConfig#System, name: String): Manager = {
     val fs = sys.getFs(name)
     fs.style match {
-      case "xfs-lvm" => new LvmManager(fs)
+      case "xfs-lvm" => new LvmManager(fs, true)
+      case "ext4-lvm" => new LvmManager(fs, false)
       case "plain" => new PlainManager(fs)
       case _ => scala.sys.error("Unknown fs style: '%s'".format(fs.style))
     }
@@ -150,7 +151,9 @@ trait FsManager {
   }
 }
 
-class LvmManager(val fs: BackupConfig#System#Fs) extends Manager with FsManager {
+class LvmManager(val fs: BackupConfig#System#Fs, isXfs: Boolean)
+    extends Manager with FsManager
+{
 
   val snapDest = new File("/mnt/snap/" + fs.fsName)
   val regVol = new File("/dev/" + fs.outer.vol + '/' + fs.volume)
@@ -177,9 +180,16 @@ class LvmManager(val fs: BackupConfig#System#Fs) extends Manager with FsManager 
     Managed.run(lvremove.getPath, "-f", snapVol.getPath)
   }
 
-  addSetup(Steps.MountSnapshot) {
-    Managed.run(mount.getPath, "-o", "nouuid",
-      snapVol.getPath, snapDest.getPath)
+  if (isXfs) {
+    addSetup(Steps.MountSnapshot) {
+      Managed.run(mount.getPath, "-o", "nouuid",
+        snapVol.getPath, snapDest.getPath)
+    }
+  } else {
+    addSetup(Steps.MountSnapshot) {
+      Managed.run(mount.getPath,
+        snapVol.getPath, snapDest.getPath)
+    }
   }
 
   addTeardown(Steps.MountSnapshot) {
