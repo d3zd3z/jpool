@@ -83,8 +83,8 @@ object Managed {
   }
 
   def runLogged(args: Seq[String], cwd: Option[File], log: ProcessLogger) {
-    printf("   : %s (%s)\n", args.reduceLeft {_ + " " + _},
-      cwd.map{_.getPath}.getOrElse("??"))
+    printf("   : %s%s\n", args.reduceLeft {_ + " " + _},
+      cwd.map{" (" + _.getPath + ')'}.getOrElse(""))
     Process(args, cwd)!(log) match {
       case 0 => ()
       case n =>
