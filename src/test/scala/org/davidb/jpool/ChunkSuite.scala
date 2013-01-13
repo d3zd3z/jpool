@@ -14,6 +14,8 @@ import java.nio.ByteBuffer
 import TempDir.withTempDir
 import java.io.{File, RandomAccessFile}
 
+import scala.language.implicitConversions
+
 class ChunkSuite extends Suite {
   implicit def stringOfBuffer(buf: ByteBuffer): String =
     new String(buf.array, buf.arrayOffset + buf.position, buf.remaining)

@@ -75,7 +75,7 @@ object Managed {
   def run(args: Seq[String], cwd: Option[File]) {
     printf("   : %s%s\n", args.reduceLeft {_ + " " + _},
       cwd.map{" (" + _.getPath + ')'}.getOrElse(""))
-    Process(args, cwd)! match {
+    Process(args, cwd).! match {
       case 0 => ()
       case n =>
         throw new ExecutionError("Error running command: %d (%s)".format(n, args))
@@ -85,7 +85,7 @@ object Managed {
   def runLogged(args: Seq[String], cwd: Option[File], log: ProcessLogger) {
     printf("   : %s%s\n", args.reduceLeft {_ + " " + _},
       cwd.map{" (" + _.getPath + ')'}.getOrElse(""))
-    Process(args, cwd)!(log) match {
+    Process(args, cwd).!(log) match {
       case 0 => ()
       case n =>
         throw new ExecutionError("Error running command: %d (%s)".format(n, args))

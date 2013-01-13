@@ -26,7 +26,7 @@ class LoggerSuite extends Suite with Loggable {
     val myTag = new Object
     var phase = 1
     def wrapper(thunk: => Unit) {
-      expect(1)(phase)
+      expectResult(1)(phase)
       // println("Pre wrap")
       thunk
       // println("Post wrap")
@@ -34,10 +34,10 @@ class LoggerSuite extends Suite with Loggable {
     }
     Logger.pushWrapper(myTag, wrapper _)
     logger.info("Wrapped message")
-    expect(2)(phase)
+    expectResult(2)(phase)
     Logger.popWrapper(myTag)
     logger.info("Unwrapped message")
-    expect(2)(phase)
+    expectResult(2)(phase)
 
     intercept[RuntimeException] {
       Logger.popWrapper(myTag)
@@ -49,18 +49,18 @@ class LoggerSuite extends Suite with Loggable {
     val tag2 = new Object
     var phase = 0
     def wrap1(thunk: => Unit) {
-      expect(0)(phase)
+      expectResult(0)(phase)
       phase += 1
       thunk
       phase += 2
-      expect(15)(phase)
+      expectResult(15)(phase)
     }
     def wrap2(thunk: => Unit) {
-      expect(1)(phase)
+      expectResult(1)(phase)
       phase += 4
       thunk
       phase += 8
-      expect(13)(phase)
+      expectResult(13)(phase)
     }
     Logger.pushWrapper(tag2, wrap2 _)
     Logger.pushWrapper(tag1, wrap1 _)

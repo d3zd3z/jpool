@@ -22,7 +22,7 @@ object ListCommand extends AnyRef with Loggable {
 
     val sanity = for {
       hash <- pool.getBackups
-      val back = Back.load(pool, hash)
+      back = Back.load(pool, hash)
       if (matcher(back.props))
       (date, sane) = sanitize(back.props) }
       yield (date, sane, hash)

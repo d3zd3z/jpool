@@ -19,7 +19,7 @@ class PoolFileSuite extends Suite with TempDirTest {
   // not present.
   def testReadError {
     val pf = makeFile
-    expect(0) {
+    expectResult(0) {
       pf.size
     }
     intercept[FileNotFoundException] {

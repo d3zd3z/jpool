@@ -81,7 +81,7 @@ class PoolDb(metaPrefix: File) {
         fos.close()
         tmpName.renameTo(realName)
       } catch {
-        case _ =>
+        case _ : Exception =>
       }
     }
 

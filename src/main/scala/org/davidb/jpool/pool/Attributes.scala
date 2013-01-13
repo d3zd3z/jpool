@@ -156,14 +156,6 @@ class Attributes(var kind: String,
     buffer
   }
 
-  // Convert this node into a Binary representation of the XML.
-  def toByteBufferXML(): ByteBuffer = {
-    val buf = new StringBuilder
-    buf.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
-    buf.append(xml.Utility.toXML(toXML))
-    ByteBuffer.wrap(buf.toString.getBytes("UTF-8"))
-  }
-
   // override def toString(): String = xml.Utility.toXML(toXML).toString
   override def toString(): String = sys.error("Don't use toString() on Attributes")
 

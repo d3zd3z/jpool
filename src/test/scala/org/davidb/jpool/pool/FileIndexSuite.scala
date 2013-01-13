@@ -72,7 +72,7 @@ class FileIndexSuite extends Suite with TempDirTest {
   def checkIndex(index: FileIndex, pf: FakePoolFile) {
     for (i <- 0 until pf.size) {
       val (hash, kind, size) = pf.readInfo(i)
-      expect(Some(FileIndex.Elt(i, kind))) {
+      expectResult(Some(FileIndex.Elt(i, kind))) {
         index.get(hash)
       }
     }

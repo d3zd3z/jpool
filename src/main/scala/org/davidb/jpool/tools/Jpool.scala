@@ -111,7 +111,7 @@ object Jpool {
     }
   }
 
-  val opts = new Getopt("jpool") {
+  object opts extends Getopt("jpool") {
     var handled = false
 
     override def empty() {

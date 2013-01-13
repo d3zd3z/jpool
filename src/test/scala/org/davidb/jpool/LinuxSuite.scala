@@ -194,7 +194,7 @@ class LinuxSuite extends Suite {
     assert(fields(3) === info("nlink"))
     assert(fields(4) === info("uid"))
     assert(fields(5) === info("gid"))
-    assert((hexField(6) & 07777).toString === info("mode"))
+    assert((hexField(6) & 0xFFF).toString === info("mode"))
     assert(fields(7) === info("ino"))
     assert(fields(8) === info("dev"))
     if (kind == "CHR" || kind == "BLK") {

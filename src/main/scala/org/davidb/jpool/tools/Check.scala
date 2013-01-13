@@ -7,6 +7,17 @@
 package org.davidb.jpool
 package tools
 
+object Check {
+  def main(args: Array[String]) {
+    printf("TODO: Port check to Scala 2.10\n")
+  }
+}
+
+/* TODO: Rewrite with Akka
+
+package org.davidb.jpool
+package tools
+
 import scala.actors.Actor
 import scala.actors.Actor._
 import java.io.File
@@ -147,3 +158,4 @@ object Check extends AnyRef with Loggable {
     }
   }
 }
+*/
