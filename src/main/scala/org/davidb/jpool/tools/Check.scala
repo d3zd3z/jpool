@@ -7,19 +7,8 @@
 package org.davidb.jpool
 package tools
 
-object Check {
-  def main(args: Array[String]) {
-    printf("TODO: Port check to Scala 2.10\n")
-  }
-}
-
-/* TODO: Rewrite with Akka
-
-package org.davidb.jpool
-package tools
-
-import scala.actors.Actor
-import scala.actors.Actor._
+// import scala.actors.Actor
+// import scala.actors.Actor._
 import java.io.File
 import java.util.Date
 import org.davidb.logging.Loggable
@@ -83,6 +72,7 @@ object Check extends AnyRef with Loggable {
 
   def main(args: Array[String]) {
     val tmpChunk = Chunk.make("blob", "")
+    /*
     val numValidators = 2 * Runtime.getRuntime.availableProcessors
     for (i <- 1 to numValidators) {
       val v = new Validator
@@ -90,18 +80,21 @@ object Check extends AnyRef with Loggable {
       // Seed the validator with trivial work.
       v ! CheckValid(tmpChunk, tmpChunk.hash, self)
     }
+    */
 
     val meter = new CheckMeter
     ProgressMeter.register(meter)
     args.foreach(scan (_, meter))
     ProgressMeter.unregister(meter)
 
+    /*
     for (i <- 1 to numValidators) {
       receive {
         case r: Response =>
           r.self ! CheckStop
       }
     }
+    */
 
     val ec = errorCount.intValue()
     if (ec == 0)
@@ -124,14 +117,19 @@ object Check extends AnyRef with Loggable {
       // finding other data.
       val (chunk, hash) = pf.readUnchecked(pos)
       meter.addData(pf.position - pos)
+
+      checkChunk(chunk, hash)
+      /*
       receive {
         case v: Response =>
           // logger.info("Got a validator")
           v.self ! CheckValid(chunk, hash, self)
       }
+      */
     }
   }
 
+  /*
   case class CheckValid(chunk: Chunk, hash: Hash, actor: Actor)
   case object CheckStop
 
@@ -157,5 +155,19 @@ object Check extends AnyRef with Loggable {
       }
     }
   }
+  */
+
+  def checkChunk(chunk: Chunk, hash: Hash) {
+    try {
+      if (hash != chunk.hash) {
+        logger.warn("Chunk hash mismatch")
+        errorCount.incrementAndGet()
+      }
+    } catch {
+      case e: Exception => {
+        logger.warn("Exception in chunk: " + e.toString)
+        errorCount.incrementAndGet()
+      }
+    }
+  }
 }
-*/
