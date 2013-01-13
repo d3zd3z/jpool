@@ -5,7 +5,7 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <org_davidb_jpool_Linux__.h>
+#include <org_davidb_jpool_Linux.h>
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -64,7 +64,7 @@ static jmethodID function1Apply;
 static jclass ByteBufferClass;
 static jmethodID bbWrap;
 
-JNIEXPORT void JNICALL Java_org_davidb_jpool_Linux_00024_setup
+JNIEXPORT void JNICALL Java_org_davidb_jpool_Linux_setup
 	(JNIEnv *env, jobject obj)
 {
 	jclass tmp;
@@ -150,13 +150,13 @@ static void path_error(JNIEnv *env, jobject obj, jstring path, char *callName)
 				myName, path, (jint) errno);
 }
 
-JNIEXPORT jstring JNICALL Java_org_davidb_jpool_Linux_00024_message
+JNIEXPORT jstring JNICALL Java_org_davidb_jpool_Linux_message
 	(JNIEnv *env, jobject obj)
 {
 	return (*env)->NewStringUTF(env, "Hello world");
 }
 
-JNIEXPORT jobject JNICALL Java_org_davidb_jpool_Linux_00024_readDir
+JNIEXPORT jobject JNICALL Java_org_davidb_jpool_Linux_readDir
 	(JNIEnv *env, jobject obj, jstring path)
 {
 	JSTRING_TO_C_STACK(env, buf, path);
@@ -304,7 +304,7 @@ static jobject lstat_convert(JNIEnv *env, jobject obj, jstring path, struct stat
 	return map;
 }
 
-JNIEXPORT jobject JNICALL Java_org_davidb_jpool_Linux_00024_stat
+JNIEXPORT jobject JNICALL Java_org_davidb_jpool_Linux_stat
 	(JNIEnv *env, jobject obj, jstring path)
 {
 	JSTRING_TO_C_STACK(env, buf, path);
@@ -320,7 +320,7 @@ JNIEXPORT jobject JNICALL Java_org_davidb_jpool_Linux_00024_stat
 	return lstat_convert(env, obj, path, &sbuf);
 }
 
-JNIEXPORT jobject JNICALL Java_org_davidb_jpool_Linux_00024_lstat
+JNIEXPORT jobject JNICALL Java_org_davidb_jpool_Linux_lstat
 	(JNIEnv *env, jobject obj, jstring path)
 {
 	JSTRING_TO_C_STACK(env, buf, path);
@@ -336,7 +336,7 @@ JNIEXPORT jobject JNICALL Java_org_davidb_jpool_Linux_00024_lstat
 	return lstat_convert(env, obj, path, &sbuf);
 }
 
-JNIEXPORT void JNICALL Java_org_davidb_jpool_Linux_00024_symlink
+JNIEXPORT void JNICALL Java_org_davidb_jpool_Linux_symlink
 	(JNIEnv *env, jobject obj, jstring oldPath, jstring newPath)
 {
 	JSTRING_TO_C_STACK(env, cOldPath, oldPath);
@@ -349,7 +349,7 @@ JNIEXPORT void JNICALL Java_org_davidb_jpool_Linux_00024_symlink
 	}
 }
 
-JNIEXPORT void JNICALL Java_org_davidb_jpool_Linux_00024_link
+JNIEXPORT void JNICALL Java_org_davidb_jpool_Linux_link
 	(JNIEnv *env, jobject obj, jstring oldPath, jstring newPath)
 {
 	JSTRING_TO_C_STACK(env, cOldPath, oldPath);
@@ -362,7 +362,7 @@ JNIEXPORT void JNICALL Java_org_davidb_jpool_Linux_00024_link
 	}
 }
 
-JNIEXPORT jstring JNICALL Java_org_davidb_jpool_Linux_00024_readlink
+JNIEXPORT jstring JNICALL Java_org_davidb_jpool_Linux_readlink
 	(JNIEnv *env, jobject obj, jstring path)
 {
 	JSTRING_TO_C_STACK(env, cpath, path);
@@ -397,7 +397,7 @@ JNIEXPORT jstring JNICALL Java_org_davidb_jpool_Linux_00024_readlink
 	}
 }
 
-JNIEXPORT jint JNICALL Java_org_davidb_jpool_Linux_00024_openForWrite
+JNIEXPORT jint JNICALL Java_org_davidb_jpool_Linux_openForWrite
 	(JNIEnv *env, jobject obj, jstring path)
 {
 	JSTRING_TO_C_STACK(env, cpath, path);
@@ -410,7 +410,7 @@ JNIEXPORT jint JNICALL Java_org_davidb_jpool_Linux_00024_openForWrite
 	return fd;
 }
 
-JNIEXPORT jint JNICALL Java_org_davidb_jpool_Linux_00024_openForRead
+JNIEXPORT jint JNICALL Java_org_davidb_jpool_Linux_openForRead
 	(JNIEnv *env, jobject obj, jstring path)
 {
 	JSTRING_TO_C_STACK(env, cpath, path);
@@ -428,7 +428,7 @@ JNIEXPORT jint JNICALL Java_org_davidb_jpool_Linux_00024_openForRead
 	return fd;
 }
 
-JNIEXPORT void JNICALL Java_org_davidb_jpool_Linux_00024_close
+JNIEXPORT void JNICALL Java_org_davidb_jpool_Linux_close
 	(JNIEnv *env, jobject obj, jint fd)
 {
 	int result = close(fd);
@@ -440,7 +440,7 @@ JNIEXPORT void JNICALL Java_org_davidb_jpool_Linux_00024_close
 
 /* Note that this assumes that the offset and length are within
  * bounds, since they are checked in the caller. */
-JNIEXPORT void JNICALL Java_org_davidb_jpool_Linux_00024_writeChunk
+JNIEXPORT void JNICALL Java_org_davidb_jpool_Linux_writeChunk
 	(JNIEnv *env, jobject obj, jint fd, jbyteArray jbuffer, jint offset, jint length)
 {
 	jbyte *buffer = (*env)->GetByteArrayElements(env, jbuffer, NULL);
@@ -463,7 +463,7 @@ cleanup:
 
 /* This also assumes that the offset and length are within bounds.
  * Returns number of bytes actually read, possibly zero. */
-JNIEXPORT int JNICALL Java_org_davidb_jpool_Linux_00024_readChunk
+JNIEXPORT int JNICALL Java_org_davidb_jpool_Linux_readChunk
 	(JNIEnv *env, jobject obj, jint fd, jbyteArray jbuffer, jint offset, jint length)
 {
 	jbyte *buffer = (*env)->GetByteArrayElements(env, jbuffer, NULL);
@@ -491,7 +491,7 @@ JNIEXPORT int JNICALL Java_org_davidb_jpool_Linux_00024_readChunk
 	return total;
 }
 
-JNIEXPORT void JNICALL Java_org_davidb_jpool_Linux_00024_mkdir
+JNIEXPORT void JNICALL Java_org_davidb_jpool_Linux_mkdir
 	(JNIEnv *env, jobject obj, jstring path)
 {
 	JSTRING_TO_C_STACK(env, cpath, path);
@@ -503,20 +503,20 @@ JNIEXPORT void JNICALL Java_org_davidb_jpool_Linux_00024_mkdir
 	}
 }
 
-JNIEXPORT jint JNICALL Java_org_davidb_jpool_Linux_00024_geteuid
+JNIEXPORT jint JNICALL Java_org_davidb_jpool_Linux_geteuid
 	(JNIEnv *env, jobject obj)
 {
 	return geteuid();
 }
 
-JNIEXPORT jint JNICALL Java_org_davidb_jpool_Linux_00024_umask
+JNIEXPORT jint JNICALL Java_org_davidb_jpool_Linux_umask
 	(JNIEnv *env, jobject obj, jint mask)
 {
 	return umask(mask);
 }
 
 /* Single time call, never follows symlinks. */
-JNIEXPORT void JNICALL Java_org_davidb_jpool_Linux_00024_utime
+JNIEXPORT void JNICALL Java_org_davidb_jpool_Linux_utime
 	(JNIEnv *env, jobject obj, jstring path, jlong mtime, jlong mtime_nsec)
 {
 	JSTRING_TO_C_STACK(env, cpath, path);
@@ -533,7 +533,7 @@ JNIEXPORT void JNICALL Java_org_davidb_jpool_Linux_00024_utime
 	}
 }
 
-JNIEXPORT void JNICALL Java_org_davidb_jpool_Linux_00024_chown
+JNIEXPORT void JNICALL Java_org_davidb_jpool_Linux_chown
 	(JNIEnv *env, jobject obj, jstring path, jlong uid, jlong gid)
 {
 	JSTRING_TO_C_STACK(env, cpath, path);
@@ -541,7 +541,7 @@ JNIEXPORT void JNICALL Java_org_davidb_jpool_Linux_00024_chown
 		path_error(env, obj, path, "chown");
 }
 
-JNIEXPORT void JNICALL Java_org_davidb_jpool_Linux_00024_lchown
+JNIEXPORT void JNICALL Java_org_davidb_jpool_Linux_lchown
 	(JNIEnv *env, jobject obj, jstring path, jlong uid, jlong gid)
 {
 	JSTRING_TO_C_STACK(env, cpath, path);
@@ -549,7 +549,7 @@ JNIEXPORT void JNICALL Java_org_davidb_jpool_Linux_00024_lchown
 		path_error(env, obj, path, "lchown");
 }
 
-JNIEXPORT void JNICALL Java_org_davidb_jpool_Linux_00024_chmod
+JNIEXPORT void JNICALL Java_org_davidb_jpool_Linux_chmod
 	(JNIEnv *env, jobject obj, jstring path, jlong mode)
 {
 	JSTRING_TO_C_STACK(env, cpath, path);
@@ -557,7 +557,7 @@ JNIEXPORT void JNICALL Java_org_davidb_jpool_Linux_00024_chmod
 		path_error(env, obj, path, "chmod");
 }
 
-JNIEXPORT void JNICALL Java_org_davidb_jpool_Linux_00024_makeSpecial
+JNIEXPORT void JNICALL Java_org_davidb_jpool_Linux_makeSpecial
 	(JNIEnv *env, jobject obj, jstring path, jstring kind, jlong mode, jlong dev)
 {
 	JSTRING_TO_C_STACK(env, cpath, path);
@@ -590,7 +590,7 @@ JNIEXPORT void JNICALL Java_org_davidb_jpool_Linux_00024_makeSpecial
 		path_error(env, obj, path, "mknod");
 }
 
-JNIEXPORT jstring JNICALL Java_org_davidb_jpool_Linux_00024_ttyname
+JNIEXPORT jstring JNICALL Java_org_davidb_jpool_Linux_ttyname
 	(JNIEnv *env, jobject obj, int fd)
 {
 	/* The ttyname_r call appears to be broken on linux (off by
@@ -618,7 +618,7 @@ JNIEXPORT jstring JNICALL Java_org_davidb_jpool_Linux_00024_ttyname
 
 /* Note that this is glibc specific, and depends on the _GNU_SOURCE
  * defined before including anything. */
-JNIEXPORT jstring JNICALL Java_org_davidb_jpool_Linux_00024_strerror
+JNIEXPORT jstring JNICALL Java_org_davidb_jpool_Linux_strerror
 	(JNIEnv *env, jobject obj, int errnum)
 {
 	char buf[128];

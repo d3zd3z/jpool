@@ -7,8 +7,8 @@ OBJDIR = target/obj
 SODIR = target/so
 SRCDIR = src/main/c
 HEADERS = $(HDIR)/org_davidb_jpool_Linux__.h
-MAIN_CLASS = org.davidb.jpool.Linux$$
-CLASSFILES = $(COMPILE_PATH)/org/davidb/jpool/Linux$$.class
+MAIN_CLASS = org.davidb.jpool.Linux
+CLASSFILES = $(COMPILE_PATH)/org/davidb/jpool/Linux.class
 
 INCLUDE = -I${JAVA_HOME}/include -I${JAVA_HOME}/include/linux \
 	-I${JAVA_HOME}/../include -I${JAVA_HOME}/../include/linux \

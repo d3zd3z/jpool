@@ -12,7 +12,7 @@ import org.davidb.jpool.pool.Attributes
 
 import org.davidb.logging.Loggable
 
-object Linux extends AnyRef with Loggable {
+class Linux extends AnyRef with Loggable {
   @native def setup
 
   @native def message: String
@@ -211,3 +211,5 @@ object Linux extends AnyRef with Loggable {
     System.loadLibrary("linux")
   setup
 }
+
+object Linux extends Linux
